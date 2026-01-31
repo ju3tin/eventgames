@@ -1,4 +1,3 @@
-// app/api/scores/all.ts
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -31,7 +30,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     
     const game_type = searchParams.get('game_type') || 'punch-targets'
-    const limit = Math.min(Number(searchParams.get('limit')) || 50, 100) // max 100 for safety
+    const limit = Math.min(Number(searchParams.get('limit')) || 50, 100)
     const offset = Number(searchParams.get('offset')) || 0
 
     const { data, error, count } = await supabase
@@ -55,15 +54,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Anonymize emails (show only first part for privacy)
     const anonymizedScores = data?.map(item => ({
       id: item.id,
       score: item.score,
       duration: item.duration,
       created_at: item.created_at,
-    //  user: item.user?.email
-    //    ? { email: item.user.email.split('@')[0] + '...' }
-    //    : { email: 'Anonymous' }
     })) || []
 
     return NextResponse.json({
