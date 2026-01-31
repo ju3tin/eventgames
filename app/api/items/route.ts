@@ -1,4 +1,3 @@
-// app/api/items/route.ts (minimal version)
 import { NextResponse } from 'next/server';
 
 export async function GET() {
