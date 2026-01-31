@@ -33,8 +33,8 @@ type GameState = "idle" | "countdown" | "playing" | "paused" | "ended";
 
 const GAME_DURATION = 60; // seconds
 const TARGET_SPAWN_INTERVAL = 800; // ms
-const TARGET_LIFETIME = 2200; // ms – slightly longer than before
-const HIT_RADIUS = 55; // pixels – bit more forgiving
+const TARGET_LIFETIME = 2200; // ms
+const HIT_RADIUS = 55; // pixels (forgiving for webcam)
 
 export default function PunchTargetsGame() {
   const router = useRouter();
@@ -60,11 +60,10 @@ export default function PunchTargetsGame() {
       const rect = gameAreaRef.current?.getBoundingClientRect();
       if (!rect) return;
 
-      // Because video is mirrored (user-facing camera)
       const scaleX = rect.width / 640;
       const scaleY = rect.height / 480;
 
-      // Left wrist (appears on right side of screen due to mirroring)
+      // Left wrist (mirrored camera)
       const leftWrist = pose.keypoints[KEYPOINT_INDICES.leftWrist];
       if (leftWrist?.score && leftWrist.score > 0.35) {
         const x = rect.width - leftWrist.x * scaleX;
@@ -97,12 +96,11 @@ export default function PunchTargetsGame() {
 
       if (hitAny) {
         setCombo((c) => {
-          const newCombo = c + 1;
-          setMaxCombo((m) => Math.max(m, newCombo));
-          return newCombo;
+          const newC = c + 1;
+          setMaxCombo((m) => Math.max(m, newC));
+          return newC;
         });
-        setScore((s) => s + 100 + combo * 15); // slightly better combo bonus
-        // Optional: play punch sound here
+        setScore((s) => s + 100 + combo * 15);
       }
 
       return updated;
@@ -128,13 +126,10 @@ export default function PunchTargetsGame() {
 
     setTargets((prev) => [...prev, target]);
 
-    // Auto-remove after lifetime if not hit
     setTimeout(() => {
       setTargets((prev) => {
-        const stillExists = prev.find((t) => t.id === target.id);
-        if (stillExists && !stillExists.hit) {
-          setCombo(0); // miss → combo reset
-        }
+        const missed = prev.find((t) => t.id === target.id && !t.hit);
+        if (missed) setCombo(0);
         return prev.filter((t) => t.id !== target.id);
       });
     }, TARGET_LIFETIME);
@@ -177,7 +172,6 @@ export default function PunchTargetsGame() {
     }
   }, [score, timeLeft]);
 
-  // Game timers & spawner
   useEffect(() => {
     if (gameState === "playing") {
       timerRef.current = setInterval(() => {
@@ -199,12 +193,10 @@ export default function PunchTargetsGame() {
     };
   }, [gameState, spawnTarget, endGame]);
 
-  // Full cleanup on unmount
   useEffect(() => () => stop(), [stop]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/40 flex flex-col">
-      {/* Header */}
       <header className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Button
@@ -243,7 +235,6 @@ export default function PunchTargetsGame() {
 
       <main className="flex-1 pt-16 flex flex-col">
         <div ref={gameAreaRef} className="relative flex-1 overflow-hidden">
-          {/* Mirrored webcam feed – low opacity background */}
           <video
             ref={videoRef}
             autoPlay
@@ -253,7 +244,6 @@ export default function PunchTargetsGame() {
             style={{ transform: "scaleX(-1)" }}
           />
 
-          {/* Targets */}
           {targets.map((t) => (
             <div
               key={t.id}
@@ -270,7 +260,7 @@ export default function PunchTargetsGame() {
               <div
                 className={`w-full h-full rounded-full flex items-center justify-center border-4 ${
                   t.hit
-                    ? "bg-primary border-primary animate-ping-once"
+                    ? "bg-primary border-primary"
                     : "bg-destructive/70 border-destructive"
                 }`}
               >
@@ -279,7 +269,6 @@ export default function PunchTargetsGame() {
             </div>
           ))}
 
-          {/* Idle screen */}
           {gameState === "idle" && (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-background/90 to-transparent backdrop-blur-sm">
               <Card className="w-full max-w-md mx-4 p-8 text-center shadow-2xl border-primary/20">
@@ -311,7 +300,6 @@ export default function PunchTargetsGame() {
             </div>
           )}
 
-          {/* Countdown overlay */}
           {gameState === "countdown" && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
               <div className="text-9xl sm:text-[12rem] font-black text-primary animate-pulse tracking-tighter">
@@ -320,7 +308,6 @@ export default function PunchTargetsGame() {
             </div>
           )}
 
-          {/* Paused overlay */}
           {gameState === "paused" && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-md">
               <Card className="p-10 text-center max-w-sm mx-4">
@@ -346,7 +333,6 @@ export default function PunchTargetsGame() {
             </div>
           )}
 
-          {/* Game Over screen */}
           {gameState === "ended" && (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-background/90 to-background/70 backdrop-blur-sm">
               <Card className="w-full max-w-lg mx-4 p-8 text-center shadow-2xl">
@@ -383,7 +369,6 @@ export default function PunchTargetsGame() {
             </div>
           )}
 
-          {/* Pause button (only when playing) */}
           {gameState === "playing" && (
             <Button
               variant="secondary"
