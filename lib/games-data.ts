@@ -12,6 +12,7 @@ export interface Game {
   players: string
   color: string
   isLocked?: boolean
+  comingSoon?: boolean
 }
 
 export const games: Game[] = [
@@ -25,14 +26,15 @@ export const games: Game[] = [
     calories: '50-100',
     players: '1 Player',
     color: 'bg-chart-1',
+    comingSoon: true,
   },
   {
-    id: 'target-shooter',
-    title: 'Target Shooter',
-    description: 'Point and aim at targets using your arms. Test your accuracy and reaction time.',
+    id: 'punch-targets',
+    title: 'Punch the Targets',
+    description: 'Use your fists to punch targets that appear on screen. Build combos for bonus points!',
     icon: Target,
     difficulty: 'Medium',
-    duration: '3-5 min',
+    duration: '1 min',
     calories: '80-120',
     players: '1 Player',
     color: 'bg-accent',
@@ -47,6 +49,7 @@ export const games: Game[] = [
     calories: '100-150',
     players: '1 Player',
     color: 'bg-chart-4',
+    comingSoon: true,
   },
   {
     id: 'rhythm-move',
@@ -58,6 +61,7 @@ export const games: Game[] = [
     calories: '120-200',
     players: '1-2 Players',
     color: 'bg-chart-3',
+    comingSoon: true,
   },
   {
     id: 'fitness-challenge',
