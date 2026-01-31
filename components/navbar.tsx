@@ -41,6 +41,9 @@ export function Navbar({ user }: NavbarProps) {
             <Link href="/games" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Games
             </Link>
+            <Link href="/leaderboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Leaderboard
+            </Link>
           </div>
 
           {/* Auth Buttons */}
