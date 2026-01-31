@@ -41,9 +41,7 @@ export async function GET(request: Request) {
         id,
         score,
         duration,
-        created_at,
-        user:users!inner (email)
-        `,
+        created_at `,
         { count: 'exact' }
       )
       .eq('game_type', game_type)
