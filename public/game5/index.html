@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Punch Targets – Camera Game</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(to bottom, #0f0f1a, #1a1a2e);
+      color: white;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      padding: 12px 20px;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .stats {
+      display: flex;
+      gap: 24px;
+      font-size: 1.1rem;
+    }
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #game-area {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+    }
+    video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+      opacity: 0.25;
+      pointer-events: none;
+    }
+    .target {
+      position: absolute;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease-out;
+      pointer-events: none;
+    }
+    .target.hit {
+      transform: scale(1.6) rotate(15deg);
+      opacity: 0;
+    }
+    .target:not(.hit) {
+      animation: pulse 1.5s infinite alternate;
+    }
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to   { transform: scale(1.12); }
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 10;
+    }
+    .card {
+      background: rgba(30,30,50,0.9);
+      border: 1px solid #444;
+      border-radius: 16px;
+      padding: 32px 40px;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+    h1 { font-size: 2.8rem; margin: 0 0 16px; }
+    .countdown { font-size: 18rem; font-weight: 900; color: #00d4ff; }
+    button {
+      background: #0066ff;
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      font-size: 1.2rem;
+      border-radius: 12px;
+      cursor: pointer;
+      margin: 8px;
+      transition: all 0.2s;
+    }
+    button:hover { background: #3385ff; transform: translateY(-2px); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .small-btn {
+      padding: 10px 20px;
+      font-size: 1rem;
+    }
+    .pause-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid #666;
+      backdrop-filter: blur(4px);
+      padding: 12px;
+      border-radius: 50%;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <button onclick="window.location.href='/'">← Back</button>
+  <div class="stats" id="stats" style="display:none;">
+    <div class="stat"><span>⏱</span> <span id="timer">01:00</span></div>
+    <div class="stat"><span>⚡</span> <span id="combo">0</span></div>
+    <div class="stat"><span>🏆</span> <span id="score">0</span></div>
+  </div>
+</header>
+
+<div id="game-area">
+  <video id="video" autoplay playsinline muted></video>
+
+  <!-- Overlays -->
+  <div id="idle" class="overlay">
+    <div class="card">
+      <h1>Punch Targets</h1>
+      <p style="margin:16px 0; color:#aaa;">
+        Use your hands to punch targets!<br>
+        Build combos for bonus points.<br>
+        60 seconds challenge.
+      </p>
+      <p id="errorMsg" style="color:#ff5555; margin:12px 0;"></p>
+      <button id="startBtn" onclick="startGame()">Start Game</button>
+    </div>
+  </div>
+
+  <div id="countdown" class="overlay" style="display:none;">
+    <div id="count" class="countdown">3</div>
+  </div>
+
+  <div id="paused" class="overlay" style="display:none;">
+    <div class="card">
+      <h2 style="font-size:3rem; margin-bottom:32px;">PAUSED</h2>
+      <button onclick="resumeGame()">Resume</button>
+      <button onclick="window.location.reload()" style="background:#444;">Quit</button>
+    </div>
+  </div>
+
+  <div id="gameover" class="overlay" style="display:none;">
+    <div class="card">
+      <h1>Game Over!</h1>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:32px 0;">
+        <div>
+          <div style="color:#aaa; font-size:0.9rem;">Score</div>
+          <div id="finalScore" style="font-size:3.5rem; color:#00d4ff;">0</div>
+        </div>
+        <div>
+          <div style="color:#aaa; font-size:0.9rem;">Max Combo</div>
+          <div id="finalCombo" style="font-size:3.5rem; color:#ffaa00;">0</div>
+        </div>
+      </div>
+      <button onclick="window.location.reload()">Play Again</button>
+    </div>
+  </div>
+
+  <button id="pauseBtn" class="pause-btn" style="display:none;" onclick="pauseGame()">⏸</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3"></script>
+
+<script>
+// ──────────────────────────────────────────────
+const video = document.getElementById('video');
+const gameArea = document.getElementById('game-area');
+let detector = null;
+let animationFrame = null;
+let gameState = 'idle'; // idle, countdown, playing, paused, ended
+let score = 0;
+let combo = 0;
+let maxCombo = 0;
+let timeLeft = 60;
+let targets = [];
+let targetId = 0;
+
+const GAME_DURATION = 60;
+const SPAWN_INTERVAL = 800;
+const TARGET_LIFETIME = 2200;
+const HIT_RADIUS = 55;
+
+// ──────────────────────────────────────────────
+async function loadModel() {
+  const startBtn = document.getElementById('startBtn');
+  startBtn.textContent = "Loading model...";
+  startBtn.disabled = true;
+
+  try {
+    // Set backend
+    await tf.setBackend('webgl');
+    await tf.ready();
+
+    // Create detector – use string constants (CDN style)
+    detector = await poseDetection.createDetector(
+      poseDetection.SupportedModels.MoveNet,
+      { modelType: 'SinglePose.Lightning' }   // ← this is the correct syntax for v2.1.3 CDN
+    );
+
+    startBtn.textContent = "Start Game";
+    startBtn.disabled = false;
+  } catch (err) {
+    console.error("Model load failed:", err);
+    document.getElementById('errorMsg').textContent = "Failed to load model. Try again or check console.";
+    startBtn.textContent = "Retry";
+    startBtn.disabled = false;
+  }
+}
+
+// ──────────────────────────────────────────────
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }
+    });
+    video.srcObject = stream;
+    await video.play();
+  } catch (err) {
+    document.getElementById('errorMsg').textContent = "Camera access denied or unavailable.";
+    console.error("Camera error:", err);
+  }
+}
+
+// ──────────────────────────────────────────────
+async function startGame() {
+  if (gameState !== 'idle') return;
+
+  if (!detector) {
+    await loadModel();
+    if (!detector) return;
+  }
+
+  await startCamera();
+
+  gameState = 'countdown';
+  document.getElementById('idle').style.display = 'none';
+  document.getElementById('countdown').style.display = 'flex';
+  document.getElementById('stats').style.display = 'flex';
+  document.getElementById('pauseBtn').style.display = 'block';
+
+  score = 0; combo = 0; maxCombo = 0; timeLeft = GAME_DURATION;
+  targets = []; targetId = 0;
+  updateUI();
+
+  let count = 3;
+  document.getElementById('count').textContent = count;
+
+  const cd = setInterval(() => {
+    count--;
+    document.getElementById('count').textContent = count;
+    if (count <= 0) {
+      clearInterval(cd);
+      document.getElementById('countdown').style.display = 'none';
+      gameState = 'playing';
+      startGameLoop();
+    }
+  }, 1000);
+}
+
+// ──────────────────────────────────────────────
+function startGameLoop() {
+  const timer = setInterval(() => {
+    timeLeft--;
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      endGame();
+      return;
+    }
+    const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+    const secs = (timeLeft % 60).toString().padStart(2, '0');
+    document.getElementById('timer').textContent = `${mins}:${secs}`;
+  }, 1000);
+
+  const spawner = setInterval(spawnTarget, SPAWN_INTERVAL);
+
+  function detect() {
+    if (gameState !== 'playing') return;
+
+    if (video.readyState >= 2 && video.videoWidth > 0) {
+      detector.estimatePoses(video).then(poses => {
+        if (poses?.length > 0) {
+          const pose = poses[0];
+          const rect = gameArea.getBoundingClientRect();
+          const scaleX = rect.width / video.videoWidth;
+          const scaleY = rect.height / video.videoHeight;
+
+          // Left wrist → right side of screen (mirrored)
+          const lw = pose.keypoints[9];
+          if (lw?.score > 0.35) {
+            const x = rect.width - (lw.x * scaleX);
+            const y = lw.y * scaleY;
+            checkHit(x, y);
+          }
+
+          // Right wrist → left side
+          const rw = pose.keypoints[10];
+          if (rw?.score > 0.35) {
+            const x = rect.width - (rw.x * scaleX);
+            const y = rw.y * scaleY;
+            checkHit(x, y);
+          }
+        }
+      }).catch(err => console.error("Detection error:", err));
+    }
+
+    animationFrame = requestAnimationFrame(detect);
+  }
+
+  detect();
+
+  // Cleanup
+  window.addEventListener('beforeunload', () => {
+    clearInterval(timer);
+    clearInterval(spawner);
+    cancelAnimationFrame(animationFrame);
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(t => t.stop());
+    }
+  }, { once: true });
+}
+
+// ──────────────────────────────────────────────
+function spawnTarget() {
+  if (gameState !== 'playing') return;
+
+  const rect = gameArea.getBoundingClientRect();
+  const padding = 90;
+  const x = padding + Math.random() * (rect.width - padding * 2);
+  const y = padding + Math.random() * (rect.height - padding * 2);
+  const radius = 32 + Math.random() * 18;
+
+  const target = document.createElement('div');
+  target.className = 'target';
+  target.style.left = `${x - radius}px`;
+  target.style.top  = `${y - radius}px`;
+  target.style.width = `${radius * 2}px`;
+  target.style.height = `${radius * 2}px`;
+
+  const inner = document.createElement('div');
+  inner.style.width = '100%';
+  inner.style.height = '100%';
+  inner.style.background = 'rgba(220, 20, 60, 0.75)';
+  inner.style.border = '4px solid #c00';
+  inner.style.borderRadius = '50%';
+  inner.style.fontSize = '2rem';
+  inner.style.display = 'flex';
+  inner.style.alignItems = 'center';
+  inner.style.justifyContent = 'center';
+  inner.textContent = '🎯';
+
+  target.appendChild(inner);
+  target.dataset.id = targetId++;
+  target.dataset.x = x;
+  target.dataset.y = y;
+  target.dataset.radius = radius;
+
+  gameArea.appendChild(target);
+
+  setTimeout(() => {
+    if (target && !target.classList.contains('hit')) {
+      combo = 0;
+      updateUI();
+    }
+    target?.remove();
+  }, TARGET_LIFETIME);
+}
+
+// ──────────────────────────────────────────────
+function checkHit(wx, wy) {
+  const liveTargets = document.querySelectorAll('.target:not(.hit)');
+  let hitAny = false;
+
+  liveTargets.forEach(t => {
+    const tx = parseFloat(t.dataset.x);
+    const ty = parseFloat(t.dataset.y);
+    const tr = parseFloat(t.dataset.radius);
+
+    const dist = Math.hypot(wx - tx, wy - ty);
+
+    if (dist < HIT_RADIUS + tr) {
+      t.classList.add('hit');
+      hitAny = true;
+    }
+  });
+
+  if (hitAny) {
+    combo++;
+    if (combo > maxCombo) maxCombo = combo;
+    score += 100 + combo * 15;
+    updateUI();
+  }
+}
+
+// ──────────────────────────────────────────────
+function updateUI() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('combo').textContent = combo;
+  const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+  const secs = (timeLeft % 60).toString().padStart(2, '0');
+  document.getElementById('timer').textContent = `${mins}:${secs}`;
+}
+
+// ──────────────────────────────────────────────
+function pauseGame() {
+  gameState = 'paused';
+  document.getElementById('paused').style.display = 'flex';
+  cancelAnimationFrame(animationFrame);
+}
+
+function resumeGame() {
+  gameState = 'playing';
+  document.getElementById('paused').style.display = 'none';
+  startGameLoop(); // re-starts detection
+}
+
+function endGame() {
+  gameState = 'ended';
+  cancelAnimationFrame(animationFrame);
+  document.getElementById('gameover').style.display = 'flex';
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('finalCombo').textContent = maxCombo;
+  document.getElementById('pauseBtn').style.display = 'none';
+}
+
+// ──────────────────────────────────────────────
+window.addEventListener('load', () => {
+  loadModel();
+});
+</script>
+</body>
+</html>
