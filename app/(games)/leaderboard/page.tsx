@@ -11,7 +11,7 @@ import { games } from "@/lib/games-data"
 
 interface LeaderboardEntry {
   id: string
-  user_id: string
+  user_id: string 
   game_id: string
   score: number
   duration_seconds: number
