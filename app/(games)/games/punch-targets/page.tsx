@@ -50,8 +50,8 @@ export default function PunchTargetsGame() {
   
   const gameAreaRef = useRef<HTMLDivElement>(null)
   const targetIdRef = useRef(0)
-  const timerRef = useRef<NodeJS.Timeout>()
-  const spawnRef = useRef<NodeJS.Timeout>()
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const spawnRef = useRef<NodeJS.Timeout | null>(null)
 
   const handlePoseDetected = useCallback((poses: Pose[]) => {
     if (gameState !== "playing" || !poses[0]) return
