@@ -61,9 +61,9 @@ export async function GET(request: Request) {
       score: item.score,
       duration: item.duration,
       created_at: item.created_at,
-      user: item.user?.email
-        ? { email: item.user.email.split('@')[0] + '...' }
-        : { email: 'Anonymous' }
+    //  user: item.user?.email
+    //    ? { email: item.user.email.split('@')[0] + '...' }
+    //    : { email: 'Anonymous' }
     })) || []
 
     return NextResponse.json({
