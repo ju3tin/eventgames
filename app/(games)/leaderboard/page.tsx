@@ -10,15 +10,15 @@ import { Trophy, Medal, Award, Flame, Clock, Target, ChevronDown } from "lucide-
 import { games } from "@/lib/games-data"
 
 interface LeaderboardEntry {
-  id: string
-  user_id: string 
-  game_id: string
-  score: number
-  duration_seconds: number
-  created_at: string
-  profiles: {
-    display_name: string | null
-  } | null
+  id: string;
+  user_id: string;
+  game_id: string;
+  score: number;
+  duration_seconds: number;
+  created_at: string;
+  profiles: Array<{
+    display_name: string | null;
+  }>;
 }
 
 const gameOptions = [
@@ -180,7 +180,7 @@ export default function LeaderboardPage() {
                       {/* Player Info */}
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground truncate">
-                          {entry.profiles?.display_name || "Anonymous Player"}
+                          {entry.profiles[0]?.display_name|| "Anonymous Player"}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {getGameName(entry.game_id)}
