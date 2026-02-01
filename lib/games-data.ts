@@ -28,7 +28,7 @@ export const games: Game[] = [
     players: '1 Player',
     color: 'bg-chart-1',
     comingSoon: true,
-    link: '/game1/index.html',
+    link: '/game/index.html',
   },
   {
     id: 'punch-targets',
