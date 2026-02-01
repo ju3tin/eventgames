@@ -14,6 +14,7 @@ export interface GameCardProps {
   calories: string
   players: string
   color: string
+  link: string
   isLocked?: boolean
 }
 
@@ -27,6 +28,7 @@ export function GameCard({
   calories,
   players,
   color,
+  link,
   isLocked = false,
 }: GameCardProps) {
   const difficultyColors = {
@@ -83,7 +85,7 @@ export function GameCard({
           </Button>
         ) : (
           <Button asChild className="w-full group/btn">
-            <Link href={`/games/${id}`}>
+            <Link href={`${link}`}>
               <Play className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
               Play Now
             </Link>
