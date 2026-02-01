@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dance Mirror Game - Similarity Scoring</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            background: #111; 
+            color: white; 
+            margin: 0; 
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .video-box {
+            position: relative;
+            width: 480px;
+        }
+        video, canvas {
+            width: 100%;
+            height: auto;
+            border: 3px solid #444;
+            border-radius: 8px;
+            background: black;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        #tutorial-box { border-color: #4CAF50; }
+        #user-box { border-color: #2196F3; }
+        #score { font-size: 32px; margin: 20px; }
+        #similarity { font-size: 24px; color: #00ff9d; margin: 10px; }
+        button { 
+            padding: 15px 30px; 
+            font-size: 20px; 
+            background: #FF5722; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin: 20px;
+        }
+        button:hover { background: #E64A19; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        h3 { margin: 10px 0; }
+        #status { color: #ffcc00; font-size: 18px; margin: 10px; }
+    </style>
+
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.22.0/dist/tf-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.22.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.22.0/dist/tf-backend-webgl.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3"></script>
+</head>
+<body>
+    <h1>Dance Mirror Game – Match the Moves!</h1>
+    <p>The tutorial video plays **once**.<br>Score points based on **how closely your pose matches** the tutorial (real-time similarity)!<br>Green = tutorial pose • Cyan = your pose</p>
+
+    <div id="status">Loading models... Please wait.</div>
+
+    <div class="container">
+        <div class="video-box" id="tutorial-box">
+            <h3>Tutorial (Green Pose)</h3>
+            <video id="tutorial-video" playsinline>
+                <!-- Replace with YOUR dance tutorial video (with sound if desired) -->
+                <source src="https://cdn.pixabay.com/video/2020/07/04/43850-437611820_large.mp4" type="video/mp4">
+            </video>
+            <canvas id="tutorial-canvas"></canvas>
+        </div>
+
+        <div class="video-box" id="user-box">
+            <h3>You (Cyan Pose)</h3>
+            <video id="user-video" autoplay playsinline></video>
+            <canvas id="user-canvas"></canvas>
+        </div>
+    </div>
+
+    <div id="similarity">Match: 0%</div>
+    <div id="score">Score: 0</div>
+    <button id="start-button" disabled>Start Game</button>
+
+    <script>
+        let detector = null;
+        let score = 0;
+        let gameRunning = false;
+
+        const tutorialVideo = document.getElementById('tutorial-video');
+        const tutorialCanvas = document.getElementById('tutorial-canvas');
+        const tutorialCtx = tutorialCanvas.getContext('2d');
+
+        const userVideo = document.getElementById('user-video');
+        const userCanvas = document.getElementById('user-canvas');
+        const userCtx = userCanvas.getContext('2d');
+
+        const similarityEl = document.getElementById('similarity');
+        const scoreEl = document.getElementById('score');
+        const statusEl = document.getElementById('status');
+        const startBtn = document.getElementById('start-button');
+
+        function resizeCanvases() {
+            if (tutorialVideo.videoWidth > 0) {
+                tutorialCanvas.width = tutorialVideo.videoWidth;
+                tutorialCanvas.height = tutorialVideo.videoHeight;
+            }
+            if (userVideo.videoWidth > 0) {
+                userCanvas.width = userVideo.videoWidth;
+                userCanvas.height = userVideo.videoHeight;
+            }
+        }
+        tutorialVideo.onloadedmetadata = resizeCanvases;
+        userVideo.onloadedmetadata = resizeCanvases;
+
+        // Simple cosine similarity between two vectors
+        function cosineSimilarity(a, b) {
+            let dot = 0, normA = 0, normB = 0;
+            for (let i = 0; i < a.length; i++) {
+                dot += a[i] * b[i];
+                normA += a[i] * a[i];
+                normB += b[i] * b[i];
+            }
+            if (normA === 0 || normB === 0) return 0;
+            return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+        }
+
+        // Normalize keypoints: translate to origin (using nose), rough scale by avg distance
+        function normalizeKeypoints(keypoints) {
+            if (!keypoints || keypoints.length < 17) return null;
+
+            const nose = keypoints.find(k => k.name === 'nose');
+            if (!nose || nose.score < 0.3) return null;
+
+            // Translate so nose is at (0,0)
+            let translated = keypoints.map(k => ({
+                x: k.x - nose.x,
+                y: k.y - nose.y,
+                score: k.score
+            }));
+
+            // Rough scale: average distance from nose to shoulders/hips
+            const leftShoulder = translated.find(k => k.name === 'left_shoulder');
+            const rightShoulder = translated.find(k => k.name === 'right_shoulder');
+            const leftHip = translated.find(k => k.name === 'left_hip');
+            const rightHip = translated.find(k => k.name === 'right_hip');
+
+            let scale = 1;
+            let count = 0;
+            [leftShoulder, rightShoulder, leftHip, rightHip].forEach(p => {
+                if (p) {
+                    const dist = Math.sqrt(p.x**2 + p.y**2);
+                    if (dist > 10) { scale += dist; count++; }
+                }
+            });
+            if (count > 0) scale /= count * 100; // arbitrary normalization factor
+            else scale = 0.01;
+
+            // Flatten to vector (x,y only, weighted lightly by score)
+            let vector = [];
+            keypoints.forEach(k => {
+                if (k.score > 0.2) {
+                    vector.push((k.x - nose.x) / scale);
+                    vector.push((k.y - nose.y) / scale);
+                } else {
+                    vector.push(0, 0); // missing → neutral
+                }
+            });
+
+            return vector;
+        }
+
+        async function initTF() {
+            try {
+                statusEl.textContent = "Setting up TensorFlow.js...";
+                await tf.setBackend('webgl');
+                await tf.ready();
+
+                statusEl.textContent = "Loading MoveNet...";
+                detector = await poseDetection.createDetector(
+                    poseDetection.SupportedModels.MoveNet,
+                    { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+                );
+
+                statusEl.textContent = "Ready! Click Start.";
+                startBtn.disabled = false;
+            } catch (err) {
+                console.error(err);
+                statusEl.textContent = "Error: " + err.message;
+            }
+        }
+
+        async function initWebcam() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                userVideo.srcObject = stream;
+            } catch (err) {
+                statusEl.textContent = "Webcam access denied.";
+                alert("Please allow camera access.");
+            }
+        }
+
+        async function startGame() {
+            if (gameRunning || !detector) return;
+            gameRunning = true;
+            score = 0;
+            updateScore();
+
+            tutorialVideo.currentTime = 0;
+            tutorialVideo.loop = false;
+            tutorialVideo.play().catch(e => console.log("Video play failed:", e));
+
+            statusEl.textContent = "Game started! Mirror the dancer.";
+            detectLoop();
+        }
+
+        async function detectLoop() {
+            if (!gameRunning) return;
+
+            let tutorialVector = null;
+            let userVector = null;
+
+            // Tutorial pose
+            if (tutorialVideo.readyState >= 2 && !tutorialVideo.paused && !tutorialVideo.ended) {
+                const poses = await detector.estimatePoses(tutorialVideo);
+                drawPose(tutorialCtx, poses, 'lime');
+                if (poses.length > 0) {
+                    tutorialVector = normalizeKeypoints(poses[0].keypoints);
+                }
+            }
+
+            // User pose
+            if (userVideo.readyState >= 2) {
+                const poses = await detector.estimatePoses(userVideo);
+                drawPose(userCtx, poses, 'cyan');
+                if (poses.length > 0) {
+                    userVector = normalizeKeypoints(poses[0].keypoints);
+                }
+            }
+
+            // Compute similarity & score
+            if (tutorialVector && userVector) {
+                const sim = cosineSimilarity(tutorialVector, userVector);
+                const matchPercent = Math.max(0, Math.round((sim + 1) / 2 * 100)); // -1→0 to 1→100
+                similarityEl.textContent = `Match: ${matchPercent}%`;
+
+                // Award points based on match quality (e.g. every frame)
+                if (matchPercent > 60) {
+                    score += Math.round((matchPercent - 60) / 4); // ~0-10 pts per frame when good
+                    updateScore();
+                }
+            } else {
+                similarityEl.textContent = `Match: N/A`;
+            }
+
+            requestAnimationFrame(detectLoop);
+        }
+
+        function drawPose(ctx, poses, color) {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            if (poses.length > 0) {
+                const keypoints = poses[0].keypoints;
+                const pairs = poseDetection.util.getAdjacentPairs(poseDetection.SupportedModels.MoveNet);
+
+                keypoints.forEach(kp => {
+                    if (kp.score > 0.35) {
+                        ctx.beginPath();
+                        ctx.arc(kp.x, kp.y, 7, 0, 2 * Math.PI);
+                        ctx.fillStyle = color;
+                        ctx.fill();
+                    }
+                });
+
+                pairs.forEach(([i, j]) => {
+                    const a = keypoints[i];
+                    const b = keypoints[j];
+                    if (a.score > 0.35 && b.score > 0.35) {
+                        ctx.beginPath();
+                        ctx.moveTo(a.x, a.y);
+                        ctx.lineTo(b.x, b.y);
+                        ctx.lineWidth = 5;
+                        ctx.strokeStyle = color;
+                        ctx.stroke();
+                    }
+                });
+            }
+        }
+
+        function updateScore() {
+            scoreEl.textContent = `Score: ${score}`;
+        }
+
+        function endGame() {
+            gameRunning = false;
+            tutorialVideo.pause();
+            alert(`Game Over! Final Score: ${score}`);
+            similarityEl.textContent = `Match: Finished!`;
+            statusEl.textContent = "Refresh to replay.";
+        }
+
+        tutorialVideo.onended = endGame; // Auto-end when video finishes
+
+        window.addEventListener('load', async () => {
+            await initTF();
+            await initWebcam();
+            startBtn.addEventListener('click', startGame);
+        });
+    </script>
+</body>
+</html>
