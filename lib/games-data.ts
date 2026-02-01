@@ -28,7 +28,7 @@ export const games: Game[] = [
     players: '1 Player',
     color: 'bg-chart-1',
     comingSoon: true,
-    link: '',
+    link: '/game1/index.html',
   },
   {
     id: 'punch-targets',
@@ -40,7 +40,7 @@ export const games: Game[] = [
     calories: '80-120',
     players: '1 Player',
     color: 'bg-accent',
-    link: '',
+    link: '/game2/index.html',
   },
   {
     id: 'dodge-master',
@@ -53,7 +53,7 @@ export const games: Game[] = [
     players: '1 Player',
     color: 'bg-chart-4',
     comingSoon: true,
-    link: '',
+    link: '/game3/index.html',
   },
   {
     id: 'rhythm-move',
@@ -66,7 +66,7 @@ export const games: Game[] = [
     players: '1-2 Players',
     color: 'bg-chart-3',
     comingSoon: true,
-    link: '',
+    link: '/game4/index.html',
   },
   {
     id: 'fitness-challenge',
@@ -79,7 +79,7 @@ export const games: Game[] = [
     players: '1 Player',
     color: 'bg-destructive',
     isLocked: true,
-    link: '',
+    link: '/game5/index.html',
   },
   {
     id: 'flappy-arms',
@@ -92,6 +92,6 @@ export const games: Game[] = [
     players: '1 Player',
     color: 'bg-chart-5',
     isLocked: true,
-    link: '',
+    link: '/game6/index.html',
   },
 ]
