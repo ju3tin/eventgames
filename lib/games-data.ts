@@ -11,6 +11,7 @@ export interface Game {
   calories: string
   players: string
   color: string
+  link: string
   isLocked?: boolean
   comingSoon?: boolean
 }
@@ -27,6 +28,7 @@ export const games: Game[] = [
     players: '1 Player',
     color: 'bg-chart-1',
     comingSoon: true,
+    link: '',
   },
   {
     id: 'punch-targets',
@@ -38,6 +40,7 @@ export const games: Game[] = [
     calories: '80-120',
     players: '1 Player',
     color: 'bg-accent',
+    link: '',
   },
   {
     id: 'dodge-master',
@@ -50,6 +53,7 @@ export const games: Game[] = [
     players: '1 Player',
     color: 'bg-chart-4',
     comingSoon: true,
+    link: '',
   },
   {
     id: 'rhythm-move',
@@ -62,6 +66,7 @@ export const games: Game[] = [
     players: '1-2 Players',
     color: 'bg-chart-3',
     comingSoon: true,
+    link: '',
   },
   {
     id: 'fitness-challenge',
@@ -74,6 +79,7 @@ export const games: Game[] = [
     players: '1 Player',
     color: 'bg-destructive',
     isLocked: true,
+    link: '',
   },
   {
     id: 'flappy-arms',
@@ -86,5 +92,6 @@ export const games: Game[] = [
     players: '1 Player',
     color: 'bg-chart-5',
     isLocked: true,
+    link: '',
   },
 ]
