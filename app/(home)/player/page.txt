@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import Image from "next/image";
 import Video from 'next-video';
 //import getStarted from ''';
-import Footer from "@/components/footer";
+import Footer from "@/components/footer1";
 import axios from "axios";
 import axiosInstance from '@/lib/axiosInstance';
 import * as posedetection from "@tensorflow-models/pose-detection";

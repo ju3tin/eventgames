@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dance Game with TensorFlow.js</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #video { display: none; } /* Hidden, but used for pose detection */
+        #canvas { border: 2px solid black; }
+        #score { font-size: 24px; margin-top: 20px; }
+        #instructions { font-size: 18px; margin-bottom: 20px; }
+        #current-move { font-size: 20px; color: green; }
+        button { padding: 10px 20px; font-size: 16px; margin-top: 20px; }
+    </style>
+    <!-- Load TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+    <!-- Load Pose Detection Model (MoveNet) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+</head>
+<body>
+    <h1>Dance Game</h1>
+    <p id="instructions">Follow the dance moves shown below to score points! Stand in front of your webcam.</p>
+    <video id="video" width="640" height="480" autoplay playsinline></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+    <div id="current-move">Current Move: None</div>
+    <div id="score">Score: 0</div>
+    <button id="start-button">Start Game</button>
+
+    <script>
+        // Game variables
+        let video;
+        let canvas;
+        let ctx;
+        let detector;
+        let score = 0;
+        let gameRunning = false;
+        let currentMoveIndex = 0;
+        let moveTimer;
+
+        // Define a simple dance sequence (moves with required keypoint positions and duration in ms)
+        // Each move: { name: string, keypoints: {nose: {x,y}, leftShoulder: {x,y}, ...}, tolerance: number, duration: ms }
+        // For simplicity, we'll define basic moves based on relative positions (e.g., arms up, arms down)
+        // Keypoints are from MoveNet: nose, left_eye, right_eye, left_ear, right_ear, left_shoulder, right_shoulder, etc.
+        const danceMoves = [
+            {
+                name: "Arms Up",
+                check: (keypoints) => {
+                    // Check if both wrists are above shoulders (y is inverted in video coords, smaller y = higher)
+                    const leftWrist = keypoints.find(k => k.name === 'left_wrist');
+                    const rightWrist = keypoints.find(k => k.name === 'right_wrist');
+                    const leftShoulder = keypoints.find(k => k.name === 'left_shoulder');
+                    const rightShoulder = keypoints.find(k => k.name === 'right_shoulder');
+                    return leftWrist && rightWrist && leftShoulder && rightShoulder &&
+                           leftWrist.y < leftShoulder.y - 50 && rightWrist.y < rightShoulder.y - 50;
+                },
+                duration: 5000 // 5 seconds to perform/hold
+            },
+            {
+                name: "Arms Out",
+                check: (keypoints) => {
+                    // Check if wrists are horizontally away from shoulders
+                    const leftWrist = keypoints.find(k => k.name === 'left_wrist');
+                    const rightWrist = keypoints.find(k => k.name === 'right_wrist');
+                    const leftShoulder = keypoints.find(k => k.name === 'left_shoulder');
+                    const rightShoulder = keypoints.find(k => k.name === 'right_shoulder');
+                    return leftWrist && rightWrist && leftShoulder && rightShoulder &&
+                           Math.abs(leftWrist.x - leftShoulder.x) > 100 && Math.abs(rightWrist.x - rightShoulder.x) > 100;
+                },
+                duration: 5000
+            },
+            {
+                name: "Jump (Knees Up)",
+                check: (keypoints) => {
+                    // Check if knees are above hips (simulating a jump or knee raise)
+                    const leftKnee = keypoints.find(k => k.name === 'left_knee');
+                    const rightKnee = keypoints.find(k => k.name === 'right_knee');
+                    const leftHip = keypoints.find(k => k.name === 'left_hip');
+                    const rightHip = keypoints.find(k => k.name === 'right_hip');
+                    return leftKnee && rightKnee && leftHip && rightHip &&
+                           leftKnee.y < leftHip.y - 50 && rightKnee.y < rightHip.y - 50;
+                },
+                duration: 5000
+            }
+            // Add more moves as needed
+        ];
+
+        async function init() {
+            video = document.getElementById('video');
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+
+            // Get webcam access
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.play();
+            } catch (err) {
+                console.error('Error accessing webcam:', err);
+                alert('Please allow webcam access to play the game.');
+                return;
+            }
+
+            // Load the MoveNet model
+            const model = poseDetection.SupportedModels.MoveNet;
+            detector = await poseDetection.createDetector(model);
+
+            // Start button event
+            document.getElementById('start-button').addEventListener('click', startGame);
+        }
+
+        function startGame() {
+            if (gameRunning) return;
+            gameRunning = true;
+            score = 0;
+            currentMoveIndex = 0;
+            updateScore();
+            nextMove();
+            requestAnimationFrame(detectPose);
+        }
+
+        function nextMove() {
+            if (currentMoveIndex >= danceMoves.length) {
+                endGame();
+                return;
+            }
+            const move = danceMoves[currentMoveIndex];
+            document.getElementById('current-move').textContent = `Current Move: ${move.name}`;
+            let moveSuccess = false;
+
+            // Timer for the move
+            const startTime = Date.now();
+            moveTimer = setInterval(() => {
+                // This checks periodically, but actual detection happens in detectPose loop
+            }, 100); // Placeholder, real check in detectPose
+
+            // We'll check in the detection loop and clear when successful or time up
+        }
+
+        async function detectPose() {
+            if (!gameRunning) return;
+
+            if (detector && video.readyState === 4) {
+                const poses = await detector.estimatePoses(video);
+                drawCanvas(poses);
+
+                // Check current move
+                if (currentMoveIndex < danceMoves.length) {
+                    const move = danceMoves[currentMoveIndex];
+                    if (poses.length > 0) {
+                        const keypoints = poses[0].keypoints;
+                        if (move.check(keypoints)) {
+                            score += 10; // Award points
+                            updateScore();
+                            clearInterval(moveTimer);
+                            currentMoveIndex++;
+                            nextMove();
+                        }
+                    }
+                }
+            }
+
+            requestAnimationFrame(detectPose);
+        }
+
+        function drawCanvas(poses) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Draw keypoints and skeleton if poses detected
+            if (poses && poses.length > 0) {
+                const keypoints = poses[0].keypoints;
+                const adjacentKeyPoints = poseDetection.util.getAdjacentPairs(poseDetection.SupportedModels.MoveNet);
+
+                // Draw keypoints
+                keypoints.forEach(kp => {
+                    if (kp.score > 0.3) {
+                        ctx.beginPath();
+                        ctx.arc(kp.x, kp.y, 5, 0, 2 * Math.PI);
+                        ctx.fillStyle = 'red';
+                        ctx.fill();
+                    }
+                });
+
+                // Draw skeleton
+                adjacentKeyPoints.forEach(([i, j]) => {
+                    const kp1 = keypoints[i];
+                    const kp2 = keypoints[j];
+                    if (kp1.score > 0.3 && kp2.score > 0.3) {
+                        ctx.beginPath();
+                        ctx.moveTo(kp1.x, kp1.y);
+                        ctx.lineTo(kp2.x, kp2.y);
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = 'blue';
+                        ctx.stroke();
+                    }
+                });
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = `Score: ${score}`;
+        }
+
+        function endGame() {
+            gameRunning = false;
+            alert(`Game Over! Final Score: ${score}`);
+            document.getElementById('current-move').textContent = 'Current Move: None';
+        }
+
+        // Initialize on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
