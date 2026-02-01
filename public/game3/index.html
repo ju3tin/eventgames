@@ -116,7 +116,7 @@ body {
           <span id="bottomLineValue">75</span>
         </label>
         <br /><label class="toggle">
-	<input class="toggle-checkbox" type="checkbox" checked>
+	<input id="remove" class="toggle-checkbox" type="checkbox" checked>
 	<div class="toggle-switch"></div>
 	<span class="toggle-label">Remove Video</span>
 </label>
@@ -166,6 +166,11 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 <script>
+
+document.getElementById('canvas').onchange = function() {
+    document.getElementById('remove').style.display = this.checked ? 'block' : 'none';
+  };
+
 
 let topLinePercent = 25;   // default: 25% down
 let bottomLinePercent = 75; // default: 75% down
