@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dance Follow Game – Dual Pose Overlay</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #0d1117;
+      color: #e6edf3;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
+      margin: 30px 0;
+    }
+    .video-box {
+      position: relative;
+    }
+    video, canvas {
+      width: 480px;
+      height: 360px;
+      border: 3px solid #30363d;
+      border-radius: 10px;
+      background: black;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+    #tutorial-box { border-color: #58a6ff; }
+    #user-box    { border-color: #3fb950; }
+    h3 { margin: 8px 0; font-size: 1.2rem; }
+    #score { font-size: 36px; margin: 20px; font-weight: bold; }
+    #current-move { font-size: 28px; color: #f0c674; margin: 15px; min-height: 40px; }
+    button {
+      padding: 16px 40px;
+      font-size: 22px;
+      background: #238636;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 20px 10px;
+      transition: background 0.2s;
+    }
+    button:hover { background: #2ea043; }
+    button:disabled { background: #30363d; cursor: not-allowed; }
+    #status { font-size: 1.1rem; color: #8b949e; margin: 10px 0; }
+  </style>
+
+  <!-- TensorFlow.js scripts – IMPORTANT: correct order + converter included -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.22.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.22.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.22.0/dist/tf-converter.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3"></script>
+</head>
+<body>
+  <h1>Dance Follow Game – See Both Skeletons</h1>
+  <p>Copy the moves from the tutorial dancer (left). Your skeleton (right) should match!</p>
+
+  <div class="container">
+    <!-- Tutorial video + pose overlay -->
+    <div class="video-box" id="tutorial-box">
+      <h3>Tutorial (with skeleton)</h3>
+      <video id="tutorial-video" loop muted playsinline>
+        <!-- REPLACE WITH YOUR OWN DANCE TUTORIAL VIDEO URL -->
+        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+        Your browser does not support video.
+      </video>
+      <canvas id="tutorial-canvas"></canvas>
+    </div>
+
+    <!-- User webcam + pose overlay -->
+    <div class="video-box" id="user-box">
+      <h3>Your movement (with skeleton)</h3>
+      <video id="user-video" autoplay playsinline></video>
+      <canvas id="user-canvas"></canvas>
+    </div>
+  </div>
+
+  <div id="current-move">Press Start to begin</div>
+  <div id="score">Score: 0</div>
+  <div id="status">Waiting for webcam and model…</div>
+  <button id="start-button" disabled>Start Game</button>
+
+  <script>
+    // ────────────────────────────────────────────────
+    // CONFIG
+    // ────────────────────────────────────────────────
+    const SCORE_PER_MATCH = 25;
+    const CONFIDENCE_THRESHOLD = 0.4;
+
+    let detector = null;
+    let score = 0;
+    let gameRunning = false;
+    let currentMoveIndex = 0;
+
+    let tutorialVideo, tutorialCanvas, tutorialCtx;
+    let userVideo, userCanvas, userCtx;
+
+    const danceMoves = [
+      {
+        name: "Arms Up ✋",
+        check: (keypoints) => {
+          const lw = keypoints.find(k => k.name === 'left_wrist');
+          const rw = keypoints.find(k => k.name === 'right_wrist');
+          const ls = keypoints.find(k => k.name === 'left_shoulder');
+          const rs = keypoints.find(k => k.name === 'right_shoulder');
+          return lw && rw && ls && rs &&
+                 lw.y < ls.y - 50 && rw.y < rs.y - 50 &&
+                 lw.score > CONFIDENCE_THRESHOLD && rw.score > CONFIDENCE_THRESHOLD;
+        }
+      },
+      {
+        name: "Arms Out 🤗",
+        check: (keypoints) => {
+          const lw = keypoints.find(k => k.name === 'left_wrist');
+          const rw = keypoints.find(k => k.name === 'right_wrist');
+          const ls = keypoints.find(k => k.name === 'left_shoulder');
+          const rs = keypoints.find(k => k.name === 'right_shoulder');
+          return lw && rw && ls && rs &&
+                 Math.abs(lw.x - ls.x) > 130 && Math.abs(rw.x - rs.x) > 130 &&
+                 lw.score > CONFIDENCE_THRESHOLD && rw.score > CONFIDENCE_THRESHOLD;
+        }
+      },
+      {
+        name: "Knees Up / Jump 🦵",
+        check: (keypoints) => {
+          const lk = keypoints.find(k => k.name === 'left_knee');
+          const rk = keypoints.find(k => k.name === 'right_knee');
+          const lh = keypoints.find(k => k.name === 'left_hip');
+          const rh = keypoints.find(k => k.name === 'right_hip');
+          return lk && rk && lh && rh &&
+                 lk.y < lh.y - 70 && rk.y < rh.y - 70 &&
+                 lk.score > CONFIDENCE_THRESHOLD && rk.score > CONFIDENCE_THRESHOLD;
+        }
+      }
+      // ← Add more moves matching your video
+    ];
+
+    // ────────────────────────────────────────────────
+    // INIT
+    // ────────────────────────────────────────────────
+    async function init() {
+      tutorialVideo = document.getElementById('tutorial-video');
+      tutorialCanvas = document.getElementById('tutorial-canvas');
+      tutorialCtx = tutorialCanvas.getContext('2d');
+
+      userVideo = document.getElementById('user-video');
+      userCanvas = document.getElementById('user-canvas');
+      userCtx = userCanvas.getContext('2d');
+
+      // Match canvas sizes to videos
+      tutorialCanvas.width = tutorialVideo.videoWidth || 480;
+      tutorialCanvas.height = tutorialVideo.videoHeight || 360;
+      userCanvas.width = 480;
+      userCanvas.height = 360;
+
+      // Webcam access
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        userVideo.srcObject = stream;
+        document.getElementById('status').textContent = "Webcam connected • Loading model…";
+      } catch (err) {
+        console.error(err);
+        document.getElementById('status').textContent = "Webcam access denied – please allow camera";
+        return;
+      }
+
+      try {
+        // Load MoveNet Lightning (fast & good enough for dance)
+        detector = await poseDetection.createDetector(
+          poseDetection.SupportedModels.MoveNet,
+          { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+        );
+        document.getElementById('status').textContent = "Model loaded! Click Start";
+        document.getElementById('start-button').disabled = false;
+      } catch (err) {
+        console.error("Model load failed:", err);
+        document.getElementById('status').textContent = "Failed to load pose model – check console";
+      }
+
+      document.getElementById('start-button').addEventListener('click', startGame);
+    }
+
+    // ────────────────────────────────────────────────
+    // GAME FLOW
+    // ────────────────────────────────────────────────
+    function startGame() {
+      if (gameRunning || !detector) return;
+      gameRunning = true;
+      score = 0;
+      currentMoveIndex = 0;
+      updateUI();
+      tutorialVideo.currentTime = 0;
+      tutorialVideo.play().catch(e => console.warn("Video play failed", e));
+      nextMove();
+      detectLoop();
+    }
+
+    function nextMove() {
+      if (currentMoveIndex >= danceMoves.length) {
+        endGame();
+        return;
+      }
+      const move = danceMoves[currentMoveIndex];
+      document.getElementById('current-move').textContent = `Do this: ${move.name}`;
+    }
+
+    // ────────────────────────────────────────────────
+    // MAIN DETECTION LOOP – both videos
+    // ────────────────────────────────────────────────
+    async function detectLoop() {
+      if (!gameRunning) return;
+
+      // Tutorial pose
+      if (tutorialVideo.readyState >= 2) {  // HAVE_CURRENT_DATA or better
+        const tutorialPoses = await detector.estimatePoses(tutorialVideo);
+        drawPose(tutorialCtx, tutorialPoses, '#58a6ff'); // blue
+      }
+
+      // User pose + scoring
+      if (userVideo.readyState >= 2) {
+        const userPoses = await detector.estimatePoses(userVideo);
+        drawPose(userCtx, userPoses, '#3fb950'); // green
+
+        if (userPoses.length > 0 && currentMoveIndex < danceMoves.length) {
+          const move = danceMoves[currentMoveIndex];
+          if (move.check(userPoses[0].keypoints)) {
+            score += SCORE_PER_MATCH;
+            updateUI();
+            currentMoveIndex++;
+            nextMove();
+          }
+        }
+      }
+
+      requestAnimationFrame(detectLoop);
+    }
+
+    function drawPose(ctx, poses, color) {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      if (poses.length === 0) return;
+
+      const keypoints = poses[0].keypoints;
+      const pairs = poseDetection.util.getAdjacentPairs(poseDetection.SupportedModels.MoveNet);
+
+      // Keypoints
+      keypoints.forEach(kp => {
+        if (kp.score > 0.35) {
+          ctx.beginPath();
+          ctx.arc(kp.x, kp.y, 7, 0, 2 * Math.PI);
+          ctx.fillStyle = color;
+          ctx.fill();
+        }
+      });
+
+      // Skeleton lines
+      pairs.forEach(([i, j]) => {
+        const a = keypoints[i];
+        const b = keypoints[j];
+        if (a.score > 0.35 && b.score > 0.35) {
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.lineWidth = 5;
+          ctx.strokeStyle = color;
+          ctx.stroke();
+        }
+      });
+    }
+
+    function updateUI() {
+      document.getElementById('score').textContent = `Score: ${score}`;
+    }
+
+    function endGame() {
+      gameRunning = false;
+      tutorialVideo.pause();
+      alert(`Game finished!\nFinal Score: ${score}`);
+      document.getElementById('current-move').textContent = "Great job! Game Over";
+    }
+
+    // Start on load
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>
