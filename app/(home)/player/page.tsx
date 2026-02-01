@@ -8,7 +8,7 @@ import Video from 'next-video';
 //import getStarted from ''';
 import Footer from "@/components/footer";
 import axios from "axios";
-import axiosInstance from '../../../lib/axiosInstance';
+import axiosInstance from '@/lib/axiosInstance';
 import * as posedetection from "@tensorflow-models/pose-detection";
 import "@tensorflow/tfjs-backend-webgl";
 import * as tf from '@tensorflow/tfjs-core';
