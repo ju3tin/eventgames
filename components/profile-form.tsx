@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { updateProfile } from '@/app/profile/actions'
+import { updateProfile } from '@/app/(games)/profile/actions'
 import { User, ImageIcon, Loader2, Check, AlertCircle } from 'lucide-react'
 
 interface ProfileFormProps {
