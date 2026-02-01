@@ -85,11 +85,7 @@ export function GameCard({
           </Button> 
         ) : (
           <Button asChild className="w-full group/btn">
-<<<<<<< HEAD
-            <Link href={`/${link}`}>
-=======
             <Link href={`${link}`}>
->>>>>>> 9f132844b668bd7384662840e569caab250e03cb
               <Play className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
               Play Now
             </Link>
