@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dance Game - Follow the Video</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            background: #111; 
+            color: white; 
+            margin: 0; 
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .video-box {
+            position: relative;
+        }
+        video, canvas {
+            width: 480px;
+            height: 360px;
+            border: 3px solid #444;
+            border-radius: 8px;
+            background: black;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #tutorial-video { border-color: #4CAF50; }
+        #user-canvas { border-color: #2196F3; }
+        #score { font-size: 32px; margin: 20px; }
+        #current-move { font-size: 28px; color: #FFD700; margin: 10px; }
+        button { 
+            padding: 15px 30px; 
+            font-size: 20px; 
+            background: #FF5722; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin: 20px;
+        }
+        button:hover { background: #E64A19; }
+        h1 { margin-bottom: 10px; }
+    </style>
+
+    <!-- TensorFlow.js & Pose Detection -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+</head>
+<body>
+    <h1>Dance Follow Game</h1>
+    <p>Copy the moves from the tutorial video on the left using your webcam on the right!</p>
+
+    <div class="container">
+        <!-- Tutorial video (left side) -->
+        <div class="video-box">
+            <h3>Tutorial</h3>
+            <video id="tutorial-video" controls loop muted>
+                <!-- Replace with your dance tutorial video URL -->
+                <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <!-- User webcam + pose overlay (right side) -->
+        <div class="video-box">
+            <h3>Your Webcam</h3>
+            <video id="user-video" autoplay playsinline></video>
+            <canvas id="user-canvas"></canvas>
+        </div>
+    </div>
+
+    <div id="current-move">Current Move: Waiting...</div>
+    <div id="score">Score: 0</div>
+    <button id="start-button">Start Game</button>
+
+    <script>
+        // ────────────────────────────────────────────────
+        // Game config
+        // ────────────────────────────────────────────────
+        let detector;
+        let score = 0;
+        let gameRunning = false;
+        let currentMoveIndex = 0;
+        let userVideo, userCanvas, userCtx, tutorialVideo;
+
+        const danceMoves = [
+            {
+                name: "Arms Up ✋",
+                check: (keypoints) => {
+                    const lw = keypoints.find(k => k.name === 'left_wrist');
+                    const rw = keypoints.find(k => k.name === 'right_wrist');
+                    const ls = keypoints.find(k => k.name === 'left_shoulder');
+                    const rs = keypoints.find(k => k.name === 'right_shoulder');
+                    return lw && rw && ls && rs &&
+                           lw.y < ls.y - 40 && rw.y < rs.y - 40 &&
+                           lw.score > 0.4 && rw.score > 0.4;
+                }
+            },
+            {
+                name: "Arms Out 🤗",
+                check: (keypoints) => {
+                    const lw = keypoints.find(k => k.name === 'left_wrist');
+                    const rw = keypoints.find(k => k.name === 'right_wrist');
+                    const ls = keypoints.find(k => k.name === 'left_shoulder');
+                    const rs = keypoints.find(k => k.name === 'right_shoulder');
+                    return lw && rw && ls && rs &&
+                           Math.abs(lw.x - ls.x) > 120 && Math.abs(rw.x - rs.x) > 120 &&
+                           lw.score > 0.4 && rw.score > 0.4;
+                }
+            },
+            {
+                name: "Knees Up / Jump 🦵",
+                check: (keypoints) => {
+                    const lk = keypoints.find(k => k.name === 'left_knee');
+                    const rk = keypoints.find(k => k.name === 'right_knee');
+                    const lh = keypoints.find(k => k.name === 'left_hip');
+                    const rh = keypoints.find(k => k.name === 'right_hip');
+                    return lk && rk && lh && rh &&
+                           lk.y < lh.y - 60 && rk.y < rh.y - 60 &&
+                           lk.score > 0.4 && rk.score > 0.4;
+                }
+            }
+            // Add more moves matching your tutorial video timing
+        ];
+
+        async function init() {
+            userVideo = document.getElementById('user-video');
+            userCanvas = document.getElementById('user-canvas');
+            userCtx = userCanvas.getContext('2d');
+            tutorialVideo = document.getElementById('tutorial-video');
+
+            // Match canvas size to video
+            userCanvas.width = userVideo.width;
+            userCanvas.height = userVideo.height;
+
+            // Webcam access
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                userVideo.srcObject = stream;
+            } catch (err) {
+                console.error(err);
+                alert("Cannot access webcam. Please allow camera permission.");
+                return;
+            }
+
+            // Load MoveNet (use Lightning for faster speed)
+            const model = poseDetection.SupportedModels.MoveNet;
+            detector = await poseDetection.createDetector(model, {
+                modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
+            });
+
+            document.getElementById('start-button').addEventListener('click', startGame);
+        }
+
+        function startGame() {
+            if (gameRunning) return;
+            gameRunning = true;
+            score = 0;
+            currentMoveIndex = 0;
+            updateUI();
+            tutorialVideo.currentTime = 0;
+            tutorialVideo.play();
+            detectLoop();
+            nextMove();
+        }
+
+        function nextMove() {
+            if (currentMoveIndex >= danceMoves.length) {
+                endGame();
+                return;
+            }
+            const move = danceMoves[currentMoveIndex];
+            document.getElementById('current-move').textContent = `Do this: ${move.name}`;
+            // You can add timing based on video progress if desired
+        }
+
+        async function detectLoop() {
+            if (!gameRunning) return;
+
+            if (detector && userVideo.readyState === userVideo.HAVE_ENOUGH_DATA) {
+                const poses = await detector.estimatePoses(userVideo);
+                drawUserPose(poses);
+
+                if (poses.length > 0 && currentMoveIndex < danceMoves.length) {
+                    const move = danceMoves[currentMoveIndex];
+                    if (move.check(poses[0].keypoints)) {
+                        score += 20;
+                        updateUI();
+                        currentMoveIndex++;
+                        nextMove();
+                    }
+                }
+            }
+
+            requestAnimationFrame(detectLoop);
+        }
+
+        function drawUserPose(poses) {
+            userCtx.clearRect(0, 0, userCanvas.width, userCanvas.height);
+            // Optional: faint user video under skeleton → userCtx.drawImage(userVideo, 0, 0, userCanvas.width, userCanvas.height);
+
+            if (poses.length > 0) {
+                const keypoints = poses[0].keypoints;
+                const pairs = poseDetection.util.getAdjacentPairs(poseDetection.SupportedModels.MoveNet);
+
+                // Draw keypoints
+                keypoints.forEach(kp => {
+                    if (kp.score > 0.35) {
+                        userCtx.beginPath();
+                        userCtx.arc(kp.x, kp.y, 6, 0, 2 * Math.PI);
+                        userCtx.fillStyle = kp.name.includes('wrist') || kp.name.includes('elbow') ? '#00FF00' : 'cyan';
+                        userCtx.fill();
+                    }
+                });
+
+                // Draw skeleton
+                pairs.forEach(([i, j]) => {
+                    const a = keypoints[i];
+                    const b = keypoints[j];
+                    if (a.score > 0.35 && b.score > 0.35) {
+                        userCtx.beginPath();
+                        userCtx.moveTo(a.x, a.y);
+                        userCtx.lineTo(b.x, b.y);
+                        userCtx.lineWidth = 4;
+                        userCtx.strokeStyle = '#00FFFF';
+                        userCtx.stroke();
+                    }
+                });
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = `Score: ${score}`;
+        }
+
+        function endGame() {
+            gameRunning = false;
+            tutorialVideo.pause();
+            alert(`Game Over! Final Score: ${score}\nGreat job following the dance!`);
+            document.getElementById('current-move').textContent = 'Game Finished!';
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
