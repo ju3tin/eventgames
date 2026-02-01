@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Move Your Body to Play
 
-## Getting Started
+**Experience the future of gaming — control games with your body movements!**  
+No controllers. No keyboard. Just you and real-time pose detection.
 
-First, run the development server:
+https://github.com/your-username/move-your-body-to-play
+
+<p align="center">
+  <img src="https://via.placeholder.com/800x450.png?text=Gameplay+Demo+(replace+with+real+screenshot)" alt="Gameplay screenshot" width="800"/>
+</p>
+
+## 🎮 What is this?
+
+A collection of fun, browser-based mini-games that use **TensorFlow.js** + **pose detection** (MoveNet or BlazePose) to track your body movements in real-time and turn them into game controls.
+
+Wave your arms, jump, squat, dance — the game sees you and reacts instantly.
+
+## ✨ Features
+
+- Real-time human pose estimation right in the browser  
+- No installation — works on phones, tablets, laptops with webcam  
+- Multiple mini-games (growing collection!)  
+- Clean, modern UI with mobile-friendly design  
+- Built with TensorFlow.js + MoveNet (lightning/fast variant)  
+- Optional webcam mirror / silhouette / skeleton debug view  
+
+## 🎲 Included Games (so far)
+
+| Game              | Control Style             | Difficulty | Status     |
+|-------------------|---------------------------|------------|------------|
+| Jump Duck         | Jump to avoid / duck      | ★★☆☆☆      | playable   |
+| Air Drums         | Hit invisible drums       | ★☆☆☆☆      | fun demo   |
+| Body Pong         | Move paddle with hip/shoulder | ★★★☆☆  | in progress|
+| Shape Matcher     | Make shapes with arms     | ★★☆☆☆      | planned    |
+
+(Feel free to add your own games via pull request!)
+
+## 🚀 Live Demo
+
+→ **[Try it live!](https://your-username.github.io/move-your-body-to-play/)** ←  
+*(replace with your actual GitHub Pages link once deployed)*
+
+Best experienced on a device with a **front-facing camera** and decent lighting.
+
+## Tech Stack
+
+- **TensorFlow.js** + **@tensorflow-models/pose-detection** (MoveNet Lightning)
+- Vanilla JavaScript / HTML5 / Canvas
+- p5.js or plain Canvas for game rendering (depending on game)
+- Tailwind CSS or plain CSS for styling
+- Vite / Parcel / static hosting
+
+## Quick Start (Local Development)
 
 ```bash
+# 1. Clone the repo
+git clone https://github.com/your-username/move-your-body-to-play.git
+cd move-your-body-to-play
+
+# 2. Install dependencies (if using npm + Vite/Parcel)
+npm install
+
+# 3. Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# → open http://localhost:5173 (or the port shown)
