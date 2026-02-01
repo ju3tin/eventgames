@@ -82,7 +82,7 @@ export function GameCard({
         {isLocked ? (
           <Button disabled className="w-full" variant="secondary">
             Coming Soon
-          </Button>
+          </Button> 
         ) : (
           <Button asChild className="w-full group/btn">
 <<<<<<< HEAD
