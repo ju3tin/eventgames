@@ -23,7 +23,7 @@ const features = [
   },
   {
     icon: Wifi,
-    title: 'No Downloads',
+    title: 'No Downloads Required',
     description: 'Play directly in your browser. No installations or plugins required.',
   },
   {
