@@ -1,28 +1,29 @@
 // app/api/leaderboard/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
-import { createServerClient } from '@supabase/ssr'; // optional for cookies/auth
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const gameId = searchParams.get('game_id');     // optional filter
+  const gameId = searchParams.get('game_id');
   const limit = Number(searchParams.get('limit')) || 50;
   const offset = Number(searchParams.get('offset')) || 0;
 
   let query = supabase
     .from('leaderboard')
     .select(`
-    id,
-  user_id,
-  game_id,
-  score,
-  created_at,
-  metadata,
-  profiles!inner(           // ← this is the join
-    username,
-    full_name,              // optional
-    avatar_url              // optional
-  )
+      id,
+      score,
+      duration_seconds,
+      created_at,
+      game_id,
+      username,
+      metadata,
+      profile_id,
+      profiles!leaderboard_profile_id_fkey (
+        username,
+        full_name,
+        avatar_url
+      )
     `)
     .order('score', { ascending: false })
     .limit(limit)
@@ -50,5 +51,4 @@ export async function GET(request: Request) {
   });
 }
 
-// Optional: revalidate often if scores change frequently
-export const revalidate = 30; // seconds
+export const revalidate = 30;
