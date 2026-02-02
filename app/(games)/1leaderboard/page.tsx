@@ -32,8 +32,8 @@ async function getLeaderboard(searchGameId?: string) {
 
   const queryString = params.toString();
   const url = queryString 
-    ? `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/leaderboard?${queryString}`
-    : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/leaderboard`;
+    ? `${process.env.NEXT_PUBLIC_SITE_URL || 'https://motionplay.vercel.app'}/api/leaderboard?${queryString}`
+    : `${process.env.NEXT_PUBLIC_SITE_URL || 'https://motionplay.vercel.app'}/api/leaderboard`;
 
   const res = await fetch(url, {
     next: { revalidate: 30 },
