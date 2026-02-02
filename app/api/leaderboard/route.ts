@@ -45,7 +45,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     success: true,
     data: data || [],
-    count: count ?? 0,
+    count: count ?? data?.length ?? 0,
     total: count,
   });
 }
