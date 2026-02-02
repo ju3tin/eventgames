@@ -1,121 +1,135 @@
-// app/gameslist/page.tsx
-import { createClient } from '@/lib/supabase/server1' // adjust path if needed
+// app/games/page.tsx
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
+import { createClient } from '@/lib/supabase/server';
+import { Navbar } from '@/components/navbar';
+import { Footer } from '@/components/footer';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Gamepad2, Clock, Star } from 'lucide-react';
 
-// Define a TypeScript type matching your table (optional but recommended)
-type Game = {
-  id: number
-  created_at: string
-  title: string
-  description: string | null
-  icon: string | null
-  difficulty: string | null
-  duration: number | null
-  calories: number | null
-  players: number | null
-  color: string | null
-  link: string | null
-  isLocked: boolean | null
-  comingSoon: boolean | null
-}
+async function getGames() {
+  const supabase = await createClient();
 
-export default async function GamesListPage() {
-  const supabase = createClient()
-
-  // Fetch all rows from gameslist table
   const { data: games, error } = await supabase
-    .from('gameslist')
-    .select('*')
-    .order('id', { ascending: true }) // optional: sort by id
+    .from('games')
+    .select('id, slug, title, description, thumbnail_url, difficulty, play_count')
+    .eq('is_active', true)
+    .order('play_count', { ascending: false }) // popular first; or .order('title')
+    .limit(20); // for now; later add pagination
 
   if (error) {
-    console.error('Error fetching games:', error)
-    return (
-      <div className="p-8 text-red-600">
-        Error loading games: {error.message}
-      </div>
-    )
+    console.error('Error fetching games:', error);
+    return [];
   }
 
-  if (!games || games.length === 0) {
-    return (
-      <div className="p-8 text-center">
-        <h1 className="text-3xl font-bold mb-4">Games List</h1>
-        <p className="text-gray-500">No games found in the database yet.</p>
-        <p className="mt-2">Add some rows in Supabase Table Editor!</p>
-      </div>
-    )
+  return games ?? [];
+}
+
+export default async function GamesPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/auth/login');
   }
+
+  const games = await getGames();
 
   return (
-    <div className="container mx-auto p-6 max-w-5xl">
-      <h1 className="text-4xl font-bold mb-8 text-center">Games List</h1>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Navbar />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {games.map((game: Game) => (
-          <div
-            key={game.id}
-            className="bg-white border rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-            style={game.color ? { borderTop: `4px solid ${game.color}` } : {}}
-          >
-            <div className="p-6">
-              <div className="flex items-center gap-4 mb-4">
-                {game.icon && (
-                  <div className="text-4xl">{game.icon}</div> // assuming emoji/icon string
-                )}
-                <h2 className="text-2xl font-semibold">{game.title}</h2>
-              </div>
-
-              <p className="text-gray-600 mb-4">{game.description}</p>
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Difficulty:</span>{' '}
-                  {game.difficulty || '—'}
-                </div>
-                <div>
-                  <span className="font-medium">Duration:</span>{' '}
-                  {game.duration ? `${game.duration} min` : '—'}
-                </div>
-                <div>
-                  <span className="font-medium">Calories:</span>{' '}
-                  {game.calories || '—'}
-                </div>
-                <div>
-                  <span className="font-medium">Players:</span>{' '}
-                  {game.players || '—'}
-                </div>
-              </div>
-
-              <div className="mt-4 flex gap-3">
-                {game.isLocked && (
-                  <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
-                    Locked
-                  </span>
-                )}
-                {game.comingSoon && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                    Coming Soon
-                  </span>
-                )}
-                {game.link && (
-                  <a
-                    href={game.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline text-sm"
-                  >
-                    Play →
-                  </a>
-                )}
-              </div>
-            </div>
+      <main className="flex-1 py-12">
+        <div className="container mx-auto px-4 max-w-6xl">
+          {/* Header */}
+          <div className="mb-10">
+            <h1 className="text-3xl md:text-4xl font-bold font-serif text-balance">
+              Play Our <span className="text-primary">Games</span>
+            </h1>
+            <p className="text-muted-foreground mt-3 max-w-2xl">
+              Challenge yourself with fun games, track your scores, and climb the leaderboard!
+            </p>
           </div>
-        ))}
-      </div>
 
-      <p className="text-center text-gray-500 mt-10 text-sm">
-        Fetched {games.length} game{games.length !== 1 ? 's' : ''} from Supabase
-      </p>
+          {games.length === 0 ? (
+            <div className="text-center py-16">
+              <Gamepad2 className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+              <h2 className="text-2xl font-semibold mb-2">No games available yet</h2>
+              <p className="text-muted-foreground">Check back soon — we're adding more!</p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {games.map((game) => (
+                <Card 
+                  key={game.id} 
+                  className="overflow-hidden border-border/50 bg-card/60 backdrop-blur-sm hover:shadow-lg transition-all hover:-translate-y-1"
+                >
+                  {game.thumbnail_url ? (
+                    <div className="relative h-48 w-full">
+                      <Image
+                        src={game.thumbnail_url}
+                        alt={game.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        unoptimized // if using Supabase public URLs
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-48 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                      <Gamepad2 className="w-20 h-20 text-primary/40" />
+                    </div>
+                  )}
+
+                  <CardHeader className="pb-3">
+                    <CardTitle className="font-serif text-xl">{game.title}</CardTitle>
+                    <CardDescription className="flex items-center gap-2 mt-1">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        game.difficulty === 'easy' ? 'bg-green-500/20 text-green-400' :
+                        game.difficulty === 'hard' ? 'bg-red-500/20 text-red-400' :
+                        'bg-yellow-500/20 text-yellow-400'
+                      }`}>
+                        {game.difficulty?.toUpperCase() || 'MEDIUM'}
+                      </span>
+                      {game.play_count > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          Played {game.play_count.toLocaleString()} times
+                        </span>
+                      )}
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {game.description || "A fun and challenging game to test your skills."}
+                    </p>
+
+                    <Button asChild className="w-full">
+                      <Link href={`/games/${game.slug}`}>
+                        <Gamepad2 className="w-4 h-4 mr-2" />
+                        Play Now
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Optional: Load more / pagination placeholder */}
+          {games.length >= 20 && (
+            <div className="text-center mt-12">
+              <Button variant="outline" disabled>
+                Load More Games (coming soon)
+              </Button>
+            </div>
+          )}
+        </div>
+      </main>
+
+      <Footer />
     </div>
-  )
+  );
 }
