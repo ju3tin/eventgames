@@ -1,18 +1,16 @@
 // app/api/profile/route.ts
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
-  // Await cookies() – this is the required change for Next.js 15
-  const cookieStore = await cookies();
+  const cookieStore = await cookies(); // ← Required in Next.js 15
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        // Now safe: cookieStore is already resolved
         getAll() {
           return cookieStore.getAll();
         },
@@ -22,26 +20,68 @@ export async function GET(request: Request) {
               cookieStore.set(name, value, options);
             });
           } catch {
-            // Ignore errors from Server Components (can't set cookies there)
-            // Middleware or route handlers can still set them
+            // The `set` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
           }
         },
       },
     }
   );
 
-  // Rest of your code remains the same...
-  const { data: { user } } = await supabase.auth.getUser();
+  // Get current authenticated user from session (cookies)
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (authError || !user) {
+    console.error('Auth error:', authError);
+    return NextResponse.json(
+      { error: 'Unauthorized - not authenticated', details: authError?.message },
+      { status: 401 }
+    );
   }
 
-  const { data: profile, error } = await supabase
+  // Fetch profile (RLS ensures only own row is accessible)
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('username, full_name, created_at')
+    .select(`
+      username,
+      full_name,
+      created_at
+      // avatar_url,     // ← uncomment if you add this field later
+      // website,        // ← add any extra fields you need
+    `)
     .eq('id', user.id)
     .single();
 
-  // ... handle profile, return JSON ...
+  if (profileError) {
+    console.error('Profile fetch error:', profileError);
+    if (profileError.code === 'PGRST116') { // no rows found
+      return NextResponse.json({
+        success: true,
+        data: null, // profile not created yet
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+      });
+    }
+    return NextResponse.json(
+      { error: 'Failed to load profile', details: profileError.message },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    success: true,
+    data: profile,
+    user: {
+      id: user.id,
+      email: user.email,
+      // Add more user fields if needed: last_sign_in_at, etc.
+    },
+  });
 }
+
+// Optional: revalidate often if profile changes are frequent
+// (or remove if profile data rarely changes)
+export const revalidate = 60; // seconds
