@@ -25,7 +25,7 @@ export default async function LeaderboardPage({
   searchParams: { username?: string }
 }) {
   // 1️⃣ Fetch leaderboard data
-  const res = await fetch('/api/leaderboard', {
+  const res = await fetch('https://motionplay.vercel.app/api/leaderboard', {
     cache: 'no-store',
   })
   const json = await res.json()
