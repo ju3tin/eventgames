@@ -1,15 +1,20 @@
-// app/api/leaderboard/route.ts
+// app/api/my-scores/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const username = searchParams.get('username')?.trim();
 
-  const username = searchParams.get('username'); // new filter
-  const limit = Number(searchParams.get('limit')) || 50;
-  const offset = Number(searchParams.get('offset')) || 0;
+  if (!username) {
+    return NextResponse.json(
+      { error: 'username query parameter is required' },
+      { status: 400 }
+    );
+  }
 
-  let query = supabase
+  // Fetch only scores where the joined profile has this exact username
+  const { data: scores, error, count } = await supabase
     .from('leaderboard')
     .select(`
       id,
@@ -17,6 +22,7 @@ export async function GET(request: Request) {
       duration_seconds,
       created_at,
       game_id,
+      username,
       metadata,
       profile_id,
       profiles!leaderboard_profile_id_fkey (
@@ -24,33 +30,53 @@ export async function GET(request: Request) {
         full_name,
         avatar_url
       )
-    `, { count: 'exact' })
-    .order('score', { ascending: false })
-    .limit(limit)
-    .range(offset, offset + limit - 1);
-
-  // Filter by username (case-insensitive partial match)
-  if (username) {
-     query = query.eq('profiles.username', username);
-  }
-
-  const { data, error, count } = await query;
+    `)
+    .eq('profiles.username', username)     // ← this is the key filter
+    .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Leaderboard fetch error:', error);
+    console.error('My scores fetch error:', error);
     return NextResponse.json(
-      { error: 'Failed to load leaderboard', details: error.message },
+      { error: 'Failed to fetch scores', details: error.message },
       { status: 500 }
     );
   }
 
+  // If no rows matched
+  if (!scores || scores.length === 0) {
+    return NextResponse.json({
+      success: true,
+      requested_username: username,
+      message: 'No scores found for this username',
+      total_score: 0,
+      stats: {
+        games_played: 0,
+        total_duration: 0,
+        highest_score: 0,
+        last_played: null
+      },
+      scores: []
+    });
+  }
+
+  // Calculate totals from the filtered results
+  const total_score = scores.reduce((sum, row) => sum + (row.score || 0), 0);
+  const total_duration = scores.reduce((sum, row) => sum + (row.duration_seconds || 0), 0);
+  const highest_score = Math.max(...scores.map(row => row.score || 0));
+  const last_played = scores[0].created_at; // newest first
+
   return NextResponse.json({
     success: true,
-    data: data || [],
-    count: count ?? 0,
-    total: count,
-    limit,
-    offset,
+    requested_username: username,
+    found_scores: scores.length,
+    total_score,
+    stats: {
+      games_played: scores.length,
+      total_duration,
+      highest_score,
+      last_played
+    },
+    scores
   });
 }
 
