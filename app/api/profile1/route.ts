@@ -16,7 +16,6 @@ export async function GET(request: Request) {
       username,
       full_name,
       created_at
-      // avatar_url,     // add if you have this column
     `)
     .order('created_at', { ascending: false }) // newest first, or change to 'username'
     .limit(limit)
