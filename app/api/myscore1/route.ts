@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     .range(offset, offset + limit - 1);
 
   if (username) {
-    query = query.eq('profile.username', username);
+    query = query.eq('profiles.username', username);
   }
 
   const { data, error, count } = await query;
