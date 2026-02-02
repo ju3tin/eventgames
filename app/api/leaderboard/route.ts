@@ -12,13 +12,17 @@ export async function GET(request: Request) {
   let query = supabase
     .from('leaderboard')
     .select(`
-      id,
-      user_id,
-      username,
-      game_id,
-      score,
-      created_at,
-      metadata
+    id,
+  user_id,
+  game_id,
+  score,
+  created_at,
+  metadata,
+  profiles!inner(           // ← this is the join
+    username,
+    full_name,              // optional
+    avatar_url              // optional
+  )
     `)
     .order('score', { ascending: false })
     .limit(limit)
