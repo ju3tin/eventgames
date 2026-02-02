@@ -18,7 +18,7 @@ type LeaderboardEntry = {
 };
 
 async function getLeaderboard() {
-  const res = await fetch(`/api/leaderboard `, {
+  const res = await fetch(`/api/leaderboard`, {
     next: { revalidate: 30 }, // ISR – refreshes every 30 seconds
   });
 
