@@ -1,23 +1,15 @@
-// app/api/my-scores/route.ts
+// app/api/leaderboard/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const username = searchParams.get('username')?.trim();
 
-  if (!username) {
-    return NextResponse.json(
-      { error: 'username query parameter is required' },
-      { status: 400 }
-    );
-  }
+  const username = searchParams.get('username'); // new filter
+  const limit = Number(searchParams.get('limit')) || 50;
+  const offset = Number(searchParams.get('offset')) || 0;
 
-  // ────────────────────────────────────────────────
-  // 1. Get all individual scores for this exact username
-  //    Use LEFT JOIN + filter on profiles.username
-  // ────────────────────────────────────────────────
-  const { data: scores, error: scoresError, count } = await supabase
+  let query = supabase
     .from('leaderboard')
     .select(`
       id,
@@ -32,39 +24,33 @@ export async function GET(request: Request) {
         full_name,
         avatar_url
       )
-    `)
-    .eq('profiles.username', username)     // ← exact match (case sensitive)
-    // or use .ilike('profiles.username', username) for case-insensitive
-    .order('created_at', { ascending: false });
+    `, { count: 'exact' })
+    .order('score', { ascending: false })
+    .limit(limit)
+    .range(offset, offset + limit - 1);
 
-  if (scoresError) {
-    console.error('My scores error:', scoresError);
+  // Filter by username (case-insensitive partial match)
+  if (username) {
+    query = query.ilike('profiles.username', `%${username.trim()}%`);
+  }
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    console.error('Leaderboard fetch error:', error);
     return NextResponse.json(
-      { error: 'Database error', details: scoresError.message },
+      { error: 'Failed to load leaderboard', details: error.message },
       { status: 500 }
     );
   }
 
-  // ────────────────────────────────────────────────
-  // 2. Calculate totals (only for matching rows)
-  // ────────────────────────────────────────────────
-  const total_score = scores.reduce((sum, row) => sum + (row.score || 0), 0);
-  const total_duration = scores.reduce((sum, row) => sum + (row.duration_seconds || 0), 0);
-  const highest_score = scores.length > 0 ? Math.max(...scores.map(r => r.score || 0)) : 0;
-  const last_played = scores[0]?.created_at || null;
-
   return NextResponse.json({
     success: true,
-    requested_username: username,
-    found_rows: scores.length,
-    total_score,
-    stats: {
-      games_played: scores.length,
-      total_duration,
-      highest_score,
-      last_played
-    },
-    scores: scores || []
+    data: data || [],
+    count: count ?? 0,
+    total: count,
+    limit,
+    offset,
   });
 }
 
