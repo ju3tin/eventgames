@@ -1,5 +1,6 @@
 // app/leaderboard/page.tsx
 import Link from 'next/link';
+import { getAllGames } from '@/lib/supabase/queries';
 
 type LeaderboardEntry = {
   id: string;
@@ -17,13 +18,29 @@ type LeaderboardEntry = {
   } | null;
 };
 
-async function getLeaderboard() {
-  const res = await fetch(`https://motionplay.vercel.app/api/leaderboard`, {
-    next: { revalidate: 30 }, // ISR – refreshes every 30 seconds
+type Game = {
+  id: number;
+  title: string;
+  slug: string | null;
+};
+
+async function getLeaderboard(searchGameId?: string) {
+  const params = new URLSearchParams();
+  if (searchGameId) {
+    params.set('game_id', searchGameId);
+  }
+
+  const queryString = params.toString();
+  const url = queryString 
+    ? `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/leaderboard?${queryString}`
+    : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/leaderboard`;
+
+  const res = await fetch(url, {
+    next: { revalidate: 30 },
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch leaderboard: ${res.status} ${res.statusText}`);
+    throw new Error(`Failed to fetch leaderboard: ${res.status}`);
   }
 
   const json = await res.json();
@@ -35,33 +52,78 @@ async function getLeaderboard() {
   return json.data as LeaderboardEntry[];
 }
 
-// Force dynamic rendering – fixes the "couldn't be rendered statically" error
+// Force dynamic – needed because of fetch + dynamic filter
 export const dynamic = 'force-dynamic';
 
-export default async function LeaderboardPage() {
+export default async function LeaderboardPage({
+  searchParams,
+}: {
+  searchParams: { game?: string };
+}) {
+  const selectedGameId = searchParams.game;
+
   let entries: LeaderboardEntry[] = [];
+  let games: Game[] = [];
   let errorMsg: string | null = null;
 
   try {
-    entries = await getLeaderboard();
+    // Fetch both in parallel
+    const [leaderboardData, gamesData] = await Promise.all([
+      getLeaderboard(selectedGameId),
+      getAllGames(),
+    ]);
+
+    entries = leaderboardData;
+    games = gamesData;
   } catch (err: any) {
-    errorMsg = err.message || 'Could not load leaderboard';
+    errorMsg = err.message || 'Could not load data';
     console.error('Leaderboard page error:', err);
   }
+
+  // Find selected game title for header
+  const selectedGame = games.find(g => String(g.id) === selectedGameId);
+  const headerTitle = selectedGame 
+    ? `${selectedGame.title} Leaderboard`
+    : 'Global Leaderboard';
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-10">
+        {/* Header + Filter */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
-            Leaderboard
+            {headerTitle}
           </h1>
-          
-          <p className="mt-4 sm:mt-0 text-gray-600">
-            {entries.length} scores • Updated live
-          </p>
+
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/leaderboard"
+              className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
+                !selectedGameId
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-white border border-gray-300 hover:bg-gray-100'
+              }`}
+            >
+              All Games
+            </Link>
+
+            {games.map(game => (
+              <Link
+                key={game.id}
+                href={`/leaderboard?game=${game.id}`}
+                className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
+                  selectedGameId === String(game.id)
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-white border border-gray-300 hover:bg-gray-100'
+                }`}
+              >
+                {game.title}
+              </Link>
+            ))}
+          </div>
         </div>
 
+        {/* Error / Empty / Content */}
         {errorMsg ? (
           <div className="bg-red-50 border border-red-200 text-red-800 p-8 rounded-2xl text-center shadow-sm">
             <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
@@ -73,7 +135,9 @@ export default async function LeaderboardPage() {
               No scores yet
             </h2>
             <p className="text-gray-600">
-              Be the first to make it to the leaderboard!
+              {selectedGameId 
+                ? `No one has played ${selectedGame?.title || 'this game'} yet`
+                : 'Be the first to make it to the leaderboard!'}
             </p>
           </div>
         ) : (
@@ -99,6 +163,10 @@ export default async function LeaderboardPage() {
                       'Anonymous';
 
                     const avatar = entry.profiles?.avatar_url;
+
+                    // Find game title from fetched games list
+                    const gameTitle = games.find(g => g.id === entry.game_id)?.title 
+                      || (entry.game_id ? `Game ${entry.game_id}` : '—');
 
                     return (
                       <tr 
@@ -138,8 +206,8 @@ export default async function LeaderboardPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-600">
-                          {entry.game_id ? `Game ${entry.game_id}` : '—'}
+                        <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-600 font-medium">
+                          {gameTitle}
                         </td>
                         <td className="px-6 py-5 whitespace-nowrap text-right font-bold text-gray-900 text-lg">
                           {entry.score.toLocaleString()}
