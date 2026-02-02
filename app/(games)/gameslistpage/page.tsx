@@ -13,7 +13,7 @@ async function getGames() {
   const supabase = await createClient();
 
   const { data: games, error } = await supabase
-    .from('games')
+    .from('gameslist')
     .select('id, slug, title, description, thumbnail_url, difficulty, play_count')
     .eq('is_active', true)
     .order('play_count', { ascending: false }) // popular first; or .order('title')
