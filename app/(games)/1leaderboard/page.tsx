@@ -16,7 +16,7 @@ type LeaderboardEntry = {
 };
 
 async function getAllScores() {
-  const res = await fetch('http://localhost:3000/api/leaderboard', {  // change to your production URL in Vercel
+  const res = await fetch('/api/leaderboard', {  // change to your production URL in Vercel
     next: { revalidate: 30 },
     cache: 'no-store', // remove if you want caching
   });
