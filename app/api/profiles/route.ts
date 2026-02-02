@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     .range(offset, offset + limit - 1);
 
   if (gameId) {
-    query = query.eq('game_id', gameId);
+    query = query.eq('id', gameId);
   }
 
   const { data, error, count } = await query;
