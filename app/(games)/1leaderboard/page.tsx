@@ -1,15 +1,13 @@
 // app/leaderboard/page.tsx
-import Link from 'next/link';
-
 type LeaderboardEntry = {
   id: string;
   score: number;
   duration_seconds: number;
   created_at: string;
   game_id: number | null;
-  username: string | null;           // denormalized (may be null)
+  username: string | null;           // denormalized fallback
   metadata: any | null;
-  profile_id: string;
+  profile_id: string | null;
   profiles: {
     username: string | null;
     full_name: string | null;
@@ -17,63 +15,43 @@ type LeaderboardEntry = {
   } | null;
 };
 
-async function getLeaderboard(gameId?: string) {
-  const params = new URLSearchParams();
-  if (gameId) params.set('game_id', gameId);
-
-  const url = `/api/leaderboard?${params.toString()}`;
-
-  const res = await fetch(url, {
+async function getAllScores() {
+  const res = await fetch('http://localhost:3000/api/leaderboard', {  // change to your production URL in Vercel
     next: { revalidate: 30 },
+    cache: 'no-store', // remove if you want caching
   });
 
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
+    throw new Error(`Failed to fetch leaderboard: ${res.status}`);
   }
 
   const json = await res.json();
 
   if (!json.success) {
-    throw new Error(json.error || 'API error');
+    throw new Error(json.error || 'API returned failure');
   }
 
+  // Sort client-side if API doesn't sort (your API already does .order('score', { ascending: false }))
   return json.data as LeaderboardEntry[];
 }
 
-export default async function LeaderboardPage({
-  searchParams,
-}: {
-  searchParams: { game?: string };
-}) {
-  const gameId = searchParams.game;
-
+export default async function LeaderboardPage() {
   let entries: LeaderboardEntry[] = [];
   let errorMsg: string | null = null;
 
   try {
-    entries = await getLeaderboard(gameId);
+    entries = await getAllScores();
   } catch (err: any) {
-    errorMsg = err.message || 'Failed to load leaderboard';
+    errorMsg = err.message || 'Could not load scores';
     console.error(err);
   }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-10">
-          <h1 className="text-4xl font-bold text-gray-900">
-            {gameId ? `Game ${gameId} Leaderboard` : 'Leaderboard'}
-          </h1>
-
-          {gameId && (
-            <Link
-              href="/leaderboard"
-              className="mt-4 sm:mt-0 px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-            >
-              ← Back to Global
-            </Link>
-          )}
-        </div>
+        <h1 className="text-4xl font-bold text-gray-900 mb-10 text-center">
+          All Scores Leaderboard
+        </h1>
 
         {errorMsg ? (
           <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-xl text-center">
@@ -81,7 +59,7 @@ export default async function LeaderboardPage({
           </div>
         ) : entries.length === 0 ? (
           <div className="text-center py-20 text-gray-600 text-xl">
-            No scores yet — be the first!
+            No scores have been recorded yet.
           </div>
         ) : (
           <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
@@ -110,35 +88,32 @@ export default async function LeaderboardPage({
                     <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {rank}
-                        {rank === 1 && <span className="ml-2 text-2xl">🥇</span>}
-                        {rank === 2 && <span className="ml-2 text-2xl">🥈</span>}
-                        {rank === 3 && <span className="ml-2 text-2xl">🥉</span>}
+                        {rank <= 3 && (
+                          <span className="ml-2 text-xl">
+                            {rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           {avatar ? (
                             <img
                               src={avatar}
-                              alt="Avatar"
-                              className="h-10 w-10 rounded-full object-cover border border-gray-300"
+                              alt=""
+                              className="h-10 w-10 rounded-full object-cover border"
                             />
                           ) : (
                             <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
-                              {playerName.charAt(0).toUpperCase()}
+                              {playerName.charAt(0).toUpperCase() || '?'}
                             </div>
                           )}
-                          <div className="font-medium text-gray-900">
+                          <span className="font-medium text-gray-900">
                             {playerName}
-                            {entry.profiles?.full_name && (
-                              <div className="text-sm text-gray-500">
-                                {entry.profiles.full_name}
-                              </div>
-                            )}
-                          </div>
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {entry.game_id ? `Game ${entry.game_id}` : 'Global'}
+                        {entry.game_id ? `Game ${entry.game_id}` : '—'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-gray-900">
                         {entry.score.toLocaleString()}
@@ -147,11 +122,7 @@ export default async function LeaderboardPage({
                         {entry.duration_seconds}s
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(entry.created_at).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                        {new Date(entry.created_at).toLocaleDateString()}
                       </td>
                     </tr>
                   );
