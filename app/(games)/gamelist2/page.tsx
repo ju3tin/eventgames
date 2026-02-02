@@ -19,7 +19,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchGames() {
       try {
-        const { data, error } = await supabase.from('gameslist').select('*').order('id');
+        const { data, error } = await supabase.from('gameslist1').select('*').order('id');
         if (error) throw error;
         setGames(data || []);
       } catch (err: any) {
