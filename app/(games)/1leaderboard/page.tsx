@@ -8,7 +8,6 @@ type LeaderboardEntry = {
   duration_seconds: number;
   created_at: string;
   game_id: number | null;
-  username: string | null;
   metadata: any | null;
   profile_id: string | null;
   profiles: {
@@ -165,7 +164,6 @@ export default async function LeaderboardPage({
                     const rank = index + 1;
                     const displayName =
                       entry.profiles?.username ||
-                      entry.username ||
                       'Anonymous';
 
                     const avatar = entry.profiles?.avatar_url;
