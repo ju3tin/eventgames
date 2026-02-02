@@ -31,7 +31,7 @@ async function getAllGames() {
     .order('title', { ascending: true });
 
   if (error) {
-    console.error('Games fetch error:', error);
+    console.error('Error fetching games:', error);
     return [];
   }
   return data || [];
@@ -43,9 +43,9 @@ async function getLeaderboard(selectedGameId?: string) {
     params.set('game_id', selectedGameId);
   }
 
-  const query = params.toString();
-  const url = query
-    ? `https://motionplay.vercel.app/api/leaderboard?${query}`
+  const queryString = params.toString();
+  const url = queryString
+    ? `https://motionplay.vercel.app/api/leaderboard?${queryString}`
     : 'https://motionplay.vercel.app/api/leaderboard';
 
   const res = await fetch(url, {
@@ -53,12 +53,13 @@ async function getLeaderboard(selectedGameId?: string) {
   });
 
   if (!res.ok) {
-    throw new Error(`Leaderboard fetch failed: ${res.status}`);
+    throw new Error(`Leaderboard fetch failed: ${res.status} ${res.statusText}`);
   }
 
   const json = await res.json();
+
   if (!json.success) {
-    throw new Error(json.error || 'API error');
+    throw new Error(json.error || 'API returned failure');
   }
 
   return json.data as LeaderboardEntry[];
@@ -84,19 +85,20 @@ export default async function LeaderboardPage({
     ]);
   } catch (err: any) {
     errorMsg = err.message || 'Failed to load leaderboard';
-    console.error(err);
+    console.error('Leaderboard page error:', err);
   }
 
+  // Find current game title for header
   const selectedGame = games.find(g => String(g.id) === selectedGameId);
-  const pageTitle = selectedGame ? `${selectedGame.title} Leaderboard` : 'Leaderboard';
+  const headerTitle = selectedGame ? `${selectedGame.title} Leaderboard` : 'Leaderboard';
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header + Filter */}
+        {/* Header + Filters */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
-            {pageTitle}
+            {headerTitle}
           </h1>
 
           <div className="flex flex-wrap gap-2.5">
@@ -127,7 +129,7 @@ export default async function LeaderboardPage({
           </div>
         </div>
 
-        {/* Content */}
+        {/* Error / Empty / Table */}
         {errorMsg ? (
           <div className="bg-red-50 border border-red-200 text-red-800 p-8 rounded-2xl text-center shadow-sm">
             <h2 className="text-xl font-semibold mb-2">Error</h2>
@@ -140,8 +142,8 @@ export default async function LeaderboardPage({
             </h2>
             <p className="text-gray-600">
               {selectedGameId
-                ? `No scores for ${selectedGame?.title || 'this game'} yet`
-                : 'Be the first to appear on the leaderboard!'}
+                ? `No scores recorded for ${selectedGame?.title || 'this game'} yet`
+                : 'Be the first to make it to the leaderboard!'}
             </p>
           </div>
         ) : (
@@ -162,10 +164,13 @@ export default async function LeaderboardPage({
                   {entries.map((entry, index) => {
                     const rank = index + 1;
                     const displayName =
-                      entry.profiles?.username || entry.username || 'Anonymous';
+                      entry.profiles?.username ||
+                      entry.username ||
+                      'Anonymous';
+
                     const avatar = entry.profiles?.avatar_url;
 
-                    // Get real game title
+                    // Lookup real game title
                     const gameTitle =
                       games.find(g => g.id === entry.game_id)?.title ||
                       (entry.game_id ? `Game ${entry.game_id}` : '—');
@@ -197,7 +202,9 @@ export default async function LeaderboardPage({
                               </div>
                             )}
                             <div>
-                              <div className="font-medium text-gray-900">{displayName}</div>
+                              <div className="font-medium text-gray-900">
+                                {displayName}
+                              </div>
                               {entry.profiles?.full_name && (
                                 <div className="text-sm text-gray-500">
                                   {entry.profiles.full_name}
@@ -216,7 +223,11 @@ export default async function LeaderboardPage({
                           {entry.duration_seconds}s
                         </td>
                         <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(entry.created_at).toLocaleDateString()}
+                          {new Date(entry.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
                         </td>
                       </tr>
                     );
