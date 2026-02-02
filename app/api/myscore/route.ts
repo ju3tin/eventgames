@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 
   // Filter by username (case-insensitive partial match)
   if (username) {
-    query = query.ilike('profiles.username', `%${username.trim()}%`);
+     query = query.eq('profiles.username', username);
   }
 
   const { data, error, count } = await query;
