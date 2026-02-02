@@ -22,7 +22,6 @@ export async function GET(request: Request) {
       duration_seconds,
       created_at,
       game_id,
-      username,
       metadata,
       profile_id,
       profiles!leaderboard_profile_id_fkey (
