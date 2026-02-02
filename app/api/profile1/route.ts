@@ -1,87 +1,46 @@
-// app/api/profile/route.ts
+// app/api/profiles/route.ts
 import { NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { supabase } from '@/lib/supabaseClient'; // your public anon client
 
 export async function GET(request: Request) {
-  const cookieStore = await cookies(); // ← Required in Next.js 15
+  const { searchParams } = new URL(request.url);
+  
+  // Optional query params (for flexibility later)
+  const limit = Number(searchParams.get('limit')) || 100;
+  const offset = Number(searchParams.get('offset')) || 0;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
-          } catch {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
-    }
-  );
-
-  // Get current authenticated user from session (cookies)
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    console.error('Auth error:', authError);
-    return NextResponse.json(
-      { error: 'Unauthorized - not authenticated', details: authError?.message },
-      { status: 401 }
-    );
-  }
-
-  // Fetch profile (RLS ensures only own row is accessible)
-  const { data: profile, error: profileError } = await supabase
+  const { data, error, count } = await supabase
     .from('profiles')
     .select(`
+      id,
       username,
       full_name,
       created_at
-      // avatar_url,     // ← uncomment if you add this field later
-      // website,        // ← add any extra fields you need
+      // avatar_url,     // add if you have this column
     `)
-    .eq('id', user.id)
-    .single();
+    .order('created_at', { ascending: false }) // newest first, or change to 'username'
+    .limit(limit)
+    .range(offset, offset + limit - 1);
 
-  if (profileError) {
-    console.error('Profile fetch error:', profileError);
-    if (profileError.code === 'PGRST116') { // no rows found
-      return NextResponse.json({
-        success: true,
-        data: null, // profile not created yet
-        user: {
-          id: user.id,
-          email: user.email,
-        },
-      });
-    }
+  if (error) {
+    console.error('Profiles fetch error:', error);
     return NextResponse.json(
-      { error: 'Failed to load profile', details: profileError.message },
+      { 
+        success: false,
+        error: 'Failed to load profiles', 
+        details: error.message 
+      },
       { status: 500 }
     );
   }
 
   return NextResponse.json({
     success: true,
-    data: profile,
-    user: {
-      id: user.id,
-      email: user.email,
-      // Add more user fields if needed: last_sign_in_at, etc.
-    },
+    data: data || [],
+    count: count ?? data?.length ?? 0,
+    total: count,
   });
 }
 
-// Optional: revalidate often if profile changes are frequent
-// (or remove if profile data rarely changes)
-export const revalidate = 60; // seconds
+// Revalidate every 60 seconds (good for semi-dynamic data)
+export const revalidate = 60;
