@@ -5,7 +5,7 @@ import { createServerClient } from '@supabase/ssr'; // optional for cookies/auth
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const gameId = searchParams.get('game_id');     // optional filter
+  const gameId = searchParams.get('id');     // optional filter
   const limit = Number(searchParams.get('limit')) || 50;
   const offset = Number(searchParams.get('offset')) || 0;
 
