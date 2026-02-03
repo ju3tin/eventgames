@@ -16,9 +16,7 @@ interface LeaderboardEntry {
   score: number;
   duration_seconds: number;
   created_at: string;
-  profiles: Array<{
-    display_name: string | null;
-  }>;
+  
 }
 
 const gameOptions = [
