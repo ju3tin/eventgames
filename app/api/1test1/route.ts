@@ -1,14 +1,21 @@
-// Example: in a Server Component, Server Action, or Client Component
-import { createClient } from '@/lib/supabase/server';   // or your client helper
+// app/api/leaderboard/route.ts
+import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabaseClient';
 
-async function getLeaderboard(gameId?: string, limit = 50) {
-  const supabase = await createClient();   // or supabase = createClient() if not async
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const gameId = searchParams.get('game_id');
+  const limit = Number(searchParams.get('limit')) || 50;
+  const offset = Number(searchParams.get('offset')) || 0;
 
   let query = supabase
-    .from('leaderboard_with_profiles')     // ← use the view name here!
-    .select('*')                           // or pick columns: 'score, display_name, avatar_url, ...'
+    .from('leaderboard_with_profiles')
+    .select(`
+ *
+`)
     .order('score', { ascending: false })
-    .limit(limit);
+    .limit(limit)
+    .range(offset, offset + limit - 1);
 
   if (gameId) {
     query = query.eq('game_id', gameId);
@@ -17,12 +24,19 @@ async function getLeaderboard(gameId?: string, limit = 50) {
   const { data, error, count } = await query;
 
   if (error) {
-    console.error('Leaderboard error:', error.message);
-    throw error; // or return { error }
+    console.error('Leaderboard fetch error:', error);
+    return NextResponse.json(
+      { error: 'Failed to load leaderboard', details: error.message },
+      { status: 500 }
+    );
   }
 
-  return {
-    leaderboard: data ?? [],
-    total: count ?? data?.length ?? 0,
-  };
+  return NextResponse.json({
+    success: true,
+    data: data || [],
+    count: count ?? data?.length ?? 0,
+    total: count,
+  });
 }
+
+export const revalidate = 30;
