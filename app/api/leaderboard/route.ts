@@ -16,7 +16,13 @@ export async function GET(request: Request) {
   game_id,
   score,
   duration_seconds,
-  created_at
+  created_at,
+  player:profiles!user_id_fkey (    // ← join here!
+        id,
+        username,
+        full_name,
+        display_name,
+        avatar_url
 `)
     .order('score', { ascending: false })
     .limit(limit)
