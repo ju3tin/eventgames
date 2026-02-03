@@ -17,7 +17,6 @@ export async function GET(request: Request) {
   score,
   duration_seconds,
   created_at,
- 
 `)
     .order('score', { ascending: false })
     .limit(limit)
