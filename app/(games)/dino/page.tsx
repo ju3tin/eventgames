@@ -9,7 +9,7 @@ import * as poseDetection from '@tensorflow-models/pose-detection';
 // ────────────────────────────────────────────────
 // Types & Constants
 // ────────────────────────────────────────────────
-interface Keypoint {
+interface Keypoint { 
   name: string;
   x: number;
   y: number;
