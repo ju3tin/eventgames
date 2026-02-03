@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'; // your SSR client helper
 import type { LucideIcon } from 'lucide-react';
 import { Hand, Target, Swords, Music, Dumbbell, Bird } from 'lucide-react';
 
-export interface Game {
+export interface games {
   id: string;           // this will be game_id uuid from DB → string
   title: string;
   description: string;
@@ -31,7 +31,7 @@ const iconMap: Record<string, LucideIcon> = {
   default: Hand, // fallback
 };
 
-export async function getGames(): Promise<Game[]> {
+export async function getGames(): Promise<games[]> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
