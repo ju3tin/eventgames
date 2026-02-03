@@ -1,0 +1,174 @@
+// app/dance-mirror/page.tsx   (or any game page)
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+
+// Import tfjs & pose-detection
+import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-webgl'; // GPU backend
+import * as poseDetection from '@tensorflow-models/pose-detection';
+
+export default function DanceMirrorPage() {
+  const [status, setStatus] = useState('Loading model and webcam...');
+  const [score, setScore] = useState(0);
+  const [matchPercent, setMatchPercent] = useState(0);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const detectorRef = useRef<poseDetection.PoseDetector | null>(null);
+
+  // ────────────────────────────────────────────────
+  // Load model & start webcam
+  // ────────────────────────────────────────────────
+  useEffect(() => {
+    let isMounted = true;
+
+    async function init() {
+      try {
+        // 1. Set backend
+        await tf.setBackend('webgl');
+        await tf.ready();
+
+        // 2. Load MoveNet (fast single-pose model)
+        setStatus('Loading pose model...');
+        detectorRef.current = await poseDetection.createDetector(
+          poseDetection.SupportedModels.MoveNet,
+          { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+        );
+
+        setStatus('Model loaded. Starting webcam...');
+
+        // 3. Get webcam
+        if (videoRef.current) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' } // front camera
+          });
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+
+        setStatus('Ready! Mirror the movement.');
+        startDetection();
+      } catch (err: any) {
+        console.error(err);
+        setStatus('Error: ' + err.message);
+      }
+    }
+
+    init();
+
+    return () => {
+      isMounted = false;
+      // Cleanup webcam
+      if (videoRef.current?.srcObject) {
+        (videoRef.current.srcObject as MediaStream)
+          .getTracks()
+          .forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  // ────────────────────────────────────────────────
+  // Detection loop (example: basic skeleton + match score)
+  // ────────────────────────────────────────────────
+  const startDetection = () => {
+    const loop = async () => {
+      if (!detectorRef.current || !videoRef.current || !canvasRef.current) return;
+
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Match canvas size
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Optional: draw video frame (comment out if you only want skeleton)
+      // ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const poses = await detectorRef.current.estimatePoses(video);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (poses.length > 0) {
+        drawSkeleton(poses[0].keypoints, ctx);
+        // Example: simple match score (you can expand this)
+        const match = calculateSimpleMatch(poses[0].keypoints);
+        setMatchPercent(Math.round(match * 100));
+        setScore(prev => prev + Math.round(match * 10)); // accumulate points
+      }
+
+      requestAnimationFrame(loop);
+    };
+
+    loop();
+  };
+
+  // Simple example skeleton drawing
+  function drawSkeleton(keypoints: poseDetection.Keypoint[], ctx: CanvasRenderingContext2D) {
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 4;
+
+    const pairs = poseDetection.util.getAdjacentPairs(poseDetection.SupportedModels.MoveNet);
+
+    pairs.forEach(([i, j]) => {
+      const a = keypoints[i];
+      const b = keypoints[j];
+      if (a.score > 0.3 && b.score > 0.3) {
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    });
+
+    keypoints.forEach(kp => {
+      if (kp.score > 0.3) {
+        ctx.beginPath();
+        ctx.arc(kp.x, kp.y, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = '#00ff88';
+        ctx.fill();
+      }
+    });
+  }
+
+  // Dummy match calculation — replace with your real logic
+  function calculateSimpleMatch(keypoints: poseDetection.Keypoint[]) {
+    // Example: check if arms are raised (customize this!)
+    const leftWrist = keypoints.find(k => k.name === 'left_wrist');
+    const rightWrist = keypoints.find(k => k.name === 'right_wrist');
+    const leftShoulder = keypoints.find(k => k.name === 'left_shoulder');
+
+    if (!leftWrist || !rightWrist || !leftShoulder) return 0;
+
+    const avgY = (leftWrist.y + rightWrist.y) / 2;
+    return Math.max(0, 1 - (avgY - leftShoulder.y) / 200); // tune this
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center p-6">
+      <h1 className="text-5xl font-bold mb-6">Dance Mirror Challenge</h1>
+      <div className="text-xl text-cyan-400 mb-8">{status}</div>
+
+      <div className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border-4 border-cyan-600">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="w-full h-full object-cover"
+        />
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full pointer-events-none"
+        />
+      </div>
+
+      <div className="mt-10 text-center space-y-4">
+        <div className="text-6xl font-bold text-green-400">Score: {score}</div>
+        <div className="text-3xl text-cyan-300">Match: {matchPercent}%</div>
+      </div>
+    </div>
+  );
+}
