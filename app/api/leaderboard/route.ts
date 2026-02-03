@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const offset = Number(searchParams.get('offset')) || 0;
 
   let query = supabase
-    .from('leaderboard')
+    .from('leaderboard_with_profiles')
     .select(`
   id,
   user_id,
@@ -17,10 +17,7 @@ export async function GET(request: Request) {
   score,
   duration_seconds,
   created_at,
-  username:profiles!user_id_fkey (username),
-  full_name:profiles!user_id_fkey (full_name),
-  avatar_url:profiles!user_id_fkey (avatar_url),
-  display_name:profiles!user_id_fkey (display_name)
+ 
 `)
     .order('score', { ascending: false })
     .limit(limit)
