@@ -38,17 +38,14 @@ export default function LeaderboardPage() {
       const supabase = createClient()
       
       let query = supabase
-        .from("leaderboard")
+        .from("leaderboard_with_profiles")
         .select(`
           id,
           user_id,
           game_id,
           score,
           duration_seconds,
-          created_at,
-          profiles (
-            display_name
-          )
+          created_at
         `)
         .order("score", { ascending: false })
         .limit(50)
