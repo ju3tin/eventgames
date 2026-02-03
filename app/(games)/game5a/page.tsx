@@ -59,22 +59,21 @@ export default function GamesPage() {
     const supabase = createClient()
 
     const payload = {
-    ///  user_id: user.id,
-   //   game_id: gameId,
-   user_id: user.id,
+      profile_id: user.id,
+      game_id: gameId,
       score: score,
       // Only include these if your game actually tracks them
       duration_seconds: 120,           // ← make dynamic!
-    //  metadata: { level: 5, attempts: 3 }, // ← make dynamic!
+      metadata: { level: 5, attempts: 3 }, // ← make dynamic!
       // Optional: created_at / updated_at — Supabase auto-handles if columns exist
     }
 
     console.log('Submitting score:', payload)
 
     const { data, error } = await supabase
-      .from('game_scores')
+      .from('leaderboard')
       .upsert(payload, {
-       // onConflict: 'profile_id,game_id',     // ← crucial line!
+        onConflict: 'profile_id,game_id',     // ← crucial line!
         // ignoreDuplicates: false            // default = false = update
       })
       .select()
