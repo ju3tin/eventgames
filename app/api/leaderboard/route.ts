@@ -11,19 +11,17 @@ export async function GET(request: Request) {
   let query = supabase
     .from('leaderboard')
     .select(`
-      id,
-      score,
-      duration_seconds,
-      created_at,
-      game_id,
-      metadata,
-      user_id,
-      profiles!leaderboard_user_id_fkey (
-        username,
-        full_name,
-        avatar_url
-      )
-    `)
+  id,
+  user_id,
+  game_id,
+  score,
+  duration_seconds,
+  created_at,
+  username:profiles!user_id_fkey (username),
+  full_name:profiles!user_id_fkey (full_name),
+  avatar_url:profiles!user_id_fkey (avatar_url),
+  display_name:profiles!user_id_fkey (display_name)
+`)
     .order('score', { ascending: false })
     .limit(limit)
     .range(offset, offset + limit - 1);
