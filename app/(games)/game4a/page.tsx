@@ -22,7 +22,13 @@ const GamePage = () => {
 
     try {
       // Get the current user if logged in
-      const user = supabase.auth.user();
+      const { data: user, error } = await supabase.auth.getUser();
+
+      if (error) {
+        setErrorMessage(`Error fetching user: ${error.message}`);
+        return;
+      }
+
       const profileId = user?.id;
       
       if (!profileId) {
@@ -31,7 +37,7 @@ const GamePage = () => {
       }
 
       // Submit the score to Supabase
-      const { data, error } = await supabase
+      const { data, error: insertError } = await supabase
         .from('game_scores')
         .insert([
           {
@@ -45,8 +51,8 @@ const GamePage = () => {
           },
         ]);
 
-      if (error) {
-        setErrorMessage(`Error submitting score: ${error.message}`);
+      if (insertError) {
+        setErrorMessage(`Error submitting score: ${insertError.message}`);
       } else {
         setSuccessMessage('Score submitted successfully!');
         setScore(0);
