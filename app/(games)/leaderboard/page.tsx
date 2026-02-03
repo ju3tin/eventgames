@@ -177,7 +177,7 @@ export default function LeaderboardPage() {
                       {/* Player Info */}
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground truncate">
-                          {entry.username.toLocaleString() || "Anonymous Player"}
+                          {entry.username || "Anonymous Player"}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {getGameName(entry.game_id)}
