@@ -7,7 +7,7 @@ import '@tensorflow/tfjs-backend-webgl';
 import * as poseDetection from '@tensorflow-models/pose-detection';
 
 // ────────────────────────────────────────────────
-// Types & Constants
+// Types & Constants 
 // ────────────────────────────────────────────────
 interface Keypoint { 
   name: string;
