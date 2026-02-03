@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const offset = Number(searchParams.get('offset')) || 0;
 
   let query = supabase
-    .from('leaderboard_with_profiles')
+    .from('leaderboard')
     .select(`
   id,
   user_id,
