@@ -13,6 +13,7 @@ interface LeaderboardEntry {
   id: string;
   user_id: string;
   game_id: string;
+  username: string;
   score: number;
   duration_seconds: number;
   created_at: string;
@@ -41,6 +42,7 @@ export default function LeaderboardPage() {
           id,
           user_id,
           game_id,
+          username,
           score,
           duration_seconds,
           created_at
@@ -175,7 +177,7 @@ export default function LeaderboardPage() {
                       {/* Player Info */}
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground truncate">
-                          {entry.profiles[0]?.display_name|| "Anonymous Player"}
+                          {entry.username.toLocaleString() || "Anonymous Player"}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {getGameName(entry.game_id)}
