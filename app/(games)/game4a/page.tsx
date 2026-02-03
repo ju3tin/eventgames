@@ -72,7 +72,7 @@ export default function GamesPage() {
     console.log('Submitting score:', payload)
 
     const { data, error } = await supabase
-      .from('game_scores')
+      .from('leaderboard')
       .upsert(payload, {
        // onConflict: 'profile_id,game_id',     // ← crucial line!
         // ignoreDuplicates: false            // default = false = update
