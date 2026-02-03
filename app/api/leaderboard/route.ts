@@ -17,7 +17,12 @@ export async function GET(request: Request) {
       created_at,
       game_id,
       metadata,
-      user_id
+      user_id,
+      profiles!leaderboard_user_id_fkey (
+        username,
+        full_name,
+        avatar_url
+      )
     `)
     .order('score', { ascending: false })
     .limit(limit)
