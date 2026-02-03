@@ -38,7 +38,7 @@ export default function LeaderboardPage() {
       const supabase = createClient()
       
       let query = supabase
-        .from("game_scores")
+        .from("leaderboard")
         .select(`
           id,
           user_id,
