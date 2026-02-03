@@ -1,7 +1,7 @@
 // app/game/[slug]/actions.ts
 'use server';
 
-import { createServerClient } from '@/lib/supabase/server'; // your SSR helper
+import { createServerClient } from '@supabase/ssr'
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
