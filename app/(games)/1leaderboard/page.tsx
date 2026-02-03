@@ -10,11 +10,10 @@ type LeaderboardEntry = {
   game_id: number | null;
   metadata: any | null;
   profile_id: string | null;
-  profiles: {
     username: string | null;
     full_name: string | null;
     avatar_url: string | null;
-  } | null;
+  
 };
 
 type Game = {
@@ -163,10 +162,10 @@ export default async function LeaderboardPage({
                   {entries.map((entry, index) => {
                     const rank = index + 1;
                     const displayName =
-                      entry.profiles?.username ||
+                      entry?.username ||
                       'Anonymous';
 
-                    const avatar = entry.profiles?.avatar_url;
+                    const avatar = entry.avatar_url;
 
                     // Lookup real game title
                     const gameTitle =
@@ -203,9 +202,9 @@ export default async function LeaderboardPage({
                               <div className="font-medium text-gray-900">
                                 {displayName}
                               </div>
-                              {entry.profiles?.full_name && (
+                              {entry?.full_name && (
                                 <div className="text-sm text-gray-500">
-                                  {entry.profiles.full_name}
+                                  {entry.full_name}
                                 </div>
                               )}
                             </div>
