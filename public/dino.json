@@ -1,26 +1,26 @@
 [
   {
     "name": "Apatosaurus",
-    "url": "Apatosaurus.glb"
+    "url": "/assets/models/Apatosaurus.glb"
   },
   {
     "name": "Parasaurolophus",
-    "url": "Parasaurolophus.glb"
+    "url": "/assets/models/Parasaurolophus.glb"
   },
   {
     "name": "Stegosaurus",
-    "url": "Stegosaurus.glb"
+    "url": "/assets/models/Stegosaurus.glb"
   },
   {
     "name": "T-Rex",
-    "url": "T-Rex.glb"
+    "url": "/assets/models/T-Rex.glb"
   },
   {
     "name": "Triceratops",
-    "url": "Triceratops.glb"
+    "url": "/assets/models/Triceratops.glb"
   },
   {
     "name": "Velociraptor",
-    "url": "Velociraptor.glb"
+    "url": "/assets/models/Velociraptor.glb"
   }
 ]
