@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Apatosaurus",
+    "url": "Apatosaurus.glb"
+  },
+  {
+    "name": "Parasaurolophus",
+    "url": "Parasaurolophus.glb"
+  },
+  {
+    "name": "Stegosaurus",
+    "url": "Stegosaurus.glb"
+  },
+  {
+    "name": "T-Rex",
+    "url": "T-Rex.glb"
+  },
+  {
+    "name": "Triceratops",
+    "url": "Triceratops.glb"
+  },
+  {
+    "name": "Velociraptor",
+    "url": "Velociraptor.glb"
+  }
+]
