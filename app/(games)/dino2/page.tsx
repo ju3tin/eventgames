@@ -46,7 +46,7 @@ export default function GLBPage() {
 
     // Load GLB
     const loader = new GLTFLoader();
-    loader.load('/models/character.glb', (gltf) => {
+    loader.load('/assets/models/Triceratops.glb', (gltf) => {
       const model = gltf.scene;
       scene.add(model);
 
