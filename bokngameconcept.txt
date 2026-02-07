@@ -1,0 +1,189 @@
+Got it — let’s turn **BONK-with-a-baseball-bat** into a clean, hype **endless runner** concept 🏃‍♂️💥
+I’ll keep this design-focused (mechanics, vibe, progression), not code.
+
+---
+
+## Game Title (working)
+
+**BONK RUN: Bat to the Moon**
+
+---
+
+## Core Fantasy
+
+You play as the **BONK dog**, gripping an oversized baseball bat, sprinting endlessly through chaotic crypto-themed streets. Everything in your way is either:
+
+* something to **smash**
+* something to **dodge**
+* or something to **BONK for bonuses**
+
+Fast, goofy, satisfying, meme-forward.
+
+---
+
+## Core Gameplay Loop
+
+**Run → Jump → Slide → Swing Bat → Collect → Upgrade → Repeat**
+
+* **Swipe left/right** – change lanes
+* **Swipe up** – jump
+* **Swipe down** – slide
+* **Tap / hold** – swing the bat
+* **Perfect timing** = stronger BONK hits
+
+The bat is not just cosmetic — it’s central to the game feel.
+
+---
+
+## Bat Mechanics (Key Differentiator)
+
+The baseball bat makes this runner stand out.
+
+### Bat Actions
+
+* **Quick BONK** – fast tap, breaks small obstacles
+* **Charged BONK** – hold, massive swing that:
+
+  * launches enemies
+  * smashes walls
+  * sends coins flying toward you
+* **Mid-air BONK** – downward smash for bonus points
+
+### Combo System
+
+* Chain hits without missing → **BONK Multiplier**
+* Visual effects stack: screen shake, spark explosions, meme text (“BONK!!”, “CRITICAL BONK”)
+
+---
+
+## Obstacles & Enemies
+
+### Smashable
+
+* Paper-hand barriers
+* Scam bots
+* Weak market bears
+* Glass crypto billboards
+
+### Dodge-Only
+
+* Giant falling candles 📉
+* Laser grids
+* Spinning market wheels
+
+### Enemies
+
+* **Bear Whales** – slow, tanky
+* **Rug Pull Gremlins** – fast, tricky
+* **FUD Drones** – airborne, require jump BONK
+
+---
+
+## Environments (Endless Variants)
+
+Each run cycles through themed zones:
+
+1. **Crypto City**
+
+   * Neon charts, ticker tape roads
+2. **Meme Alley**
+
+   * Graffiti, Doge posters, chaos energy
+3. **Exchange Escape**
+
+   * Conveyor belts, closing gates
+4. **Moon Highway**
+
+   * Low gravity, huge jumps, cosmic vibes 🌕
+
+Transitions happen seamlessly mid-run.
+
+---
+
+## Power-Ups
+
+* **Diamond Bat** – invincible BONKs for 10s
+* **Rocket BONK** – auto-dash forward smashing everything
+* **Magnet Paws** – pulls coins & tokens
+* **Moon Mode** – slow-mo + massive score boost
+
+---
+
+## Progression & Meta
+
+### Upgrades
+
+* Bat strength
+* Swing speed
+* Jump height
+* Starting multiplier
+
+### Cosmetics
+
+* Bat skins (gold, pixel, flaming, moon rock)
+* BONK outfits (astronaut, street punk, baseball pro)
+* Trail effects (paw prints, rockets, coins)
+
+### Characters (Future)
+
+* BONK variants with unique passives
+
+  * Faster combo decay
+  * Stronger air BONKs
+  * Bonus coin drops
+
+---
+
+## Scoring System
+
+Score =
+**Distance × Combo Multiplier + Style Bonuses**
+
+Style bonuses:
+
+* Mid-air BONKs
+* Last-second dodges
+* Multi-enemy smashes
+* Environmental kills
+
+---
+
+## Visual Style
+
+* Bright, chunky, arcade-style
+* Exaggerated bat swings
+* Comic impact frames on hits
+* Meme text popping briefly on screen
+
+Sound design matters a LOT:
+
+* Bat hit = deep, satisfying *THWACK*
+* Combo streaks add crowd-cheer layers
+
+---
+
+## Monetization (Optional, Non-Gross)
+
+* Cosmetic-only shop
+* Season passes with themes
+* No pay-to-win bat stats
+
+---
+
+## Why This Works
+
+* Endless runner = accessible
+* Bat mechanic = active skill, not passive running
+* BONK theme = chaotic, fun, meme-ready
+* Perfect for mobile, streams, and short clips
+
+---
+
+If you want, I can:
+
+* Design **UI screens**
+* Create a **first-time player tutorial flow**
+* Flesh out **token integration** (cosmetic or rewards-only)
+* Or turn this into a **one-page game pitch deck**
+
+Just tell me the next move 🚀🐕💥
