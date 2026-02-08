@@ -105,7 +105,7 @@ if (activeModel?.url) {
     const model = gltf.scene;
     scene.add(model);
   });
-}  // Fit camera
+ // Fit camera
       const box = new THREE.Box3().setFromObject(model);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
@@ -176,7 +176,7 @@ if (activeModel?.url) {
       mountRef.current?.removeChild(renderer.domElement);
     };
   }, []);
-
+}
   useEffect(() => {
   if (!controlsRef.current) return;
   controlsRef.current.enableRotate = rotateEnabled;
