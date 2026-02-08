@@ -21,7 +21,7 @@ export default function GLBPage() {
 
     /* ---------------- Scene ---------------- */
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#020617');
+   // scene.background = new THREE.Color('#020617');
 
     /* ---------------- Camera ---------------- */
     const camera = new THREE.PerspectiveCamera(
