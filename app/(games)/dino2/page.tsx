@@ -32,7 +32,10 @@ export default function GLBPage() {
     );
 
     /* ---------------- Renderer ---------------- */
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+       const renderer = new THREE.WebGLRenderer({
+    alpha: true,
+    antialias: true,
+  });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(
       mountRef.current.clientWidth,
