@@ -26,11 +26,7 @@ export default function GLBViewerPage({ params }: Props) {
   const actionsRef = useRef<Record<string, THREE.AnimationAction>>({});
 
   const [models, setModels] = useState<ModelItem[]>([]);
-  const [activeIndex, setActiveIndex] = useState<number>(() => {
-    const idx = parseInt(params.slug, 10);
-    return isNaN(idx) ? 0 : idx;
-  });
-
+  const [activeIndex, setActiveIndex] = useState<number>(0);
   const [animationNames, setAnimationNames] = useState<string[]>([]);
   const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
   const [rotateEnabled, setRotateEnabled] = useState(false);
@@ -40,18 +36,52 @@ export default function GLBViewerPage({ params }: Props) {
   const router = useRouter();
   const clock = new THREE.Clock();
 
-  // Load model list once
+  // ────────────────────────────────────────────────
+  // 1. Load models list once
+  // ────────────────────────────────────────────────
   useEffect(() => {
+    console.log('[INIT] Fetching dino.json...');
     fetch('/dino.json')
       .then((res) => res.json())
-      .then((data: ModelItem[]) => setModels(data))
-      .catch((err) => console.error('Failed to load dino.json:', err));
+      .then((data: ModelItem[]) => {
+        console.log('[MODELS LOADED]', data.length, 'models found');
+        setModels(data);
+      })
+      .catch((err) => console.error('[ERROR] Failed to load dino.json:', err));
   }, []);
 
-  // Initialize Three.js scene
+  // ────────────────────────────────────────────────
+  // 2. Sync activeIndex from URL slug whenever slug changes
+  // ────────────────────────────────────────────────
+  useEffect(() => {
+    if (models.length === 0) {
+      console.log('[SLUG SYNC] Waiting for models to load...');
+      return;
+    }
+
+    const idx = parseInt(params.slug, 10);
+    const validIndex = isNaN(idx) || idx < 0 || idx >= models.length ? 0 : idx;
+
+    console.log(
+      `[SLUG CHANGED] params.slug = ${params.slug}, calculated index = ${validIndex}`
+    );
+
+    setActiveIndex((prev) => {
+      if (prev !== validIndex) {
+        console.log(`[ACTIVE INDEX UPDATED] ${prev} → ${validIndex}`);
+      }
+      return validIndex;
+    });
+  }, [params.slug, models]);
+
+  // ────────────────────────────────────────────────
+  // 3. Three.js scene setup (once)
+  // ────────────────────────────────────────────────
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
+
+    console.log('[SCENE SETUP] Initializing Three.js...');
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
@@ -104,6 +134,7 @@ export default function GLBViewerPage({ params }: Props) {
     animate();
 
     return () => {
+      console.log('[SCENE CLEANUP] Disposing Three.js resources...');
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', handleResize);
       controls.dispose();
@@ -119,7 +150,7 @@ export default function GLBViewerPage({ params }: Props) {
     };
   }, []);
 
-  // Rotate controls
+  // Rotate toggle
   useEffect(() => {
     if (controlsRef.current) {
       controlsRef.current.enableRotate = rotateEnabled;
@@ -128,25 +159,40 @@ export default function GLBViewerPage({ params }: Props) {
     }
   }, [rotateEnabled]);
 
-  // Background color
+  // Background
   useEffect(() => {
     if (rendererRef.current) {
       rendererRef.current.setClearColor(bgTransparent ? 0x000000 : bgHex, bgTransparent ? 0 : 1);
     }
   }, [bgHex, bgTransparent]);
 
-  // Load / switch GLB model when models or activeIndex change
+  // ────────────────────────────────────────────────
+  // 4. Load/switch model when activeIndex changes
+  // ────────────────────────────────────────────────
   useEffect(() => {
     if (models.length === 0) return;
 
     const model = models[activeIndex];
-    if (!model?.url || !sceneRef.current || !cameraRef.current) return;
+    if (!model?.url) {
+      console.warn('[MODEL] No URL for active index:', activeIndex);
+      return;
+    }
+
+    if (!sceneRef.current || !cameraRef.current) {
+      console.warn('[MODEL] Scene or camera not ready yet');
+      return;
+    }
+
+    console.log(
+      `[MODEL LOAD TRIGGERED] Index: ${activeIndex}, Name: ${model.name}, URL: ${model.url}`
+    );
 
     const scene = sceneRef.current;
     const camera = cameraRef.current;
 
     // Cleanup previous model
     if (currentModelRef.current) {
+      console.log('[MODEL] Removing previous model');
       const prev = currentModelRef.current;
       if (prev.parent) prev.parent.remove(prev);
       prev.traverse((child) => {
@@ -165,9 +211,12 @@ export default function GLBViewerPage({ params }: Props) {
     setActiveAnimation(null);
 
     const loader = new GLTFLoader();
+    console.log('[GLTF] Starting load:', model.url);
+
     loader.load(
       model.url,
       (gltf) => {
+        console.log('[GLTF] Load SUCCESS:', model.name);
         const obj = gltf.scene;
         currentModelRef.current = obj;
         scene.add(obj);
@@ -180,6 +229,7 @@ export default function GLBViewerPage({ params }: Props) {
         const maxDim = Math.max(size.x, size.y, size.z);
         const fovRad = (camera.fov * Math.PI) / 180;
         const distance = (maxDim * 1.5) / Math.sin(fovRad / 2);
+
         camera.position.set(0, maxDim * 0.45, distance);
         camera.lookAt(0, 0, 0);
 
@@ -207,11 +257,16 @@ export default function GLBViewerPage({ params }: Props) {
         }
       },
       undefined,
-      (err) => console.error('GLTF load failed:', err)
+      (err) => {
+        console.error('[GLTF] Load FAILED:', model.url, err);
+      }
     );
 
     return () => {
-      if (currentModelRef.current?.parent) currentModelRef.current.parent.remove(currentModelRef.current);
+      if (currentModelRef.current?.parent) {
+        console.log('[MODEL] Cleanup on unmount/change');
+        currentModelRef.current.parent.remove(currentModelRef.current);
+      }
     };
   }, [models, activeIndex]);
 
@@ -227,17 +282,16 @@ export default function GLBViewerPage({ params }: Props) {
 
   const changeModel = (index: number) => {
     if (index < 0 || index >= models.length) return;
+    console.log(`[UI] User clicked model index: ${index}`);
     setActiveIndex(index);
-    router.push(`/dino4/${index}`); // optional: update URL
+    router.push(`/dino4/${index}`);
   };
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-950">
       <div ref={mountRef} className="flex-1" />
-
       <div className="w-80 bg-slate-900/95 text-white p-5 border-l border-slate-700 overflow-y-auto">
         <h2 className="text-2xl font-bold mb-6">Dino Viewer</h2>
-
         <div className="mb-8">
           <h3 className="text-lg font-semibold mb-3">Select Model</h3>
           <div className="grid grid-cols-2 gap-2.5">
@@ -256,9 +310,7 @@ export default function GLBViewerPage({ params }: Props) {
             ))}
           </div>
         </div>
-
         <hr className="border-slate-700 my-6" />
-
         <h3 className="text-lg font-semibold mb-3">Animations</h3>
         <div className="space-y-2 mb-8">
           {animationNames.length === 0 ? (
@@ -279,9 +331,7 @@ export default function GLBViewerPage({ params }: Props) {
             ))
           )}
         </div>
-
         <hr className="border-slate-700 my-6" />
-
         <div className="space-y-4">
           <button
             onClick={() => setRotateEnabled((v) => !v)}
@@ -291,7 +341,6 @@ export default function GLBViewerPage({ params }: Props) {
           >
             {rotateEnabled ? 'Disable Auto-Rotate' : 'Enable Auto-Rotate'}
           </button>
-
           <div>
             <label className="block text-sm font-medium mb-2">Background</label>
             <input
@@ -304,7 +353,6 @@ export default function GLBViewerPage({ params }: Props) {
               className="w-full h-10 rounded cursor-pointer bg-transparent border border-slate-600"
             />
           </div>
-
           <button
             onClick={() => setBgTransparent((v) => !v)}
             className={`w-full py-3 rounded font-medium transition-colors ${
