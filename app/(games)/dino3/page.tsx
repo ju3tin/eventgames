@@ -12,6 +12,9 @@ type ModelItem = {
 
 export default function GLBPage() {
   const mountRef = useRef<HTMLDivElement | null>(null);
+  const [bgHex, setBgHex] = useState<string>('#020617');
+  const [bgTransparent, setBgTransparent] = useState<boolean>(true);
+
 
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -30,6 +33,9 @@ export default function GLBPage() {
   const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
   const [rotateEnabled, setRotateEnabled] = useState(false);
   const [bgColor, setBgColor] = useState<string | null>(null);
+
+
+  
 
   /* ---------------- Fetch Models API ---------------- */
   useEffect(() => {
@@ -125,6 +131,17 @@ export default function GLBPage() {
     rendererRef.current.setClearColor(bgColor, 1);
   }
 }, [bgColor]);
+
+  useEffect(() => {
+  if (!rendererRef.current) return;
+
+  if (bgTransparent) {
+    rendererRef.current.setClearColor(0x000000, 0);
+  } else {
+    rendererRef.current.setClearColor(bgHex, 1);
+  }
+}, [bgHex, bgTransparent]);
+
 
   /* ---------------- Load Model ---------------- */
   useEffect(() => {
@@ -245,6 +262,28 @@ export default function GLBPage() {
         <button className={`w-full rounded px-3 py-2 bg-emerald-500`} onClick={() => setBgColor(null)}>Transparent</button>
 <button className={`w-full rounded px-3 py-2 bg-emerald-500`} onClick={() => setBgColor('#020617')}>Dark</button>
 <button className={`w-full rounded px-3 py-2 bg-emerald-500`} onClick={() => setBgColor('#0f172a')}>Slate</button>
+<div className="space-y-2">
+  {/* Hex picker */}
+  <input
+    type="color"
+    value={bgHex}
+    onChange={(e) => {
+      setBgHex(e.target.value);
+      setBgTransparent(false);
+    }}
+    className="w-full h-10 rounded cursor-pointer"
+  />
+
+  {/* Transparent toggle */}
+  <button
+    className={`w-full rounded px-3 py-2 ${
+      bgTransparent ? 'bg-emerald-500' : 'bg-slate-700'
+    }`}
+    onClick={() => setBgTransparent((v) => !v)}
+  >
+    {bgTransparent ? 'Transparent ON' : 'Transparent OFF'}
+  </button>
+</div>
 
       </div>
     </div>
