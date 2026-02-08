@@ -41,6 +41,7 @@ export default function GLBPage() {
       mountRef.current.clientWidth,
       mountRef.current.clientHeight
     );
+    renderer.setClearColor(0x000000, 0);
     mountRef.current.appendChild(renderer.domElement);
 
     /* ---------------- Controls ---------------- */
