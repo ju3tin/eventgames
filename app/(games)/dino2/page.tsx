@@ -150,6 +150,27 @@ export default function GLBPage() {
 
     animate();
 
+     useEffect(() => {
+  if (!rendererRef.current) return;
+
+  if (bgColor === null) {
+    rendererRef.current.setClearColor(0x000000, 0);
+  } else {
+    rendererRef.current.setClearColor(bgColor, 1);
+  }
+}, [bgColor]);
+
+  useEffect(() => {
+  if (!rendererRef.current) return;
+
+  if (bgTransparent) {
+    rendererRef.current.setClearColor(0x000000, 0);
+  } else {
+    rendererRef.current.setClearColor(bgHex, 1);
+  }
+}, [bgHex, bgTransparent]);
+
+
     /* ---------------- Cleanup ---------------- */
     return () => {
       cancelAnimationFrame(frameId);
