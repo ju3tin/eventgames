@@ -10,6 +10,9 @@ type ModelItem = {
   name: string;
   url: string;
 };
+interface Props {
+  params: { slug: string };
+}
 
 export default function GLBPage() {
   const mountRef = useRef<HTMLDivElement | null>(null);
