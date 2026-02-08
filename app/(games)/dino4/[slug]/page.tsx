@@ -100,7 +100,7 @@ useEffect(() => {
 
     // Load GLB
     const loader = new GLTFLoader();
-    loader.load('/assets/models/Triceratops.glb', (gltf) => {
+    loader.load({activeModel?.url}, (gltf) => {
       const model = gltf.scene;
       scene.add(model);
 
