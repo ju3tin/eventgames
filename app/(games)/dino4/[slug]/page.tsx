@@ -14,7 +14,7 @@ interface Props {
   params: { slug: string };
 }
 
-export default function GLBPage() {
+export default function GLBPage({ params }: Props) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
