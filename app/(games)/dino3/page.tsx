@@ -58,13 +58,15 @@ export default function GLBPage() {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      alpha: true,
+  antialias: true,
     renderer.setSize(
       mountRef.current.clientWidth,
       mountRef.current.clientHeight
     );
     rendererRef.current = renderer;
     mountRef.current.appendChild(renderer.domElement);
-
+    renderer.setClearColor(0x000000, 0); // fully transparent
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.enableRotate = false;
