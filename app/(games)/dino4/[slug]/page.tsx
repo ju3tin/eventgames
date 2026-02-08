@@ -99,13 +99,13 @@ useEffect(() => {
     scene.add(dirLight);
 
     // Load GLB
-    if (activeModel?.url) {
-    const loader = new GLTFLoader();
-    loader.load({activeModel.url}, (gltf) => {
-      const model = gltf.scene;
-      scene.add(model);
-}
-      // Fit camera
+if (activeModel?.url) {
+  const loader = new GLTFLoader();
+  loader.load(activeModel.url, (gltf) => {
+    const model = gltf.scene;
+    scene.add(model);
+  });
+}  // Fit camera
       const box = new THREE.Box3().setFromObject(model);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
