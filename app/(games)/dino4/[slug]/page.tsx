@@ -30,6 +30,15 @@ export default function GLBPage() {
   const [bgTransparent, setBgTransparent] = useState(true);
 
   /* ---------------- Scene Setup (once) ---------------- */
+useEffect(() => {
+    fetch('/dino.json')
+      .then((res) => res.json())
+      .then((data: ModelItem[]) => {
+        setModels(data);
+        setActiveModel(data[0]);
+      });
+  }, []);
+  
   useEffect(() => {
     if (!mountRef.current) return;
 
