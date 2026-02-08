@@ -36,7 +36,7 @@ export default function GLBViewerPage({ params }: Props) {
   const router = useRouter();
   const clock = new THREE.Clock();
 
-  // 1. Load model list
+  // Load model list from JSON
   useEffect(() => {
     fetch('/dino.json')
       .then((res) => res.json())
@@ -46,10 +46,10 @@ export default function GLBViewerPage({ params }: Props) {
         const validIndex = isNaN(index) || index < 0 || index >= data.length ? 0 : index;
         setActiveModel(data[validIndex]);
       })
-      .catch((err) => console.error('Failed to load dino.json', err));
+      .catch((err) => console.error('Failed to load dino.json:', err));
   }, [params.slug]);
 
-  // 2. One-time scene + renderer + controls setup
+  // One-time setup: scene, camera, renderer, controls, lights, render loop
   useEffect(() => {
     if (!mountRef.current) return;
 
@@ -91,7 +91,7 @@ export default function GLBViewerPage({ params }: Props) {
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
     controls.enablePan = false;
-    controls.enableRotate = false; // controlled via state
+    controls.enableRotate = false; // controlled by state
     controls.minDistance = 1;
     controls.maxDistance = 80;
 
@@ -102,7 +102,6 @@ export default function GLBViewerPage({ params }: Props) {
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
     };
-
     window.addEventListener('resize', handleResize);
 
     // Animation loop
@@ -111,15 +110,15 @@ export default function GLBViewerPage({ params }: Props) {
       rafId = requestAnimationFrame(animate);
       const delta = clock.getDelta();
 
-      if (mixerRef.current) mixerRef.current.update(delta);
-      if (controlsRef.current) controlsRef.current.update();
+      mixerRef.current?.update(delta);
+      controls.update();
+      renderer.render(scene, camera);
 
-      if (rendererRef.current && cameraRef.current) {
-        rendererRef.current.render(scene, cameraRef.current);
-      }
+      return () => cancelAnimationFrame(rafId);
     };
     animate();
 
+    // Cleanup
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', handleResize);
@@ -128,44 +127,62 @@ export default function GLBViewerPage({ params }: Props) {
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
+      // Optional: more aggressive dispose of scene contents
+      scene.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry?.dispose();
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(m => m?.dispose());
+          } else {
+            obj.material?.dispose();
+          }
+        }
+      });
     };
-  }, []); // one-time setup
+  }, []);
 
-  // 3. Update rotate controls
+  // Sync rotate toggle with controls
   useEffect(() => {
     if (controlsRef.current) {
       controlsRef.current.enableRotate = rotateEnabled;
+      controlsRef.current.autoRotate = rotateEnabled;
+      controlsRef.current.autoRotateSpeed = 1.2;
     }
   }, [rotateEnabled]);
 
-  // 4. Update background
+  // Update background color / transparency
   useEffect(() => {
     if (!rendererRef.current) return;
-    if (bgTransparent) {
-      rendererRef.current.setClearColor(0x000000, 0);
-    } else {
-      rendererRef.current.setClearColor(bgHex, 1);
-    }
+    rendererRef.current.setClearColor(
+      bgTransparent ? 0x000000 : bgHex,
+      bgTransparent ? 0 : 1
+    );
   }, [bgHex, bgTransparent]);
 
-  // 5. Load & switch model when activeModel changes
+  // Load and switch active model
   useEffect(() => {
-    if (!activeModel?.url || !sceneRef.current) return;
+    if (!activeModel?.url || !sceneRef.current || !cameraRef.current) return;
 
     const scene = sceneRef.current;
+    const camera = cameraRef.current;
 
     // Cleanup previous model
     if (currentModelRef.current) {
-      scene.remove(currentModelRef.current);
+      const prevModel = currentModelRef.current;
 
-      // Dispose geometry & materials (basic version)
-      currentModelRef.current.traverse((child) => {
+      // Remove from scene if still attached
+      if (prevModel.parent === scene) {
+        scene.remove(prevModel);
+      }
+
+      // Dispose resources
+      prevModel.traverse((child) => {
         if (child instanceof THREE.Mesh) {
           child.geometry?.dispose();
           if (Array.isArray(child.material)) {
-            child.material.forEach((m) => m?.dispose?.());
+            child.material.forEach(m => m?.dispose());
           } else {
-            child.material?.dispose?.();
+            child.material?.dispose();
           }
         }
       });
@@ -173,7 +190,7 @@ export default function GLBViewerPage({ params }: Props) {
       currentModelRef.current = null;
     }
 
-    // Stop & clear old animations
+    // Clear previous animations
     if (mixerRef.current) {
       mixerRef.current.stopAllAction();
     }
@@ -181,7 +198,7 @@ export default function GLBViewerPage({ params }: Props) {
     setAnimationNames([]);
     setActiveAnimation(null);
 
-    // Load new model
+    // Load new GLTF
     const loader = new GLTFLoader();
     loader.load(
       activeModel.url,
@@ -196,22 +213,22 @@ export default function GLBViewerPage({ params }: Props) {
         const center = box.getCenter(new THREE.Vector3());
         model.position.sub(center);
 
-        // Fit camera
+        // Camera framing
         const maxDim = Math.max(size.x, size.y, size.z);
-        const fovRad = (cameraRef.current!.fov * Math.PI) / 180;
-        const distance = (maxDim * 1.4) / Math.sin(fovRad / 2);
+        const fovRad = (camera.fov * Math.PI) / 180;
+        const distance = (maxDim * 1.5) / Math.sin(fovRad / 2);
 
-        cameraRef.current!.position.set(0, maxDim * 0.4, distance);
-        cameraRef.current!.lookAt(0, 0, 0);
+        camera.position.set(0, maxDim * 0.45, distance);
+        camera.lookAt(0, 0, 0);
 
         if (controlsRef.current) {
           controlsRef.current.target.set(0, 0, 0);
-          controlsRef.current.minDistance = distance * 0.4;
-          controlsRef.current.maxDistance = distance * 3;
+          controlsRef.current.minDistance = distance * 0.3;
+          controlsRef.current.maxDistance = distance * 4;
           controlsRef.current.update();
         }
 
-        // Setup animations
+        // Animations
         const mixer = new THREE.AnimationMixer(model);
         mixerRef.current = mixer;
 
@@ -225,17 +242,17 @@ export default function GLBViewerPage({ params }: Props) {
         setAnimationNames(names);
 
         if (names.length > 0) {
-          actionsRef.current[names[0]]?.reset().fadeIn(0.3).play();
+          actionsRef.current[names[0]]?.reset().fadeIn(0.4).play();
           setActiveAnimation(names[0]);
         }
       },
       undefined,
-      (err) => console.error('GLTF load failed:', err)
+      (err) => console.error('GLTF load error:', err)
     );
 
-    // Cleanup function (for when component unmounts or model changes again)
+    // Cleanup on unmount / next model
     return () => {
-      if (currentModelRef.current && scene.contains(currentModelRef.current)) {
+      if (currentModelRef.current && currentModelRef.current.parent === scene) {
         scene.remove(currentModelRef.current);
       }
     };
@@ -244,68 +261,64 @@ export default function GLBViewerPage({ params }: Props) {
   const playAnimation = (name: string) => {
     if (!mixerRef.current) return;
 
-    // Fade out all
-    Object.values(actionsRef.current).forEach((action) => {
-      action.fadeOut(0.25);
-    });
+    Object.values(actionsRef.current).forEach(a => a.fadeOut(0.3));
 
-    const target = actionsRef.current[name];
-    if (target) {
-      target.reset().fadeIn(0.25).play();
+    const action = actionsRef.current[name];
+    if (action) {
+      action.reset().fadeIn(0.3).play();
       setActiveAnimation(name);
     }
   };
 
   const changeModel = (index: number) => {
     if (index < 0 || index >= models.length) return;
-    setActiveModel(models[index]);
     router.push(`/dino4/${index}`);
   };
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-950">
-      {/* 3D Canvas */}
-      <div ref={mountRef} className="flex-1 relative" />
+      {/* 3D Viewport */}
+      <div ref={mountRef} className="flex-1" />
 
-      {/* Sidebar Controls */}
-      <div className="w-80 bg-slate-900/90 backdrop-blur-sm text-white p-5 border-l border-slate-700 overflow-y-auto">
-        <h2 className="text-xl font-bold mb-4">Dino Viewer</h2>
+      {/* Sidebar */}
+      <div className="w-80 bg-slate-900/95 text-white p-5 border-l border-slate-700 overflow-y-auto">
+        <h2 className="text-2xl font-bold mb-6">Dino Viewer</h2>
 
-        {/* Model selector */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Select Model</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {models.map((model, idx) => (
+        {/* Model selection */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3">Select Model</h3>
+          <div className="grid grid-cols-2 gap-2.5">
+            {models.map((m, i) => (
               <button
-                key={model.name}
-                onClick={() => changeModel(idx)}
-                className={`px-3 py-2 rounded text-sm transition-colors ${
-                  activeModel?.name === model.name
-                    ? 'bg-sky-600 text-white'
+                key={m.name}
+                onClick={() => changeModel(i)}
+                className={`px-4 py-2.5 rounded text-sm transition-colors ${
+                  activeModel?.name === m.name
+                    ? 'bg-indigo-600 text-white shadow-md'
                     : 'bg-slate-800 hover:bg-slate-700'
                 }`}
               >
-                {model.name}
+                {m.name}
               </button>
             ))}
           </div>
         </div>
 
-        <hr className="border-slate-700 my-5" />
+        <hr className="border-slate-700 my-6" />
 
         {/* Animations */}
-        <h3 className="text-lg font-semibold mb-2">Animations</h3>
-        <div className="space-y-2 mb-6">
+        <h3 className="text-lg font-semibold mb-3">Animations</h3>
+        <div className="space-y-2 mb-8">
           {animationNames.length === 0 ? (
-            <p className="text-slate-400 text-sm">No animations found</p>
+            <p className="text-slate-400 text-sm italic">No animations available</p>
           ) : (
-            animationNames.map((name) => (
+            animationNames.map(name => (
               <button
                 key={name}
                 onClick={() => playAnimation(name)}
-                className={`w-full text-left px-4 py-2 rounded transition-colors ${
+                className={`w-full text-left px-4 py-2.5 rounded transition-colors ${
                   activeAnimation === name
-                    ? 'bg-sky-600 text-white'
+                    ? 'bg-indigo-600 text-white'
                     : 'bg-slate-800 hover:bg-slate-700'
                 }`}
               >
@@ -315,38 +328,43 @@ export default function GLBViewerPage({ params }: Props) {
           )}
         </div>
 
-        <hr className="border-slate-700 my-5" />
+        <hr className="border-slate-700 my-6" />
 
-        {/* Rotate toggle */}
-        <button
-          onClick={() => setRotateEnabled((v) => !v)}
-          className={`w-full px-4 py-3 rounded font-medium transition-colors mb-4 ${
-            rotateEnabled ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-700 hover:bg-slate-600'
-          }`}
-        >
-          {rotateEnabled ? 'Disable Auto-Rotate' : 'Enable Auto-Rotate'}
-        </button>
-
-        {/* Background */}
-        <div className="space-y-3">
-          <label className="block text-sm font-medium">Background Color</label>
-          <input
-            type="color"
-            value={bgHex}
-            onChange={(e) => {
-              setBgHex(e.target.value);
-              setBgTransparent(false);
-            }}
-            className="w-full h-10 rounded cursor-pointer bg-transparent border border-slate-600"
-          />
-
+        {/* Controls */}
+        <div className="space-y-4">
           <button
-            onClick={() => setBgTransparent((v) => !v)}
-            className={`w-full px-4 py-3 rounded font-medium transition-colors ${
-              bgTransparent ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-700 hover:bg-slate-600'
+            onClick={() => setRotateEnabled(v => !v)}
+            className={`w-full py-3 rounded font-medium transition-colors ${
+              rotateEnabled
+                ? 'bg-emerald-600 hover:bg-emerald-700'
+                : 'bg-slate-700 hover:bg-slate-600'
             }`}
           >
-            {bgTransparent ? 'Transparent Background' : 'Solid Background'}
+            {rotateEnabled ? 'Disable Auto-Rotate' : 'Enable Auto-Rotate'}
+          </button>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Background</label>
+            <input
+              type="color"
+              value={bgHex}
+              onChange={e => {
+                setBgHex(e.target.value);
+                setBgTransparent(false);
+              }}
+              className="w-full h-10 rounded cursor-pointer bg-transparent border border-slate-600"
+            />
+          </div>
+
+          <button
+            onClick={() => setBgTransparent(v => !v)}
+            className={`w-full py-3 rounded font-medium transition-colors ${
+              bgTransparent
+                ? 'bg-emerald-600 hover:bg-emerald-700'
+                : 'bg-slate-700 hover:bg-slate-600'
+            }`}
+          >
+            {bgTransparent ? 'Transparent BG' : 'Solid BG'}
           </button>
         </div>
       </div>
