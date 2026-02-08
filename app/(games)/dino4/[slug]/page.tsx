@@ -100,7 +100,7 @@ useEffect(() => {
 
     // Load GLB
     const loader = new GLTFLoader();
-    loader.load({activeModel?.url}, (gltf) => {
+    loader.load({activeModel.url}, (gltf) => {
       const model = gltf.scene;
       scene.add(model);
 
