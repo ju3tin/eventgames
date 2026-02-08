@@ -12,7 +12,7 @@ type ModelItem = {
 };
 
 interface Props {
-  params: { slug: string }; // slug = initial model index
+  params: { slug: string };
 }
 
 export default function GLBViewerPage({ params }: Props) {
@@ -30,7 +30,6 @@ export default function GLBViewerPage({ params }: Props) {
     const idx = parseInt(params.slug, 10);
     return isNaN(idx) ? 0 : idx;
   });
-  const activeModel = models[activeIndex] || null;
 
   const [animationNames, setAnimationNames] = useState<string[]>([]);
   const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
@@ -136,14 +135,17 @@ export default function GLBViewerPage({ params }: Props) {
     }
   }, [bgHex, bgTransparent]);
 
-  // Load / switch GLB model when activeModel changes
+  // Load / switch GLB model when models or activeIndex change
   useEffect(() => {
-    if (!activeModel?.url || !sceneRef.current || !cameraRef.current) return;
+    if (models.length === 0) return;
+
+    const model = models[activeIndex];
+    if (!model?.url || !sceneRef.current || !cameraRef.current) return;
 
     const scene = sceneRef.current;
     const camera = cameraRef.current;
 
-    // Remove previous model
+    // Cleanup previous model
     if (currentModelRef.current) {
       const prev = currentModelRef.current;
       if (prev.parent) prev.parent.remove(prev);
@@ -164,16 +166,16 @@ export default function GLBViewerPage({ params }: Props) {
 
     const loader = new GLTFLoader();
     loader.load(
-      activeModel.url,
+      model.url,
       (gltf) => {
-        const model = gltf.scene;
-        currentModelRef.current = model;
-        scene.add(model);
+        const obj = gltf.scene;
+        currentModelRef.current = obj;
+        scene.add(obj);
 
-        const box = new THREE.Box3().setFromObject(model);
+        const box = new THREE.Box3().setFromObject(obj);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
-        model.position.sub(center);
+        obj.position.sub(center);
 
         const maxDim = Math.max(size.x, size.y, size.z);
         const fovRad = (camera.fov * Math.PI) / 180;
@@ -188,7 +190,7 @@ export default function GLBViewerPage({ params }: Props) {
           controlsRef.current.update();
         }
 
-        const mixer = new THREE.AnimationMixer(model);
+        const mixer = new THREE.AnimationMixer(obj);
         mixerRef.current = mixer;
 
         const names: string[] = [];
@@ -211,7 +213,7 @@ export default function GLBViewerPage({ params }: Props) {
     return () => {
       if (currentModelRef.current?.parent) currentModelRef.current.parent.remove(currentModelRef.current);
     };
-  }, [activeModel]);
+  }, [models, activeIndex]);
 
   const playAnimation = (name: string) => {
     if (!mixerRef.current) return;
@@ -225,7 +227,7 @@ export default function GLBViewerPage({ params }: Props) {
 
   const changeModel = (index: number) => {
     if (index < 0 || index >= models.length) return;
-    setActiveIndex(index); // update activeIndex state
+    setActiveIndex(index);
     router.push(`/dino4/${index}`); // optional: update URL
   };
 
