@@ -45,7 +45,7 @@ export default function GLBPage() {
     if (!mountRef.current) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#020617');
+   // scene.background = new THREE.Color('#020617');
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(
