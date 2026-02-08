@@ -10,6 +10,7 @@ export default function GLBPage() {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const actionsRef = useRef<Record<string, THREE.AnimationAction>>({});
+  const controlsRef = useRef<OrbitControls | null>(null); // <-- Add this line
 
   const clock = new THREE.Clock();
 
