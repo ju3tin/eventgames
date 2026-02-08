@@ -22,5 +22,9 @@
   {
     "name": "Velociraptor",
     "url": "/assets/models/Velociraptor.glb"
+  },
+  {
+    "name":"Pterodactyl",
+    "url":"/assets/models/pterodactyl.glb"
   }
 ]
