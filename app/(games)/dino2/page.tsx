@@ -199,6 +199,33 @@ export default function GLBPage() {
         >
           {rotateEnabled ? 'Disable Rotate' : 'Enable Rotate'}
         </button>
+
+        <button className={`w-full rounded px-3 py-2 bg-emerald-500`} onClick={() => setBgColor(null)}>Transparent</button>
+<button className={`w-full rounded px-3 py-2 bg-emerald-500`} onClick={() => setBgColor('#020617')}>Dark</button>
+<button className={`w-full rounded px-3 py-2 bg-emerald-500`} onClick={() => setBgColor('#0f172a')}>Slate</button>
+<div className="space-y-2">
+  {/* Hex picker */}
+  <input
+    type="color"
+    value={bgHex}
+    onChange={(e) => {
+      setBgHex(e.target.value);
+      setBgTransparent(false);
+    }}
+    className="w-full h-10 rounded cursor-pointer"
+  />
+
+  {/* Transparent toggle */}
+  <button
+    className={`w-full rounded px-3 py-2 ${
+      bgTransparent ? 'bg-emerald-500' : 'bg-slate-700'
+    }`}
+    onClick={() => setBgTransparent((v) => !v)}
+  >
+    {bgTransparent ? 'Transparent ON' : 'Transparent OFF'}
+  </button>
+</div>
+
       </div>
     </div>
   );
