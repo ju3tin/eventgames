@@ -8,6 +8,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 export default function GLBPage() {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [bgColor, setBgColor] = useState<string | null>(null);
+   const [bgHex, setBgHex] = useState<string>('#020617');
 
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const actionsRef = useRef<Record<string, THREE.AnimationAction>>({});
