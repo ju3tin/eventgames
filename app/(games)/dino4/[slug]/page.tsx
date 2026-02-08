@@ -36,20 +36,30 @@ export default function GLBViewerPage({ params }: Props) {
   const router = useRouter();
   const clock = new THREE.Clock();
 
-  // 1. Load list of models
+  // Load model list once
   useEffect(() => {
     fetch('/dino.json')
       .then((res) => res.json())
       .then((data: ModelItem[]) => {
         setModels(data);
-        const index = parseInt(params.slug, 10);
-        const validIndex = isNaN(index) || index < 0 || index >= data.length ? 0 : index;
-        setActiveModel(data[validIndex]);
       })
       .catch((err) => console.error('Failed to load dino.json:', err));
-  }, [params.slug]);
+  }, []);
 
-  // 2. One-time Three.js setup
+  // Update active model when slug changes
+  useEffect(() => {
+    if (models.length === 0) return;
+
+    const index = parseInt(params.slug, 10);
+    const validIndex = isNaN(index) || index < 0 || index >= models.length ? 0 : index;
+    const selected = models[validIndex];
+
+    if (selected?.url !== activeModel?.url) {
+      setActiveModel(selected);
+    }
+  }, [params.slug, models, activeModel]);
+
+  // Scene, renderer, camera, controls setup (once)
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
@@ -105,7 +115,6 @@ export default function GLBViewerPage({ params }: Props) {
     };
     animate();
 
-    // Cleanup
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', handleResize);
@@ -114,18 +123,17 @@ export default function GLBViewerPage({ params }: Props) {
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
-      // Aggressive dispose
       scene.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
           obj.geometry?.dispose();
-          const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
-          materials.forEach((mat) => mat?.dispose());
+          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+          mats.forEach((mat) => mat?.dispose());
         }
       });
     };
   }, []);
 
-  // 3. Rotate toggle
+  // Sync rotate setting
   useEffect(() => {
     const controls = controlsRef.current;
     if (controls) {
@@ -135,7 +143,7 @@ export default function GLBViewerPage({ params }: Props) {
     }
   }, [rotateEnabled]);
 
-  // 4. Background
+  // Background control
   useEffect(() => {
     const renderer = rendererRef.current;
     if (renderer) {
@@ -143,14 +151,14 @@ export default function GLBViewerPage({ params }: Props) {
     }
   }, [bgHex, bgTransparent]);
 
-  // 5. Model loading & switching
+  // Load / switch GLB model when activeModel changes
   useEffect(() => {
     if (!activeModel?.url || !sceneRef.current || !cameraRef.current) return;
 
     const scene = sceneRef.current;
     const camera = cameraRef.current;
 
-    // Remove & clean previous model
+    // Cleanup previous model
     if (currentModelRef.current) {
       const prev = currentModelRef.current;
       if (prev.parent) {
@@ -166,7 +174,7 @@ export default function GLBViewerPage({ params }: Props) {
       currentModelRef.current = null;
     }
 
-    // Clear old animations
+    // Clear animations
     mixerRef.current?.stopAllAction();
     actionsRef.current = {};
     setAnimationNames([]);
@@ -180,13 +188,11 @@ export default function GLBViewerPage({ params }: Props) {
         currentModelRef.current = model;
         scene.add(model);
 
-        // Center
         const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
         model.position.sub(center);
 
-        // Frame camera
         const maxDim = Math.max(size.x, size.y, size.z);
         const fovRad = (camera.fov * Math.PI) / 180;
         const distance = (maxDim * 1.5) / Math.sin(fovRad / 2);
@@ -202,7 +208,6 @@ export default function GLBViewerPage({ params }: Props) {
           controls.update();
         }
 
-        // Animations
         const mixer = new THREE.AnimationMixer(model);
         mixerRef.current = mixer;
 
@@ -223,7 +228,6 @@ export default function GLBViewerPage({ params }: Props) {
       (err) => console.error('GLTF load failed:', err)
     );
 
-    // Cleanup for next effect run / unmount
     return () => {
       if (currentModelRef.current?.parent) {
         currentModelRef.current.parent.remove(currentModelRef.current);
@@ -233,9 +237,7 @@ export default function GLBViewerPage({ params }: Props) {
 
   const playAnimation = (name: string) => {
     if (!mixerRef.current) return;
-
     Object.values(actionsRef.current).forEach((a) => a.fadeOut(0.3));
-
     const action = actionsRef.current[name];
     if (action) {
       action.reset().fadeIn(0.3).play();
@@ -250,10 +252,8 @@ export default function GLBViewerPage({ params }: Props) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-950">
-      {/* Canvas */}
       <div ref={mountRef} className="flex-1" />
 
-      {/* Sidebar */}
       <div className="w-80 bg-slate-900/95 text-white p-5 border-l border-slate-700 overflow-y-auto">
         <h2 className="text-2xl font-bold mb-6">Dino Viewer</h2>
 
