@@ -16,6 +16,9 @@ export default function GLBPage() {
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const actionsRef = useRef<Record<string, THREE.AnimationAction>>({});
   const controlsRef = useRef<OrbitControls | null>(null); // <-- Add this line
+  
+  const [models, setModels] = useState<ModelItem[]>([]);
+  const [activeModel, setActiveModel] = useState<ModelItem | null>(null);
 
   const clock = new THREE.Clock();
 
