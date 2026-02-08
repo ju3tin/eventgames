@@ -52,6 +52,7 @@ export default function GLBPage() {
 
     // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
+    controlsRef.current = controls;
     controls.enableDamping = true;
     controls.enableRotate = false;
     controls.enablePan = false;
@@ -124,7 +125,7 @@ export default function GLBPage() {
     const animate = () => {
       frameId = requestAnimationFrame(animate);
       mixerRef.current?.update(clock.getDelta());
-      controls.enableRotate = rotateEnabled;
+    //  controls.enableRotate = rotateEnabled;
       controls.update();
       renderer.render(scene, camera);
     };
@@ -139,6 +140,12 @@ export default function GLBPage() {
       mountRef.current?.removeChild(renderer.domElement);
     };
   }, []);
+
+  useEffect(() => {
+  if (!controlsRef.current) return;
+  controlsRef.current.enableRotate = rotateEnabled;
+}, [rotateEnabled]);
+
 
   /* ---------------- Background Control ---------------- */
   useEffect(() => {
