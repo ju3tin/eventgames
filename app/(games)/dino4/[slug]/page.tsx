@@ -12,7 +12,7 @@ type ModelItem = {
 };
 
 interface Props {
-  params: { slug: string }; // slug = model index
+  params: { slug: string }; // slug = initial model index
 }
 
 export default function GLBViewerPage({ params }: Props) {
@@ -26,7 +26,12 @@ export default function GLBViewerPage({ params }: Props) {
   const actionsRef = useRef<Record<string, THREE.AnimationAction>>({});
 
   const [models, setModels] = useState<ModelItem[]>([]);
-  const [activeModel, setActiveModel] = useState<ModelItem | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number>(() => {
+    const idx = parseInt(params.slug, 10);
+    return isNaN(idx) ? 0 : idx;
+  });
+  const activeModel = models[activeIndex] || null;
+
   const [animationNames, setAnimationNames] = useState<string[]>([]);
   const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
   const [rotateEnabled, setRotateEnabled] = useState(false);
@@ -40,21 +45,9 @@ export default function GLBViewerPage({ params }: Props) {
   useEffect(() => {
     fetch('/dino.json')
       .then((res) => res.json())
-      .then((data: ModelItem[]) => {
-        setModels(data);
-      })
+      .then((data: ModelItem[]) => setModels(data))
       .catch((err) => console.error('Failed to load dino.json:', err));
   }, []);
-
-  // Update active model based on slug
-  useEffect(() => {
-    if (models.length === 0) return;
-
-    const index = parseInt(params.slug, 10);
-    const validIndex = isNaN(index) || index < 0 || index >= models.length ? 0 : index;
-
-    setActiveModel(models[validIndex]);
-  }, [params.slug, models]);
 
   // Initialize Three.js scene
   useEffect(() => {
@@ -143,7 +136,7 @@ export default function GLBViewerPage({ params }: Props) {
     }
   }, [bgHex, bgTransparent]);
 
-  // Load or switch GLB model
+  // Load / switch GLB model when activeModel changes
   useEffect(() => {
     if (!activeModel?.url || !sceneRef.current || !cameraRef.current) return;
 
@@ -232,7 +225,8 @@ export default function GLBViewerPage({ params }: Props) {
 
   const changeModel = (index: number) => {
     if (index < 0 || index >= models.length) return;
-    router.push(`/dino4/${index}`);
+    setActiveIndex(index); // update activeIndex state
+    router.push(`/dino4/${index}`); // optional: update URL
   };
 
   return (
@@ -250,7 +244,7 @@ export default function GLBViewerPage({ params }: Props) {
                 key={m.name}
                 onClick={() => changeModel(i)}
                 className={`px-4 py-2.5 rounded text-sm transition-colors ${
-                  activeModel?.name === m.name
+                  activeIndex === i
                     ? 'bg-indigo-600 text-white shadow-md'
                     : 'bg-slate-800 hover:bg-slate-700'
                 }`}
