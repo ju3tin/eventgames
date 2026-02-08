@@ -242,9 +242,9 @@ export default function GLBPage() {
           {rotateEnabled ? 'Disable Rotate' : 'Enable Rotate'}
         </button>
 
-        <button onClick={() => setBgColor(null)}>Transparent</button>
-<button onClick={() => setBgColor('#020617')}>Dark</button>
-<button onClick={() => setBgColor('#0f172a')}>Slate</button>
+        <button className={`w-full rounded px-3 py-2`} onClick={() => setBgColor(null)}>Transparent</button>
+<button className={`w-full rounded px-3 py-2`} onClick={() => setBgColor('#020617')}>Dark</button>
+<button className={`w-full rounded px-3 py-2`} onClick={() => setBgColor('#0f172a')}>Slate</button>
 
       </div>
     </div>
