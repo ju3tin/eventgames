@@ -29,6 +29,7 @@ export default function GLBPage() {
   const [animationNames, setAnimationNames] = useState<string[]>([]);
   const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
   const [rotateEnabled, setRotateEnabled] = useState(false);
+  const [bgColor, setBgColor] = useState<string | null>(null);
 
   /* ---------------- Fetch Models API ---------------- */
   useEffect(() => {
@@ -114,6 +115,16 @@ export default function GLBPage() {
       mountRef.current?.removeChild(renderer.domElement);
     };
   }, [rotateEnabled]);
+
+  useEffect(() => {
+  if (!rendererRef.current) return;
+
+  if (bgColor === null) {
+    rendererRef.current.setClearColor(0x000000, 0);
+  } else {
+    rendererRef.current.setClearColor(bgColor, 1);
+  }
+}, [bgColor]);
 
   /* ---------------- Load Model ---------------- */
   useEffect(() => {
@@ -230,6 +241,11 @@ export default function GLBPage() {
         >
           {rotateEnabled ? 'Disable Rotate' : 'Enable Rotate'}
         </button>
+
+        <button onClick={() => setBgColor(null)}>Transparent</button>
+<button onClick={() => setBgColor('#020617')}>Dark</button>
+<button onClick={() => setBgColor('#0f172a')}>Slate</button>
+
       </div>
     </div>
   );
