@@ -56,17 +56,21 @@ export default function GLBPage() {
     );
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      alpha: true,
-  antialias: true,
-    renderer.setSize(
-      mountRef.current.clientWidth,
-      mountRef.current.clientHeight
-    );
-    rendererRef.current = renderer;
-    mountRef.current.appendChild(renderer.domElement);
-    renderer.setClearColor(0x000000, 0); // fully transparent
+     const renderer = new THREE.WebGLRenderer({
+    alpha: true,
+    antialias: true,
+  });
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(
+    mountRef.current.clientWidth,
+    mountRef.current.clientHeight
+  );
+  renderer.setClearColor(0x000000, 0);
+
+  rendererRef.current = renderer;
+  mountRef.current.appendChild(renderer.domElement);
+
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.enableRotate = false;
