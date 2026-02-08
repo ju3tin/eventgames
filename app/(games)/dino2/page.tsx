@@ -9,6 +9,8 @@ export default function GLBPage() {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [bgColor, setBgColor] = useState<string | null>(null);
    const [bgHex, setBgHex] = useState<string>('#020617');
+  
+  const [bgTransparent, setBgTransparent] = useState<boolean>(true);
 
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const actionsRef = useRef<Record<string, THREE.AnimationAction>>({});
