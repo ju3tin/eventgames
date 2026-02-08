@@ -39,9 +39,22 @@ useEffect(() => {
       .then((res) => res.json())
       .then((data: ModelItem[]) => {
         setModels(data);
-        setActiveModel(data[0]);
+
+        // Convert slug to number index
+        const index = parseInt(params.slug, 10);
+
+        // Make sure the index is valid, otherwise default to 0
+        const initialModel = data[index >= 0 && index < data.length ? index : 0];
+        setActiveModel(initialModel);
       });
-  }, []);
+  }, [params.slug]);
+
+  const changeModel = (index: number) => {
+    const model = models[index];
+    if (!model) return;
+    setActiveModel(model);
+    router.push(`/${index}`); // slug is now the array index
+  };
   
   useEffect(() => {
     if (!mountRef.current) return;
