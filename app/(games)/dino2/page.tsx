@@ -7,27 +7,27 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 export default function GLBPage() {
   const mountRef = useRef<HTMLDivElement | null>(null);
-  const [bgColor, setBgColor] = useState<string | null>(null);
-   const [bgHex, setBgHex] = useState<string>('#020617');
-  
-  const [bgTransparent, setBgTransparent] = useState<boolean>(true);
-
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const actionsRef = useRef<Record<string, THREE.AnimationAction>>({});
+
   const clock = new THREE.Clock();
 
   const [animationNames, setAnimationNames] = useState<string[]>([]);
   const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
   const [rotateEnabled, setRotateEnabled] = useState(false);
 
+  const [bgHex, setBgHex] = useState('#020617');
+  const [bgTransparent, setBgTransparent] = useState(true);
+
+  /* ---------------- Scene Setup (once) ---------------- */
   useEffect(() => {
     if (!mountRef.current) return;
 
-    /* ---------------- Scene ---------------- */
+    // Scene
     const scene = new THREE.Scene();
-   // scene.background = new THREE.Color('#020617');
 
-    /* ---------------- Camera ---------------- */
+    // Camera
     const camera = new THREE.PerspectiveCamera(
       60,
       mountRef.current.clientWidth / mountRef.current.clientHeight,
@@ -35,11 +35,13 @@ export default function GLBPage() {
       1000
     );
 
-    /* ---------------- Renderer ---------------- */
-       const renderer = new THREE.WebGLRenderer({
-    alpha: true,
-    antialias: true,
-  });
+    // Renderer (transparent)
+    const renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: true,
+    });
+
+    rendererRef.current = renderer;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(
       mountRef.current.clientWidth,
@@ -48,62 +50,43 @@ export default function GLBPage() {
     renderer.setClearColor(0x000000, 0);
     mountRef.current.appendChild(renderer.domElement);
 
-    /* ---------------- Controls ---------------- */
+    // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-
-    // Zoom defaults
-    controls.enableZoom = true;
-    controls.zoomSpeed = 0.6;
-    controls.minDistance = 1;
-    controls.maxDistance = 20;
-
-    // Disable by default
     controls.enableRotate = false;
     controls.enablePan = false;
 
-    // Mobile tuning
-    controls.touches = {
-      ONE: THREE.TOUCH.ROTATE,
-      TWO: THREE.TOUCH.DOLLY_PAN
-    };
-
-    /* ---------------- Lights ---------------- */
+    // Lights
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-
     const dirLight = new THREE.DirectionalLight(0xffffff, 1);
     dirLight.position.set(5, 5, 5);
     scene.add(dirLight);
 
-    /* ---------------- Load GLB ---------------- */
+    // Load GLB
     const loader = new GLTFLoader();
     loader.load('/assets/models/Triceratops.glb', (gltf) => {
       const model = gltf.scene;
       scene.add(model);
 
-      /* ---- Fit camera to model bounds ---- */
+      // Fit camera
       const box = new THREE.Box3().setFromObject(model);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
-
       model.position.sub(center);
 
       const maxDim = Math.max(size.x, size.y, size.z);
-      const fov = camera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs(maxDim / Math.sin(fov / 2));
-      cameraZ *= 1.2;
+      const cameraZ =
+        Math.abs(maxDim / Math.sin((camera.fov * Math.PI) / 360)) * 1.2;
 
       camera.position.set(0, maxDim * 0.6, cameraZ);
       camera.lookAt(0, 0, 0);
 
       controls.target.set(0, 0, 0);
-      controls.update();
-
       controls.minDistance = cameraZ * 0.5;
       controls.maxDistance = cameraZ * 2;
+      controls.update();
 
-      /* ---- Animations ---- */
+      // Animations
       const mixer = new THREE.AnimationMixer(model);
       mixerRef.current = mixer;
 
@@ -114,13 +97,13 @@ export default function GLBPage() {
       const names = gltf.animations.map((a) => a.name);
       setAnimationNames(names);
 
-      if (names.length > 0) {
+      if (names.length) {
         actionsRef.current[names[0]].play();
         setActiveAnimation(names[0]);
       }
     });
 
-    /* ---------------- Resize ---------------- */
+    // Resize
     const onResize = () => {
       if (!mountRef.current) return;
 
@@ -136,42 +119,18 @@ export default function GLBPage() {
 
     window.addEventListener('resize', onResize);
 
-    /* ---------------- Loop ---------------- */
+    // Render loop
     let frameId: number;
     const animate = () => {
       frameId = requestAnimationFrame(animate);
-
       mixerRef.current?.update(clock.getDelta());
       controls.enableRotate = rotateEnabled;
       controls.update();
-
       renderer.render(scene, camera);
     };
 
     animate();
 
-     useEffect(() => {
-  if (!rendererRef.current) return;
-
-  if (bgColor === null) {
-    rendererRef.current.setClearColor(0x000000, 0);
-  } else {
-    rendererRef.current.setClearColor(bgColor, 1);
-  }
-}, [bgColor]);
-
-  useEffect(() => {
-  if (!rendererRef.current) return;
-
-  if (bgTransparent) {
-    rendererRef.current.setClearColor(0x000000, 0);
-  } else {
-    rendererRef.current.setClearColor(bgHex, 1);
-  }
-}, [bgHex, bgTransparent]);
-
-
-    /* ---------------- Cleanup ---------------- */
     return () => {
       cancelAnimationFrame(frameId);
       window.removeEventListener('resize', onResize);
@@ -179,16 +138,24 @@ export default function GLBPage() {
       renderer.dispose();
       mountRef.current?.removeChild(renderer.domElement);
     };
-  }, [rotateEnabled]);
+  }, []);
+
+  /* ---------------- Background Control ---------------- */
+  useEffect(() => {
+    if (!rendererRef.current) return;
+
+    if (bgTransparent) {
+      rendererRef.current.setClearColor(0x000000, 0);
+    } else {
+      rendererRef.current.setClearColor(bgHex, 1);
+    }
+  }, [bgHex, bgTransparent]);
 
   /* ---------------- Animation Switch ---------------- */
   const playAnimation = (name: string) => {
     if (!mixerRef.current) return;
 
-    Object.values(actionsRef.current).forEach((action) =>
-      action.fadeOut(0.25)
-    );
-
+    Object.values(actionsRef.current).forEach((a) => a.fadeOut(0.25));
     actionsRef.current[name].reset().fadeIn(0.25).play();
     setActiveAnimation(name);
   };
@@ -198,15 +165,13 @@ export default function GLBPage() {
       <div ref={mountRef} className="flex-1" />
 
       <div className="w-72 bg-slate-900 text-white p-4 space-y-2">
-        <h2 className="text-lg font-semibold mb-2">Animations</h2>
+        <h2 className="text-lg font-semibold">Animations</h2>
 
         {animationNames.map((name) => (
           <button
             key={name}
             className={`w-full rounded px-3 py-2 ${
-              activeAnimation === name
-                ? 'bg-sky-500'
-                : 'bg-slate-700'
+              activeAnimation === name ? 'bg-sky-500' : 'bg-slate-700'
             }`}
             onClick={() => playAnimation(name)}
           >
@@ -225,32 +190,28 @@ export default function GLBPage() {
           {rotateEnabled ? 'Disable Rotate' : 'Enable Rotate'}
         </button>
 
-        <button className={`w-full rounded px-3 py-2 bg-emerald-500`} onClick={() => setBgColor(null)}>Transparent</button>
-<button className={`w-full rounded px-3 py-2 bg-emerald-500`} onClick={() => setBgColor('#020617')}>Dark</button>
-<button className={`w-full rounded px-3 py-2 bg-emerald-500`} onClick={() => setBgColor('#0f172a')}>Slate</button>
-<div className="space-y-2">
-  {/* Hex picker */}
-  <input
-    type="color"
-    value={bgHex}
-    onChange={(e) => {
-      setBgHex(e.target.value);
-      setBgTransparent(false);
-    }}
-    className="w-full h-10 rounded cursor-pointer"
-  />
+        <hr className="border-slate-700 my-3" />
 
-  {/* Transparent toggle */}
-  <button
-    className={`w-full rounded px-3 py-2 ${
-      bgTransparent ? 'bg-emerald-500' : 'bg-slate-700'
-    }`}
-    onClick={() => setBgTransparent((v) => !v)}
-  >
-    {bgTransparent ? 'Transparent ON' : 'Transparent OFF'}
-  </button>
-</div>
+        {/* Hex Picker */}
+        <input
+          type="color"
+          value={bgHex}
+          onChange={(e) => {
+            setBgHex(e.target.value);
+            setBgTransparent(false);
+          }}
+          className="w-full h-10 rounded cursor-pointer"
+        />
 
+        {/* Transparent Toggle */}
+        <button
+          className={`w-full rounded px-3 py-2 ${
+            bgTransparent ? 'bg-emerald-500' : 'bg-slate-700'
+          }`}
+          onClick={() => setBgTransparent((v) => !v)}
+        >
+          {bgTransparent ? 'Transparent ON' : 'Transparent OFF'}
+        </button>
       </div>
     </div>
   );
