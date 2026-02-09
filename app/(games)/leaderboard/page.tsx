@@ -15,6 +15,7 @@ interface LeaderboardEntry {
   game_id: string;
   username: string;
   score: number;
+  game_title: string;
   duration_seconds: number;
   created_at: string;
   
@@ -44,6 +45,7 @@ export default function LeaderboardPage() {
           game_id,
           username,
           score,
+          game_title,
           duration_seconds,
           created_at
         `)
@@ -180,7 +182,7 @@ export default function LeaderboardPage() {
                           {entry.username || "Anonymous Player"}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {getGameName(entry.game_id)}
+                          {getGameName(entry.game_title)}
                         </p>
                       </div>
 
