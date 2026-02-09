@@ -13,6 +13,7 @@ interface LeaderboardEntry {
   id: string;
   user_id: string;
   game_id: string;
+  game_title: string;
   username: string;
   score: number;
   duration_seconds: number;
@@ -42,6 +43,7 @@ export default function LeaderboardPage() {
           id,
           user_id,
           game_id,
+          game_title,
           username,
           score,
           duration_seconds,
