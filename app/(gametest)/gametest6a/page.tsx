@@ -390,8 +390,8 @@ export default function AirJugglerPage() {
           ref={overlayRef}
           style={{
             position: 'absolute',
-            top: '50%',
-            left: '50%',
+            top: '0%',
+            left: '0%',
             width: 640,
             height: 480,
             background: 'rgba(0,0,0,0.6)',
