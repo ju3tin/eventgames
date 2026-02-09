@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import * as tf from '@tensorflow/tfjs-core'
-import '@tensorflow/tfjs-backend-webgl'
+import '@tensorflow/tfjs-backend-wasm'
 import * as handPoseDetection from '@tensorflow-models/hand-pose-detection'
 
 export default function HandDetectionPage() {
@@ -11,6 +11,7 @@ export default function HandDetectionPage() {
 
   useEffect(() => {
     let detector: handPoseDetection.HandDetector
+    let animationId: number
 
     const setupCamera = async () => {
       if (!videoRef.current) return
@@ -24,15 +25,15 @@ export default function HandDetectionPage() {
     }
 
     const loadModel = async () => {
-      await tf.setBackend('webgl')
+      await tf.setBackend('wasm')
       await tf.ready()
 
       detector = await handPoseDetection.createDetector(
         handPoseDetection.SupportedModels.MediaPipeHands,
         {
-          runtime: 'mediapipe',
+          runtime: 'tfjs',
           modelType: 'lite',
-          solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands',
+          maxHands: 2,
         }
       )
     }
@@ -52,16 +53,16 @@ export default function HandDetectionPage() {
         ctx.clearRect(0, 0, 640, 480)
 
         hands.forEach(hand => {
-          hand.keypoints.forEach(point => {
+          hand.keypoints.forEach(({ x, y }) => {
             ctx.beginPath()
-            ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI)
-            ctx.fillStyle = 'red'
+            ctx.arc(x, y, 5, 0, Math.PI * 2)
+            ctx.fillStyle = '#ff3b3b'
             ctx.fill()
           })
         })
       }
 
-      requestAnimationFrame(detectHands)
+      animationId = requestAnimationFrame(detectHands)
     }
 
     const init = async () => {
@@ -71,16 +72,28 @@ export default function HandDetectionPage() {
     }
 
     init()
+
+    return () => {
+      cancelAnimationFrame(animationId)
+      detector?.dispose()
+    }
   }, [])
 
   return (
-    <div style={{ position: 'relative', width: 640, height: 480 }}>
+    <div
+      style={{
+        position: 'relative',
+        width: 640,
+        height: 480,
+      }}
+    >
       <video
         ref={videoRef}
         width={640}
         height={480}
         style={{ position: 'absolute' }}
         muted
+        playsInline
       />
       <canvas
         ref={canvasRef}
