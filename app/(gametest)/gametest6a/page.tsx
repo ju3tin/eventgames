@@ -320,7 +320,27 @@ export default function AirJugglerPage() {
     gameLoop()
   }
 
-   useEffect(() => {
+  useEffect(() => {
+    // Load TFJS and MediaPipe Hands
+    const initScripts = async () => {
+      await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs')
+      await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/hands')
+      await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection')
+    }
+
+    initScripts().then(() => {
+      if (startButtonRef.current) {
+        startButtonRef.current.addEventListener('click', startGame)
+      }
+    })
+
+    return () => {
+      cancelAnimationFrame(gameState.animationId)
+      stopDetection()
+    }
+  }, [])
+
+  useEffect(() => {
       const supabase = createClient()
   
       const initialize = async () => {
@@ -353,57 +373,9 @@ export default function AirJugglerPage() {
   
       initialize()
     }, [router])
-  
-    // Load score whenever selectedGameId or user changes
-    useEffect(() => {
-      if (user && selectedGameId) {
-        fetchScore(user.id, selectedGameId)
-      }
-    }, [user, selectedGameId])
-
-    const fetchScore = async (userId: string, gameId: string) => {
-        const supabase = createClient()
-    
-        const { data, error } = await supabase
-          .from('leaderboard')
-          .select('score')
-          .eq('user_id', userId)          // ← fixed: use user_id (not profile_id)
-          .eq('game_id', gameId)
-          .maybeSingle()
-    
-        if (error) {
-          console.error('Error fetching score:', error.message)
-          return
-        }
-    
-        setScore(data?.score ?? 0)
-      }
-    
-
-  useEffect(() => {
-    // Load TFJS and MediaPipe Hands
-    const initScripts = async () => {
-      await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs')
-      await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/hands')
-      await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection')
-    }
-
-    initScripts().then(() => {
-      if (startButtonRef.current) {
-        startButtonRef.current.addEventListener('click', startGame)
-      }
-    })
-
-    return () => {
-      cancelAnimationFrame(gameState.animationId)
-      stopDetection()
-    }
-  }, [])
- if (!user) return <div className="min-h-screen flex items-center justify-center">Please log in to play.</div>
 
   return (
     <div className="container">
-       <p className="mb-8">Logged in as: <strong>{user.email}</strong></p>
       <h1>Air Juggler</h1>
       <p className="instructions">Use your hands to keep the balls in the air!</p>
 
