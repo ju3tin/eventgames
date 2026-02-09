@@ -1,19 +1,17 @@
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { GameCard } from '@/components/game-card'
-import { useGames } from '@/lib/games-data'
+import { games } from '@/lib/games-data'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-  
+
 export default async function GamesPage() {
-  const { games, loading } = useGames()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/auth/login')
   }
-  if (loading) return <div>Loading games...</div>
 
   return (
     <div className="min-h-screen bg-background">
