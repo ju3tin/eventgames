@@ -345,30 +345,38 @@ export default function AirJugglerPage() {
   }
 
 const submitScore = async () => {
-    if (!user?.id) return alert('User not ready.')
+  const supabase = createClient()
 
-    const supabase = createClient()
-    const gameId = '1566566c-4083-4036-9325-b2121ef46592'
-
-    const payload = {
-      user_id: user.id,
-      game_id: gameId,
-      score: gameState.juggles,
-      duration_seconds: gameState.score,
-    }
-
-    const { data, error } = await supabase
-      .from('leaderboard')
-      .insert([payload]) // ← Use insert instead of upsert
-      .select()
-      .single()
-
-    if (error) return alert('Failed to submit score: ' + (error.message ?? 'Unknown'))
-
-    alert(`Score of ${gameState.juggles} submitted!`)
-    setScore(gameState.score)
-    setJuggles(gameState.juggles)
+  // Ensure we have user
+  let currentUser = user
+  if (!currentUser) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) return alert('User not ready. Please log in.')
+    currentUser = session.user
+    setUser(currentUser)
   }
+
+  const gameId = '1566566c-4083-4036-9325-b2121ef46592'
+
+  const payload = {
+    user_id: currentUser.id,
+    game_id: gameId,
+    score: gameState.juggles,
+    duration_seconds: gameState.score,
+  }
+
+  const { data, error } = await supabase
+    .from('leaderboard')
+    .insert([payload]) // ← Use insert instead of upsert// ← prevents duplicate key errors
+    .select()
+    .single()
+
+  if (error) return alert('Failed to submit score: ' + (error.message ?? 'Unknown'))
+
+  alert(`Score of ${gameState.juggles} submitted!`)
+  setScore(gameState.score)
+  setJuggles(gameState.juggles)
+}
 
 
 
