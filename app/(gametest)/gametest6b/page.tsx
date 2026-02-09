@@ -11,6 +11,7 @@ type GameOption = {
 }
 
 export default function AirJugglerPage() {
+  const [score, setScore] = useState(0)
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [games, setGames] = useState<GameOption[]>([])
@@ -271,7 +272,7 @@ export default function AirJugglerPage() {
       updateBalls()
       checkCollisions()
       updateScore()
-      if (checkGameOver()) endGame()
+      if (checkGameOver()) endGame() 
     }
 
     render()
@@ -310,6 +311,46 @@ export default function AirJugglerPage() {
     gameLoop()
   }
 
+const submitScore = async () => {
+  if (!user) return
+
+  const supabase = createClient()
+
+  const gameId = '1566566c-4083-4036-9325-b2121ef46592' // your fixed game ID
+  const duration_seconds = gameState.score // replace with actual game duration in seconds
+  const payload = {
+    user_id: user.id,
+    game_id: gameId,
+    score: gameState.juggles,
+    duration_seconds: duration_seconds,
+    // created_at will default automatically
+  }
+
+  console.log('Submitting score:', payload)
+
+  const { data, error } = await supabase
+    .from('leaderboard')
+    .upsert(payload, {
+        onConflict: 'user_id,game_id',   // ← important for upsert to work per user+game
+      })
+      .select()
+      .single()
+
+  if (error) {
+    console.error('Error submitting score:', error.message)
+    alert('Failed to submit score: ' + error.message)
+    return
+  }
+
+  console.log('Score saved:', data)
+  alert(`Score of ${gameState.juggles} saved for this game!`)
+
+  // Refresh displayed score if needed
+ // fetchScore(user.id, gameId)
+}
+
+
+
   const endGame = () => {
     gameState.gameOver = true
     cancelAnimationFrame(gameState.animationId)
@@ -331,6 +372,7 @@ export default function AirJugglerPage() {
     `
     startButtonRef.current.textContent = 'Play Again'
     overlayRef.current.style.display = 'flex'
+    submitScore()
   }
 
   // --- Load Scripts & Attach Button ---
@@ -377,6 +419,24 @@ export default function AirJugglerPage() {
 
     initialize()
   }, [router])
+
+const fetchScore = async (userId: string, gameId: string) => {
+    const supabase = createClient()
+
+    const { data, error } = await supabase
+      .from('leaderboard')
+      .select('score')
+      .eq('user_id', userId)          // ← fixed: use user_id (not profile_id)
+      .eq('game_id', gameId)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Error fetching score:', error.message)
+      return
+    }
+
+    setScore(data?.score ?? 0)
+  }
 
   return (
     <div className="container">
