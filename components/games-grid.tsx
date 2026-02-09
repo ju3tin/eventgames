@@ -1,7 +1,10 @@
+'use client'
 import { GameCard } from '@/components/game-card'
-import { games } from '@/lib/games-data'
+//import { games } from '@/lib/games-data'
+import { useGames } from '@/lib/games-data'
 
 export function GamesGrid() {
+  const { games, loading } = useGames()
   return (
     <section className="py-24">
       <div className="container mx-auto px-4">
