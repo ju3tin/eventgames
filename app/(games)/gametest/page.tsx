@@ -180,6 +180,43 @@ export default function GamesPage() {
         Score is saved **per user + per game**.<br />
         You can now create a leaderboard page that groups by game_id and orders by score DESC.
       </p>
+
+
+ <div class="container">
+      <h1>Air Juggler</h1>
+      <p class="instructions">Use your hands to keep the balls in the air!</p>
+
+      <!-- Canvas wrapper for video and game canvas -->
+      <div class="canvas-wrapper">
+        <!-- Video element for webcam (mirrored) -->
+        <video id="webcam" autoplay playsinline></video>
+
+        <!-- Game canvas (transparent, overlays video) -->
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
+
+        <!-- Game state overlay -->
+        <div id="overlay" class="overlay">
+          <h2 id="overlayMessage">Ready to Play?</h2>
+          <button id="startButton">Start Game</button>
+        </div>
+      </div>
+
+      <!-- Score display -->
+      <div id="scoreDisplay">
+        <p>Time: <span id="score">0</span>s</p>
+      </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+      <div class="loading-content">
+        <div class="loader"></div>
+        <h2>Loading TensorFlow.js</h2>
+        <p id="loadingStatus">Initializing models...</p>
+      </div>
+    </div>
+
+
     </div>
   )
 }
