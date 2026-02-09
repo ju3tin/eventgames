@@ -235,8 +235,14 @@ export default function GamesPage() {
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
 
    
-    <script src="/js/handTracking.js"></script>
-    <script src="/js/game.js"></script>
+   <Script 
+        src="/js/handTracking.js" 
+        strategy="beforeInteractive"   // or "lazyOnload", "beforeInteractive"
+      />
+    <Script 
+        src="/js/game.js" 
+        strategy="beforeInteractive"   // or "lazyOnload", "beforeInteractive"
+      />
     </div>
   )
 }
