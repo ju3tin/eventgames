@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { User } from '@supabase/supabase-js'
 import styles from '@styles/GamesPage.module.css'
+import Script from "next/script"
 
 type GameOption = {
   game_id: string  // uuid as string
@@ -121,8 +122,7 @@ export default function GamesPage() {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center p-6 bg-gray-50">
-      <h1 className="text-4xl font-bold mb-6">Games & Leaderboard Test</h1>
-      <p className="mb-8">Logged in as: <strong>{user.email}</strong></p>
+     <p className="mb-8">Logged in as: <strong>{user.email}</strong></p>
 
       {/* Dropdown for selecting game */}
    {/*   <div className="w-full max-w-md mb-10">
@@ -230,7 +230,13 @@ export default function GamesPage() {
       </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
 
+   
+    <script src="/js/handTracking.js"></script>
+    <script src="/js/game.js"></script>
     </div>
   )
 }
