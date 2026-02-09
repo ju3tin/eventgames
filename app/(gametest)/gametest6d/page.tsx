@@ -343,9 +343,7 @@ export default function AirJugglerPage() {
 
     const { data, error } = await supabase
       .from('leaderboard')
-      .upsert(payload, {
-        onConflict: 'user_id,game_id',   // ← important for upsert to work per user+game
-      }) 
+      .insert([payload]) // ← Use insert instead of upsert
       .select()
       .single()
 
