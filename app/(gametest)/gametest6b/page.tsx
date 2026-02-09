@@ -12,6 +12,7 @@ type GameOption = {
 
 export default function AirJugglerPage() {
   const [score, setScore] = useState(0)
+  const [juggles, setJuggles] = useState(0)
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [games, setGames] = useState<GameOption[]>([])
@@ -312,81 +313,35 @@ export default function AirJugglerPage() {
   }
 
 const submitScore = async () => {
-  if (!user) return
+    if (!user?.id) return alert('User not ready.')
 
-  const supabase = createClient()
+    const supabase = createClient()
+    const gameId = '1566566c-4083-4036-9325-b2121ef46592'
 
-  const gameId = '1566566c-4083-4036-9325-b2121ef46592' // your fixed game ID
-  const duration_seconds = gameState.score // replace with actual game duration in seconds
-  const payload = {
-    user_id: user.id,
-    game_id: gameId,
-    score: gameState.juggles,
-    duration_seconds: duration_seconds,
-    // created_at will default automatically
-  }
+    const payload = {
+      user_id: user.id,
+      game_id: gameId,
+      score: gameState.juggles,
+      duration_seconds: gameState.score,
+    }
 
-  console.log('Submitting score:', payload)
-
-  const { data, error } = await supabase
-    .from('leaderboard')
-    .upsert(payload, {
-        onConflict: 'user_id,game_id',   // ← important for upsert to work per user+game
-      })
+    const { data, error } = await supabase
+      .from('leaderboard')
+      .insert([payload]) // ← Use insert instead of upsert
       .select()
       .single()
 
-  if (error) {
-    console.error('Error submitting score:', error.message)
-    alert('Failed to submit score: ' + error.message)
-    return
+    if (error) return alert('Failed to submit score: ' + (error.message ?? 'Unknown'))
+
+    alert(`Score of ${gameState.juggles} submitted!`)
+    setScore(gameState.score)
+    setJuggles(gameState.juggles)
   }
 
-  console.log('Score saved:', data)
-  alert(`Score of ${gameState.juggles} saved for this game!`)
-
-  // Refresh displayed score if needed
- // fetchScore(user.id, gameId)
-}
 
 
-
-  const endGame = async () => {
-
- const supabase = createClient()
-
-  const gameId = '1566566c-4083-4036-9325-b2121ef46592' // your fixed game ID
-  const duration_seconds = gameState.score // replace with actual game duration in seconds
-  const payload = {
-    user_id: user?.id,
-    game_id: gameId,
-    score: gameState.juggles,
-    duration_seconds: duration_seconds,
-    // created_at will default automatically
-  }
-
-  console.log('Submitting score:', payload)
-
-  const { data, error } = await supabase
-    .from('leaderboard')
-    .upsert(payload, {
-        onConflict: 'user_id,game_id',   // ← important for upsert to work per user+game
-      })
-      .select()
-      .single()
-
-  if (error) {
-    console.error('Error submitting score:', error.message)
-    alert('Failed to submit score: ' + error.message)
-    return
-  }
-
-  console.log('Score saved:', data)
-  alert(`Score of ${gameState.juggles} saved for this game!`)
-
-  // Refresh displayed score if needed
- // fetchScore(user.id, gameId)
-
+  const endGame = () => {
+    
     submitScore()
     gameState.gameOver = true
     cancelAnimationFrame(gameState.animationId)
@@ -404,6 +359,7 @@ const submitScore = async () => {
         You juggled ${gameState.juggles} times
         <br/>
         Survived ${gameState.score} seconds
+         <button onClick={submitScore} className="px-6 py-3 bg-green-600 text-white rounded-lg">Submit Score</button>
       </div>
     `
     startButtonRef.current.textContent = 'Play Again'
