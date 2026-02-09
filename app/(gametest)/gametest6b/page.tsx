@@ -373,7 +373,7 @@ const submitScore = async () => {
 
   if (error) return alert('Failed to submit score: ' + (error.message ?? 'Unknown'))
 
-  alert(`Score of ${gameState.juggles} submitted!`)
+ // alert(`Score of ${gameState.juggles} submitted!`)
   setScore(gameState.score)
   setJuggles(gameState.juggles)
 }
