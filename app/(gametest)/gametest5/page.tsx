@@ -6,14 +6,12 @@ export default function HomePage() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
-  // Hand tracking state
   let detector: any = null
   let videoEl: HTMLVideoElement | null = null
   let isDetecting = false
   let sendHandsCallback: ((hands: { x: number; y: number }[]) => void) | null =
     null
 
-  // Helper to dynamically load scripts
   const loadScript = (src: string) =>
     new Promise<void>((resolve, reject) => {
       const script = document.createElement('script')
@@ -24,7 +22,6 @@ export default function HomePage() {
       document.body.appendChild(script)
     })
 
-  // Setup hand tracking
   const setupHandTracking = async (
     videoElement: HTMLVideoElement,
     sendHands: (hands: { x: number; y: number }[]) => void
@@ -33,14 +30,12 @@ export default function HomePage() {
     sendHandsCallback = sendHands
 
     try {
-      // Request webcam
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480 },
       })
       videoEl.srcObject = stream
       await videoEl.play()
 
-      // Load MediaPipe Hands detector
       const model = (window as any).handPoseDetection.SupportedModels.MediaPipeHands
       const detectorConfig = {
         runtime: 'mediapipe',
@@ -62,7 +57,6 @@ export default function HomePage() {
     }
   }
 
-  // Start detection loop
   const startDetection = () => {
     if (!detector || !videoEl) {
       console.error('Hand tracking not initialized')
@@ -86,7 +80,7 @@ export default function HomePage() {
         const palmBase = [0, 5, 9, 13, 17].map((i) => hand.keypoints[i])
         const avgX = palmBase.reduce((sum, kp) => sum + kp.x, 0) / palmBase.length
         const avgY = palmBase.reduce((sum, kp) => sum + kp.y, 0) / palmBase.length
-        return { x: 640 - avgX, y: avgY } // mirror x
+        return { x: 640 - avgX, y: avgY } // mirrored x
       })
 
       if (sendHandsCallback) sendHandsCallback(handPositions)
@@ -109,13 +103,18 @@ export default function HomePage() {
       const canvas = canvasRef.current!
       const ctx = canvas.getContext('2d')!
 
-      // Setup hand tracking
+      // Apply mirrored effect to webcam
+      videoEl.style.transform = 'scaleX(-1)'
+
+      // Transparent canvas (we just clear it each frame)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
       await setupHandTracking(videoEl, (hands) => {
-        // Draw hands on canvas
+        // Draw hands on transparent canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height)
         hands.forEach((hand) => {
           ctx.beginPath()
-          ctx.arc(hand.x, hand.y, 5, 0, Math.PI * 2)
+          ctx.arc(hand.x, hand.y, 8, 0, Math.PI * 2)
           ctx.fillStyle = 'red'
           ctx.fill()
         })
@@ -134,20 +133,33 @@ export default function HomePage() {
       <h1>Air Juggler</h1>
       <p className="instructions">Use your hands to keep the balls in the air!</p>
 
-      <div className="canvas-wrapper">
+      <div className="canvas-wrapper" style={{ position: 'relative', width: 640, height: 480 }}>
         <video
-          id="webcam"
           ref={videoRef}
           autoPlay
           playsInline
-          style={{ position: 'absolute', width: 640, height: 480 }}
+          muted
+          width={640}
+          height={480}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            transform: 'scaleX(-1)', // mirror
+            zIndex: 1,
+          }}
         />
         <canvas
-          id="gameCanvas"
           ref={canvasRef}
           width={640}
           height={480}
-          style={{ position: 'absolute' }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            zIndex: 2,
+            pointerEvents: 'none', // clicks pass through
+          }}
         />
       </div>
 
