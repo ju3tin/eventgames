@@ -18,6 +18,17 @@ export default function HandDetectionPage() {
     let rafId: number
     let mounted = true
 
+    // ✅ Helper function must be defined
+    const loadScript = (src: string) =>
+      new Promise<void>((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = src
+        script.async = true
+        script.onload = () => resolve()
+        script.onerror = () => reject(new Error(`Failed to load script: ${src}`))
+        document.body.appendChild(script)
+      })
+
     const setupCamera = async () => {
       const video = videoRef.current!
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -28,7 +39,6 @@ export default function HandDetectionPage() {
     }
 
     const loadFromCDN = async () => {
-      // 🔥 Load everything lazily from CDN
       await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core')
       await loadScript(
         'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl'
