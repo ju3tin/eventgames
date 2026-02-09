@@ -11,6 +11,9 @@ type GameOption = {
 }
 
 export default function AirJugglerPage() {
+
+
+  
   const [score, setScore] = useState(0)
   const [juggles, setJuggles] = useState(0)
   const [user, setUser] = useState<User | null>(null)
@@ -19,6 +22,35 @@ export default function AirJugglerPage() {
   const [selectedGameId, setSelectedGameId] = useState<string>('')
 
   const router = useRouter()
+
+
+  useEffect(() => {
+    const supabase = createClient()
+    const initialize = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) {
+        router.push('/auth/login')
+        return
+      }
+
+      setUser(session.user)
+
+      const { data: gamesData, error: gamesError } = await supabase
+        .from('gameslist')
+        .select('game_id, title')
+        .order('title', { ascending: true })
+
+      if (gamesError) console.error('Error loading games:', gamesError.message)
+      else if (gamesData?.length) {
+        setGames(gamesData as GameOption[])
+        setSelectedGameId(gamesData[0].game_id)
+      }
+
+      setLoading(false)
+    }
+
+    initialize()
+  }, [router])
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -384,33 +416,7 @@ const submitScore = async () => {
   }, [])
 
   // --- Supabase User & Games ---
-  useEffect(() => {
-    const supabase = createClient()
-    const initialize = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
-        router.push('/auth/login')
-        return
-      }
-
-      setUser(session.user)
-
-      const { data: gamesData, error: gamesError } = await supabase
-        .from('gameslist')
-        .select('game_id, title')
-        .order('title', { ascending: true })
-
-      if (gamesError) console.error('Error loading games:', gamesError.message)
-      else if (gamesData?.length) {
-        setGames(gamesData as GameOption[])
-        setSelectedGameId(gamesData[0].game_id)
-      }
-
-      setLoading(false)
-    }
-
-    initialize()
-  }, [router])
+  
 
 const fetchScore = async (userId: string, gameId: string) => {
     const supabase = createClient()
