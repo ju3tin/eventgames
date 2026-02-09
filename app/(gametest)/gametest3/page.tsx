@@ -1,21 +1,39 @@
-// app/(gametest)/gametest2/page.tsx
-
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
 import Script from 'next/script'
 
-export default function MediaPipeHandsTest() {
+export default function AirJugglerPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [status, setStatus] = useState('Waiting for libraries...')
   const [error, setError] = useState<string | null>(null)
   const [libsReady, setLibsReady] = useState(false)
-  const [detector, setDetector] = useState<any>(null)
-  const [testResult, setTestResult] = useState<string>('Not tested yet')
+  const [isTracking, setIsTracking] = useState(false)
 
-  // ────────────────────────────────────────────────
-  // 1. Load webcam when everything is ready
-  // ────────────────────────────────────────────────
+  // Poll for handPoseDetection global (fixes timing issues)
+  useEffect(() => {
+    if (libsReady) return
+
+    let attempts = 0
+    const maxAttempts = 40 // ~12 seconds
+    const interval = setInterval(() => {
+      attempts++
+      if ((window as any).handPoseDetection) {
+        console.log('handPoseDetection finally available after', attempts, 'attempts')
+        setLibsReady(true)
+        setStatus('Libraries ready ✓ Initializing webcam...')
+        clearInterval(interval)
+      } else if (attempts >= maxAttempts) {
+        setError('Libraries failed to load after waiting. Try refreshing or check internet.')
+        setStatus('Timeout – libraries not loaded')
+        clearInterval(interval)
+      }
+    }, 300)
+
+    return () => clearInterval(interval)
+  }, [libsReady])
+
+  // Start webcam when libs are ready
   useEffect(() => {
     if (!libsReady || !videoRef.current) return
 
@@ -23,7 +41,6 @@ export default function MediaPipeHandsTest() {
 
     const startWebcam = async () => {
       try {
-        setStatus('Requesting camera access...')
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
           audio: false,
@@ -31,138 +48,135 @@ export default function MediaPipeHandsTest() {
 
         video.srcObject = stream
         await video.play()
-        setStatus('Webcam ready ✓')
+        setStatus('Webcam ready ✓ Click "Start Game"')
       } catch (err: any) {
-        console.error('Webcam failed:', err)
+        console.error('Webcam error:', err)
         setError(
           err.name === 'NotAllowedError'
-            ? 'Camera permission denied. Please allow it in browser settings.'
-            : 'Could not start webcam: ' + (err.message || err.name)
+            ? 'Camera access denied. Allow it in browser settings and refresh.'
+            : 'Webcam failed: ' + (err.message || err.name)
         )
       }
     }
 
     startWebcam()
-
-    return () => {
-      if (video.srcObject) {
-        (video.srcObject as MediaStream).getTracks().forEach(t => t.stop())
-      }
-    }
   }, [libsReady])
 
-  // ────────────────────────────────────────────────
-  // 2. Create detector once libraries are loaded
-  // ────────────────────────────────────────────────
-  useEffect(() => {
-    if (!libsReady) return
-
-    const initDetector = async () => {
-      try {
-        setStatus('Creating hand detector...')
-        if (!(window as any).handPoseDetection) {
-          throw new Error('handPoseDetection global not found')
-        }
-
-        const model = (window as any).handPoseDetection.SupportedModels.MediaPipeHands
-        const detectorConfig = {
-          runtime: 'mediapipe',
-          solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4',
-          modelType: 'full',
-        }
-
-        const det = await (window as any).handPoseDetection.createDetector(model, detectorConfig)
-        setDetector(det)
-        setStatus('Hand detector ready ✓ Click "Test Detection"')
-      } catch (err: any) {
-        console.error('Detector init failed:', err)
-        setError('Failed to initialize hand detector: ' + (err.message || 'Unknown error'))
-      }
-    }
-
-    initDetector()
-  }, [libsReady])
-
-  // ────────────────────────────────────────────────
-  // 3. Run one frame of hand detection
-  // ────────────────────────────────────────────────
-  const testDetection = async () => {
-    if (!detector || !videoRef.current) {
-      setError('Detector or video not ready')
+  const startGame = () => {
+    if (!(window as any).handTracking?.setupHandTracking) {
+      alert('Hand tracking not fully initialized yet — wait a few seconds or refresh')
       return
     }
 
-    try {
-      setStatus('Detecting hands...')
-      const hands = await detector.estimateHands(videoRef.current)
+    const video = videoRef.current
+    if (!video) {
+      setError('Video element not found')
+      return
+    }
 
-      if (hands.length === 0) {
-        setTestResult('No hands detected in this frame')
-      } else {
-        const firstHand = hands[0]
-        const wrist = firstHand.keypoints[0] // wrist is keypoint 0
-        setTestResult(
-          `Detected ${hands.length} hand(s). ` +
-          `Wrist position ≈ (${Math.round(wrist.x)}, ${Math.round(wrist.y)})`
-        )
-      }
-      setStatus('Detection complete ✓')
-    } catch (err: any) {
-      console.error('Detection failed:', err)
-      setError('Hand detection failed: ' + (err.message || 'Unknown'))
+    (window as any).handTracking
+      .setupHandTracking(video, (hands: any[]) => {
+        console.log('Hand positions detected:', hands)
+        // → Connect to your game logic here later
+      })
+      .then((success: boolean) => {
+        if (success) {
+          (window as any).handTracking.startDetection()
+          setIsTracking(true)
+          const overlay = document.getElementById('overlay')
+          if (overlay) overlay.style.display = 'none'
+          setStatus('Game running! Use your hands to juggle')
+        }
+      })
+      .catch((err: any) => {
+        console.error('Start failed:', err)
+        setError('Failed to start tracking: ' + err.message)
+      })
+  }
+
+  const stopGame = () => {
+    if ((window as any).handTracking?.stopDetection) {
+      (window as any).handTracking.stopDetection()
+      setIsTracking(false)
+      setStatus('Game stopped')
     }
   }
 
+  const retryLibraries = () => {
+    setLibsReady(false)
+    setError(null)
+    setStatus('Retrying libraries...')
+  }
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8 flex flex-col items-center">
-      <h1 className="text-4xl font-bold mb-6">MediaPipe Hands Quick Test</h1>
+    <div className="min-h-screen bg-black text-white flex flex-col items-center p-6">
+      {/* Status & Error */}
+      <div className="w-full max-w-4xl mb-6">
+        <p className="text-xl font-semibold mb-2">
+          Status: <span className={libsReady ? 'text-green-400' : 'text-yellow-400'}>{status}</span>
+        </p>
 
-      <p className="text-lg mb-6 text-center max-w-2xl">
-        This page loads TensorFlow.js + MediaPipe Hands + Hand Pose Detection model,<br />
-        accesses your webcam, and runs one frame of hand detection when you click the button.
-      </p>
-
-      <div className="mb-6 text-xl font-semibold">
-        Status: <span className={status.includes('✓') ? 'text-green-400' : 'text-yellow-400'}>
-          {status}
-        </span>
+        {error && (
+          <div className="bg-red-900/70 p-5 rounded-xl text-center">
+            <strong className="text-red-300 block mb-3">Problem:</strong>
+            {error}
+            <button
+              onClick={retryLibraries}
+              className="mt-4 px-6 py-3 bg-white text-black rounded-lg font-medium hover:bg-gray-200"
+            >
+              Retry Loading
+            </button>
+          </div>
+        )}
       </div>
 
-      {error && (
-        <div className="bg-red-900/70 p-6 rounded-xl mb-8 max-w-xl text-center">
-          <strong className="text-red-300 block mb-2 text-xl">Error</strong>
-          {error}
+      {/* Game Area */}
+      <div className="relative w-full max-w-4xl bg-gray-900 rounded-2xl overflow-hidden border-4 border-gray-700 shadow-2xl">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          width={640}
+          height={480}
+          className="w-full h-auto transform scale-x-[-1]"
+          style={{ background: '#000' }}
+        />
+
+        <canvas id="gameCanvas" width={640} height={480} className="absolute inset-0 pointer-events-none" />
+
+        <div
+          id="overlay"
+          className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center"
+        >
+          <h2 className="text-5xl font-bold mb-10 text-center">
+            Air Juggler
+          </h2>
+          <p className="text-xl mb-8">Use your hands to keep the balls in the air!</p>
+          <button
+            onClick={startGame}
+            disabled={!libsReady || !!error}
+            className={`px-12 py-6 text-3xl font-bold rounded-full transition-all ${
+              libsReady && !error
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-gray-600 cursor-not-allowed'
+            }`}
+          >
+            {libsReady ? (isTracking ? 'Playing...' : 'Start Game') : 'Loading...'}
+          </button>
         </div>
+      </div>
+
+      {isTracking && (
+        <button
+          onClick={stopGame}
+          className="mt-8 px-10 py-4 bg-red-600 hover:bg-red-700 rounded-lg text-xl font-medium"
+        >
+          Stop Game
+        </button>
       )}
 
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        width={640}
-        height={480}
-        className="rounded-xl border-4 border-gray-700 shadow-2xl transform scale-x-[-1] mb-8"
-        style={{ background: '#000' }}
-      />
-
-      <button
-        onClick={testDetection}
-        disabled={!detector || !!error}
-        className={`px-10 py-5 text-xl font-bold rounded-full transition-all mb-6 ${
-          detector && !error
-            ? 'bg-green-600 hover:bg-green-700'
-            : 'bg-gray-600 cursor-not-allowed'
-        }`}
-      >
-        {detector ? 'Test Hand Detection (one frame)' : 'Waiting for model...'}
-      </button>
-
-      <div className="text-2xl font-mono bg-gray-800 p-6 rounded-xl min-w-[400px] text-center">
-        {testResult}
-      </div>
-
-      {/* Scripts – load in correct order */}
+      {/* Scripts */}
       <Script
         src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"
         strategy="beforeInteractive"
@@ -172,24 +186,29 @@ export default function MediaPipeHandsTest() {
       <Script
         src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js"
         strategy="beforeInteractive"
-        onLoad={() => console.log('MediaPipe Hands runtime loaded')}
+        onLoad={() => console.log('MediaPipe loaded')}
       />
 
       <Script
         src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.1.0"
         strategy="afterInteractive"
-        onLoad={() => {
-          console.log('Hand Pose Detection model script loaded')
-          setTimeout(() => {
-            if ((window as any).handPoseDetection) {
-              console.log('handPoseDetection global is ready')
-              setLibsReady(true)
-            } else {
-              setError('handPoseDetection not found after load – possible script order issue')
-            }
-          }, 1000)
-        }}
+        onLoad={() => console.log('Hand-pose-detection script loaded')}
       />
+
+      {libsReady && (
+        <>
+          <Script
+            src="/js/handTracking.js"
+            strategy="afterInteractive"
+            onLoad={() => console.log('handTracking.js loaded')}
+          />
+          <Script
+            src="/js/game.js"
+            strategy="afterInteractive"
+            onLoad={() => console.log('game.js loaded')}
+          />
+        </>
+      )}
     </div>
   )
 }
