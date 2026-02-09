@@ -19,14 +19,14 @@ interface LeaderboardEntry {
   created_at: string;
   
 }
-
+ const {games, loading} = useGames()
 const gameOptions = [
   { id: "all", name: "All Games" },
   ...games.filter(g => !g.comingSoon && !g.isLocked).map(g => ({ id: g.id, name: g.title }))
 ]
 
 export default function LeaderboardPage() {
-  const {games, loading} = useGames()
+ 
   const [scores, setScores] = useState<LeaderboardEntry[]>([])
 //  const [loading, setLoading] = useState(true)
   const [selectedGame, setSelectedGame] = useState("all")
