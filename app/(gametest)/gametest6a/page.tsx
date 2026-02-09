@@ -378,6 +378,7 @@ export default function AirJugglerPage() {
     <div className="container">
       <h1>Air Juggler</h1>
       <p className="instructions">Use your hands to keep the balls in the air!</p>
+   <p className="mb-8">Logged in as: <strong>{user?.email}</strong></p>
 
       <div className="canvas-wrapper" style={{ position: 'relative', width: 640, height: 480 }}>
         <video
