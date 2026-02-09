@@ -11,7 +11,20 @@ export default function HandDetectionPage() {
 
   useEffect(() => {
     let detector: handPoseDetection.HandDetector
-    let animationId: number
+    let rafId: number
+
+    const setupWasm = async () => {
+      // 🔑 THIS IS THE MISSING PIECE
+      tf.env().set('WASM_HAS_SIMD_SUPPORT', true)
+      tf.env().set('WASM_HAS_MULTITHREAD_SUPPORT', true)
+
+      ;(tf as any).wasm?.setWasmPaths(
+        'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.15.0/dist/'
+      )
+
+      await tf.setBackend('wasm')
+      await tf.ready()
+    }
 
     const setupCamera = async () => {
       if (!videoRef.current) return
@@ -25,9 +38,6 @@ export default function HandDetectionPage() {
     }
 
     const loadModel = async () => {
-      await tf.setBackend('wasm')
-      await tf.ready()
-
       detector = await handPoseDetection.createDetector(
         handPoseDetection.SupportedModels.MediaPipeHands,
         {
@@ -38,7 +48,7 @@ export default function HandDetectionPage() {
       )
     }
 
-    const detectHands = async () => {
+    const drawHands = async () => {
       if (
         detector &&
         videoRef.current &&
@@ -56,37 +66,32 @@ export default function HandDetectionPage() {
           hand.keypoints.forEach(({ x, y }) => {
             ctx.beginPath()
             ctx.arc(x, y, 5, 0, Math.PI * 2)
-            ctx.fillStyle = '#ff3b3b'
+            ctx.fillStyle = 'red'
             ctx.fill()
           })
         })
       }
 
-      animationId = requestAnimationFrame(detectHands)
+      rafId = requestAnimationFrame(drawHands)
     }
 
     const init = async () => {
+      await setupWasm()
       await setupCamera()
       await loadModel()
-      detectHands()
+      drawHands()
     }
 
     init()
 
     return () => {
-      cancelAnimationFrame(animationId)
+      cancelAnimationFrame(rafId)
       detector?.dispose()
     }
   }, [])
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        width: 640,
-        height: 480,
-      }}
-    >
+    <div style={{ position: 'relative', width: 640, height: 480 }}>
       <video
         ref={videoRef}
         width={640}
