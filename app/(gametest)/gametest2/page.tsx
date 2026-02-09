@@ -1,279 +1,223 @@
 'use client'
 
-import React, { useEffect, useState } from "react"
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { User } from '@supabase/supabase-js'
-import styles from '@styles/GamesPage.module.css'
-import Script from "next/script"
+import { useRef, useState, useEffect } from 'react'
+import Script from 'next/script'
 
-type GameOption = {
-  game_id: string  // uuid as string
-  title: string
-}
+export default function AirJugglerPage() {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isReady, setIsReady] = useState(false)
+  const [isTracking, setIsTracking] = useState(false)
 
-export default function GamesPage() {
-  const [libsLoaded, setLibsLoaded] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [games, setGames] = useState<GameOption[]>([])
-  const [selectedGameId, setSelectedGameId] = useState<string>('')
-  const [score, setScore] = useState(0)
-  const router = useRouter()
-
+  // ────────────────────────────────────────────────
+  // Wait for scripts → then auto-init webcam
+  // ────────────────────────────────────────────────
   useEffect(() => {
-    const supabase = createClient()
+    if (!isReady || !videoRef.current) return
 
-    const initialize = async () => {
-      // 1. Get current user
-      const { data: { session } } = await supabase.auth.getSession()
+    const video = videoRef.current
 
-      if (!session?.user) {
-        router.push('/auth/login')
-        return
+    const initWebcam = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false,
+        })
+
+        video.srcObject = stream
+        await video.play()
+        console.log('Webcam stream started')
+      } catch (err: any) {
+        console.error('Webcam error:', err)
+        let msg = 'Could not access webcam.'
+        if (err.name === 'NotAllowedError') {
+          msg = 'Camera permission denied. Please allow access in your browser settings.'
+        } else if (err.name === 'NotFoundError') {
+          msg = 'No camera detected on this device.'
+        } else {
+          msg += ` (${err.message || err.name})`
+        }
+        setError(msg)
       }
-
-      setUser(session.user)
-
-      // 2. Load list of games
-      const { data: gamesData, error: gamesError } = await supabase
-        .from('gameslist')
-        .select('game_id, title')
-        .order('title', { ascending: true })
-
-      if (gamesError) {
-        console.error('Error loading games:', gamesError.message)
-      } else if (gamesData && gamesData.length > 0) {
-        setGames(gamesData as GameOption[])
-        // Auto-select first game
-        setSelectedGameId(gamesData[0].game_id)
-      }
-
-      setLoading(false)
     }
 
-    initialize()
-  }, [router])
+    initWebcam()
+  }, [isReady])
 
-  // Load score whenever selectedGameId or user changes
-  useEffect(() => {
-    if (user && selectedGameId) {
-      fetchScore(user.id, selectedGameId)
-    }
-  }, [user, selectedGameId])
-
-  const fetchScore = async (userId: string, gameId: string) => {
-    const supabase = createClient()
-
-    const { data, error } = await supabase
-      .from('leaderboard')
-      .select('score')
-      .eq('user_id', userId)          // ← fixed: use user_id (not profile_id)
-      .eq('game_id', gameId)
-      .maybeSingle()
-
-    if (error) {
-      console.error('Error fetching score:', error.message)
+  // ────────────────────────────────────────────────
+  // Start / Stop game controls
+  // ────────────────────────────────────────────────
+  const startGame = () => {
+    if (!window.handTracking?.setupHandTracking) {
+      alert('Hand tracking not ready yet — please wait a moment')
       return
     }
 
-    setScore(data?.score ?? 0)
-  }
+    const video = videoRef.current
+    if (!video) return
 
-  const submitScore = async () => {
-    if (!user || !selectedGameId) return
-
-    const supabase = createClient()
-
-    const payload = {
-      user_id: user.id,
-      game_id: selectedGameId,
-      score: score,
-      duration_seconds: 120,           // ← replace with real value later
-      // created_at is automatic
-    }
-
-    console.log('Submitting score:', payload)
-
-    const { data, error } = await supabase
-      .from('leaderboard')
-      .upsert(payload, {
-        onConflict: 'user_id,game_id',   // ← important for upsert to work per user+game
+    window.handTracking
+      .setupHandTracking(video, (hands: any[]) => {
+        // This is where you can feed hand positions into game.js logic
+        console.log('Hand positions:', hands)
+        // Example: window.game?.updateHands?.(hands)
       })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error submitting score:', error.message)
-      alert('Failed to submit score: ' + error.message)
-      return
-    }
-
-    console.log('Score saved:', data)
-    // Optional: re-fetch to confirm
-    fetchScore(user.id, selectedGameId)
+      .then((success: boolean) => {
+        if (success) {
+          window.handTracking.startDetection()
+          setIsTracking(true)
+          // Hide overlay or show game UI here
+          const overlay = document.getElementById('overlay')
+          if (overlay) overlay.style.display = 'none'
+        }
+      })
+      .catch((err: any) => {
+        setError('Failed to start hand tracking: ' + err.message)
+      })
   }
 
-  // ── Demo controls ──
-  const incrementScore = () => setScore(prev => prev + 1)
-  const resetScore = () => setScore(0)
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  if (!user) return <div className="min-h-screen flex items-center justify-center">Please log in to play.</div>
+  const stopGame = () => {
+    if (window.handTracking?.stopDetection) {
+      window.handTracking.stopDetection()
+      setIsTracking(false)
+    }
+  }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-6 bg-gray-50">
-     <p className="mb-8">Logged in as: <strong>{user.email}</strong></p>
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
+      {/* Loading / Error Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+          <div className="text-center">
+            <div className="loader w-16 h-16 border-4 border-t-blue-500 border-gray-600 rounded-full animate-spin mx-auto mb-6"></div>
+            <h2 className="text-2xl mb-2">Loading Air Juggler</h2>
+            <p className="text-gray-400">Initializing hand tracking models...</p>
+          </div>
+        </div>
+      )}
 
-      {/* Dropdown for selecting game */}
-   {/*   <div className="w-full max-w-md mb-10">
-        <label htmlFor="game-select" className="block text-lg font-medium mb-2">
-          Select Game:
-        </label>
-        <select
-          id="game-select"
-          value={selectedGameId}
-          onChange={(e) => setSelectedGameId(e.target.value)}
-          className="w-full p-3 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={games.length === 0}
-        >
-          {games.length === 0 ? (
-            <option value="">Loading games...</option>
-          ) : (
-            games.map(game => (
-              <option key={game.game_id} value={game.game_id}>
-                {game.title}
-              </option>
-            ))
+      {error && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-6">
+          <div className="bg-red-900/80 p-8 rounded-xl max-w-lg text-center">
+            <h2 className="text-2xl font-bold mb-4 text-red-300">Error</h2>
+            <p className="mb-6">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-white text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-200"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Game UI */}
+      <div className="relative w-full max-w-4xl">
+        <h1 className="text-5xl font-bold mb-6 text-center text-blue-400">Air Juggler</h1>
+        <p className="text-xl text-center mb-8">Use your hands to keep the balls in the air!</p>
+
+        <div className="relative rounded-xl overflow-hidden border-4 border-gray-700 shadow-2xl bg-black">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            width={640}
+            height={480}
+            className="w-full h-auto transform scale-x-[-1]" // mirror for natural hand movement
+          />
+
+          <canvas
+            id="gameCanvas"
+            width={640}
+            height={480}
+            className="absolute inset-0 pointer-events-none"
+          />
+
+          <div
+            id="overlay"
+            className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center"
+          >
+            <h2 id="overlayMessage" className="text-4xl font-bold mb-8">
+              Ready to Play?
+            </h2>
+            <button
+              id="startButton"
+              onClick={startGame}
+              disabled={!isReady}
+              className={`px-10 py-5 text-2xl font-bold rounded-full transition-all ${
+                isReady
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-gray-600 cursor-not-allowed'
+              }`}
+            >
+              {isReady ? 'Start Game' : 'Loading...'}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6 text-center">
+          <p className="text-xl mb-4">
+            Time: <span id="score" className="text-3xl font-bold text-yellow-400">0</span>s
+          </p>
+
+          {isTracking && (
+            <button
+              onClick={stopGame}
+              className="mt-4 px-8 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-lg font-medium"
+            >
+              Stop Game
+            </button>
           )}
-        </select>
-      </div> End of dropdown */}
-{/* 
-      <div className="mb-10 text-center">
-        <h2 className="text-2xl font-semibold mb-3">Your Current Score for this game</h2>
-        <div className="text-5xl font-bold text-blue-600">{score.toLocaleString()}</div>
+        </div>
       </div>
-      */}
 
-{/* 
-      <div className="flex flex-wrap gap-4 justify-center">
-        <button
-          onClick={incrementScore}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-medium transition"
-        >
-          +1 Point (test)
-        </button>
+      {/* ──────────────────────────────────────────────── */}
+      {/* Scripts – loaded in correct order */}
+      {/* ──────────────────────────────────────────────── */}
 
-        <button
-          onClick={resetScore}
-          className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-4 rounded-lg text-lg font-medium transition"
-        >
-          Reset
-        </button>
-
-        <button
-          onClick={submitScore}
-          className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg text-lg font-medium transition"
-          disabled={score === 0 || !selectedGameId}
-        >
-          Submit Score to Leaderboard
-        </button>
-      </div>
-      */}
-
-{/* 
-      <p className="mt-12 text-sm text-gray-600 text-center max-w-lg">
-        Score is saved **per user + per game**.<br />
-        You can now create a leaderboard page that groups by game_id and orders by score DESC.
-      </p>
-
-  <div>Hello</div>
-  <p>This whole block is commented out</p>
-  <Button>Click me</Button>
-*/}
-
- <div style={{ backgroundColor: '#000000' }} className="container">
-      <h1>Air Juggler</h1>
-      <p className="instructions">Use your hands to keep the balls in the air!</p>
-
-      {/* 1. TensorFlow.js core */}
       <Script
         src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"
         strategy="beforeInteractive"
+        onLoad={() => console.log('TensorFlow.js loaded')}
       />
 
-      {/* 2. MediaPipe Hands runtime */}
       <Script
-        src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4"
+        src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js"
         strategy="beforeInteractive"
+        onLoad={() => console.log('MediaPipe Hands loaded')}
       />
 
-      {/* 3. Hand Pose Detection – trigger ready flag when this loads */}
       <Script
         src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.1.0"
         strategy="afterInteractive"
         onLoad={() => {
-          console.log('Hand pose detection library loaded')
-          // Give a tiny delay for window.handPoseDetection to register
-       /*   setTimeout(() => {
+          console.log('Hand Pose Detection loaded')
+          setTimeout(() => {
             if (window.handPoseDetection) {
-              setLibsLoaded(true)
-            } else {
-              console.error('handPoseDetection still undefined after load')
+              console.log('handPoseDetection ready')
+              setIsReady(true)
+              setIsLoading(false)
             }
-          }, 300) */
+          }, 800)
         }}
       />
-{libsLoaded && (
+
+      {isReady && (
         <>
           <Script
             src="/js/handTracking.js"
             strategy="afterInteractive"
-            onLoad={() => console.log('handTracking.js ready')}
+            onLoad={() => console.log('handTracking.js loaded')}
           />
           <Script
             src="/js/game.js"
             strategy="afterInteractive"
-            onLoad={() => console.log('game.js ready – you can now call setupHandTracking()')}
+            onLoad={() => console.log('game.js loaded')}
           />
         </>
       )}
-
-      <div className="canvas-wrapper">
-       <video
-  id="webcam"
-  autoPlay
-  playsInline
-  muted           // almost always needed for autoplay to work in modern browsers
-  // loop         // optional
-  // controls     // optional – add if you want user controls
->
-  {/* If you want a fallback message */}
-  Your browser does not support the video tag.
-</video>
-
-        <canvas id="gameCanvas" width="640" height="480"></canvas>
-
-        <div id="overlay" className="overlay">
-          <h2 id="overlayMessage">Ready to Play?</h2>
-          <button id="startButton">Start Game</button>
-        </div>
-      </div>
-
-      <div id="scoreDisplay">
-        <p>Time: <span id="score">0</span>s</p>
-      </div>
-    </div>
-
-    <div id="loadingOverlay" className="loading-overlay hidden">
-      <div className="loading-content">
-        <div className="loader"></div>
-        <h2>Loading TensorFlow.js</h2>
-        <p id="loadingStatus">Initializing models...</p>
-      </div>
-    </div>
-
- 
     </div>
   )
 }
