@@ -1,8 +1,22 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import { User } from '@supabase/supabase-js'
+
+type GameOption = {
+  game_id: string  // uuid as string
+  title: string
+}
 
 export default function AirJugglerPage() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [games, setGames] = useState<GameOption[]>([])
+  const [selectedGameId, setSelectedGameId] = useState<string>('')
+  const [score, setScore] = useState(0)
+  const router = useRouter()
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const overlayRef = useRef<HTMLDivElement | null>(null)
