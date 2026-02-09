@@ -7,7 +7,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Trophy, Medal, Award, Flame, Clock, Target, ChevronDown } from "lucide-react"
-import { games } from "@/lib/games-data"
+import { useGames } from '@/lib/games-data'
 
 interface LeaderboardEntry {
   id: string;
@@ -26,6 +26,7 @@ const gameOptions = [
 ]
 
 export default function LeaderboardPage() {
+  const {games, loading} = useGames()
   const [scores, setScores] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedGame, setSelectedGame] = useState("all")
@@ -92,6 +93,8 @@ export default function LeaderboardPage() {
     return `${mins}:${secs.toString().padStart(2, "0")}`
   }
 
+
+  
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
