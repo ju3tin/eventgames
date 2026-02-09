@@ -403,6 +403,7 @@ export default function AirJugglerPage() {
 
   return (
     <div className="container">
+       <p className="mb-8">Logged in as: <strong>{user.email}</strong></p>
       <h1>Air Juggler</h1>
       <p className="instructions">Use your hands to keep the balls in the air!</p>
 
