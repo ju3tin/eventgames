@@ -399,7 +399,6 @@ const submitScore = async () => {
         You juggled ${gameState.juggles} times
         <br/>
         Survived ${gameState.score} seconds
-         <button onClick={submitScore} className="px-6 py-3 bg-green-600 text-white rounded-lg">Submit Score</button>
       </div>
     `
     startButtonRef.current.textContent = 'Play Again'
