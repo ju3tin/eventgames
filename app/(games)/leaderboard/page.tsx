@@ -7,7 +7,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Trophy, Medal, Award, Flame, Clock, Target, ChevronDown } from "lucide-react"
-import { games } from "@/lib/games-data1"
+import { games } from "@/lib/game-data1"
 
 interface LeaderboardEntry {
   id: string;
