@@ -91,7 +91,6 @@ export default async function GamesPage() {
                 color={game.color}
                 link={game.link}
                 isLocked={game.isLocked}
-                slug={game.slug}
               />
             ))}
           </div>
