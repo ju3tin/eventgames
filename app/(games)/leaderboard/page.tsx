@@ -6,37 +6,47 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Trophy, Medal, Award, Flame, Clock, Target, ChevronDown } from "lucide-react"
-import { games } from "@/lib/game-data1"
+import {
+  Trophy,
+  Medal,
+  Award,
+  Flame,
+  Clock,
+  Target,
+  ChevronDown,
+} from "lucide-react"
 
 interface LeaderboardEntry {
-  id: string;
-  user_id: string;
-  game_id: string;
-  username: string;
-  score: number;
-  game_title: string;
-  duration_seconds: number;
-  created_at: string;
-  
+  id: string
+  user_id: string
+  game_id: string
+  username: string
+  score: number
+  game_title: string
+  duration_seconds: number
+  created_at: string
 }
 
-const gameOptions = [
-  { id: "all", name: "All Games" },
-  ...games.filter(g => !g.comingSoon && !g.isLocked).map(g => ({ id: g.id, name: g.title }))
-]
+interface GameOption {
+  id: string
+  name: string
+}
 
 export default function LeaderboardPage() {
   const [scores, setScores] = useState<LeaderboardEntry[]>([])
+  const [gameOptions, setGameOptions] = useState<GameOption[]>([
+    { id: "all", name: "All Games" },
+  ])
   const [loading, setLoading] = useState(true)
   const [selectedGame, setSelectedGame] = useState("all")
   const [showDropdown, setShowDropdown] = useState(false)
 
   useEffect(() => {
-    async function fetchScores() {
+    async function fetchData() {
       setLoading(true)
       const supabase = createClient()
-      
+
+      // Fetch leaderboard
       let query = supabase
         .from("leaderboard_with_profiles")
         .select(`
@@ -58,22 +68,39 @@ export default function LeaderboardPage() {
 
       const { data, error } = await query
 
-      if (error) {
-        console.error("Error fetching scores:", error)
-      } else {
-        setScores(data || [])
+      if (!error && data) {
+        setScores(data)
+
+        // Build dropdown options from data (deduped)
+        const uniqueGames = Array.from(
+          new Map(
+            data.map(item => [
+              item.game_id,
+              { id: item.game_id, name: item.game_title },
+            ])
+          ).values()
+        )
+
+        setGameOptions([{ id: "all", name: "All Games" }, ...uniqueGames])
+      } else if (error) {
+        console.error("Error fetching leaderboard:", error)
       }
+
       setLoading(false)
     }
 
-    fetchScores()
+    fetchData()
   }, [selectedGame])
 
   const getRankIcon = (index: number) => {
     if (index === 0) return <Trophy className="h-6 w-6 text-yellow-400" />
     if (index === 1) return <Medal className="h-6 w-6 text-gray-300" />
     if (index === 2) return <Award className="h-6 w-6 text-amber-600" />
-    return <span className="h-6 w-6 flex items-center justify-center text-muted-foreground font-mono">{index + 1}</span>
+    return (
+      <span className="h-6 w-6 flex items-center justify-center text-muted-foreground font-mono">
+        {index + 1}
+      </span>
+    )
   }
 
   const getRankBg = (index: number) => {
@@ -81,11 +108,6 @@ export default function LeaderboardPage() {
     if (index === 1) return "bg-gray-300/10 border-gray-300/30"
     if (index === 2) return "bg-amber-600/10 border-amber-600/30"
     return "bg-card border-border"
-  }
-
-  const getGameName = (gameId: string) => {
-    const game = games.find(g => g.id === gameId)
-    return game?.title || gameId
   }
 
   const formatDuration = (seconds: number) => {
@@ -97,20 +119,25 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      
+
       <main className="flex-1 pt-24 pb-16">
         <div className="container mx-auto px-4">
           {/* Header */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
               <Flame className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Top Players</span>
+              <span className="text-sm font-medium text-primary">
+                Top Players
+              </span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4 text-balance">
+
+            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">
               Leaderboard
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
-              See who{"'"}s dominating the motion games. Can you beat their scores?
+
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              See who&apos;s dominating the motion games. Can you beat their
+              scores?
             </p>
           </div>
 
@@ -119,15 +146,16 @@ export default function LeaderboardPage() {
             <div className="relative">
               <Button
                 variant="outline"
-                onClick={() => setShowDropdown(!showDropdown)}
+                onClick={() => setShowDropdown(v => !v)}
                 className="min-w-[200px] justify-between"
               >
                 {gameOptions.find(g => g.id === selectedGame)?.name}
                 <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
+
               {showDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-xl z-10 overflow-hidden">
-                  {gameOptions.map((game) => (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-card border rounded-lg shadow-xl z-10 overflow-hidden">
+                  {gameOptions.map(game => (
                     <button
                       key={game.id}
                       onClick={() => {
@@ -135,7 +163,9 @@ export default function LeaderboardPage() {
                         setShowDropdown(false)
                       }}
                       className={`w-full px-4 py-3 text-left hover:bg-secondary transition-colors ${
-                        selectedGame === game.id ? "bg-primary/10 text-primary" : "text-foreground"
+                        selectedGame === game.id
+                          ? "bg-primary/10 text-primary"
+                          : ""
                       }`}
                     >
                       {game.name}
@@ -151,14 +181,21 @@ export default function LeaderboardPage() {
             {loading ? (
               <div className="space-y-3">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-20 bg-card rounded-xl animate-pulse" />
+                  <div
+                    key={i}
+                    className="h-20 bg-card rounded-xl animate-pulse"
+                  />
                 ))}
               </div>
             ) : scores.length === 0 ? (
-              <Card className="p-12 text-center bg-card border-border">
+              <Card className="p-12 text-center">
                 <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">No Scores Yet</h3>
-                <p className="text-muted-foreground mb-6">Be the first to set a record!</p>
+                <h3 className="text-xl font-semibold mb-2">
+                  No Scores Yet
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  Be the first to set a record!
+                </p>
                 <Button asChild>
                   <a href="/games">Play Now</a>
                 </Button>
@@ -168,37 +205,37 @@ export default function LeaderboardPage() {
                 {scores.map((entry, index) => (
                   <Card
                     key={entry.id}
-                    className={`p-4 md:p-5 border transition-all hover:scale-[1.01] ${getRankBg(index)}`}
+                    className={`p-4 md:p-5 border transition-all hover:scale-[1.01] ${getRankBg(
+                      index
+                    )}`}
                   >
                     <div className="flex items-center gap-4">
-                      {/* Rank */}
-                      <div className="flex-shrink-0 w-10 flex justify-center">
+                      <div className="w-10 flex justify-center">
                         {getRankIcon(index)}
                       </div>
 
-                      {/* Player Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-foreground truncate">
+                        <p className="font-semibold truncate">
                           {entry.username || "Anonymous Player"}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {getGameName(entry.game_title)}
+                          {entry.game_title}
                         </p>
                       </div>
 
-                      {/* Stats */}
-                      <div className="flex items-center gap-4 md:gap-6">
-                        <div className="text-right hidden sm:block">
-                          <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                            <Clock className="h-3 w-3" />
-                            <span>{formatDuration(entry.duration_seconds)}</span>
-                          </div>
+                      <div className="flex items-center gap-6">
+                        <div className="hidden sm:flex items-center gap-1 text-sm text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {formatDuration(entry.duration_seconds)}
                         </div>
+
                         <div className="text-right">
                           <p className="text-2xl font-bold text-primary font-mono">
                             {entry.score.toLocaleString()}
                           </p>
-                          <p className="text-xs text-muted-foreground uppercase tracking-wide">points</p>
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                            points
+                          </p>
                         </div>
                       </div>
                     </div>
