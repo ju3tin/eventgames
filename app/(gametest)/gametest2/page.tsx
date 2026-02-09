@@ -10,9 +10,7 @@ export default function AirJugglerPage() {
   const [isReady, setIsReady] = useState(false)
   const [isTracking, setIsTracking] = useState(false)
 
-  // ────────────────────────────────────────────────
   // Wait for scripts → then auto-init webcam
-  // ────────────────────────────────────────────────
   useEffect(() => {
     if (!isReady || !videoRef.current) return
 
@@ -45,11 +43,9 @@ export default function AirJugglerPage() {
     initWebcam()
   }, [isReady])
 
-  // ────────────────────────────────────────────────
-  // Start / Stop game controls
-  // ────────────────────────────────────────────────
+  // Start game – using (window as any) to avoid TS error
   const startGame = () => {
-    if (!window.handTracking?.setupHandTracking) {
+    if (!(window as any).handTracking?.setupHandTracking) {
       alert('Hand tracking not ready yet — please wait a moment')
       return
     }
@@ -57,29 +53,28 @@ export default function AirJugglerPage() {
     const video = videoRef.current
     if (!video) return
 
-    window.handTracking
+    (window as any).handTracking
       .setupHandTracking(video, (hands: any[]) => {
-        // This is where you can feed hand positions into game.js logic
-        console.log('Hand positions:', hands)
-        // Example: window.game?.updateHands?.(hands)
+        console.log('Detected hand positions:', hands)
+        // You can pass these positions to your game logic here
       })
       .then((success: boolean) => {
         if (success) {
-          window.handTracking.startDetection()
+          (window as any).handTracking.startDetection()
           setIsTracking(true)
-          // Hide overlay or show game UI here
           const overlay = document.getElementById('overlay')
           if (overlay) overlay.style.display = 'none'
         }
       })
       .catch((err: any) => {
-        setError('Failed to start hand tracking: ' + err.message)
+        console.error('Setup failed:', err)
+        setError('Failed to initialize hand tracking: ' + err.message)
       })
   }
 
   const stopGame = () => {
-    if (window.handTracking?.stopDetection) {
-      window.handTracking.stopDetection()
+    if ((window as any).handTracking?.stopDetection) {
+      (window as any).handTracking.stopDetection()
       setIsTracking(false)
     }
   }
@@ -173,10 +168,7 @@ export default function AirJugglerPage() {
         </div>
       </div>
 
-      {/* ──────────────────────────────────────────────── */}
-      {/* Scripts – loaded in correct order */}
-      {/* ──────────────────────────────────────────────── */}
-
+      {/* Scripts */}
       <Script
         src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"
         strategy="beforeInteractive"
@@ -195,7 +187,7 @@ export default function AirJugglerPage() {
         onLoad={() => {
           console.log('Hand Pose Detection loaded')
           setTimeout(() => {
-            if (window.handPoseDetection) {
+            if ((window as any).handPoseDetection) {
               console.log('handPoseDetection ready')
               setIsReady(true)
               setIsLoading(false)
