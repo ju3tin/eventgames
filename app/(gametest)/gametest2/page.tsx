@@ -1,215 +1,167 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
-import Script from 'next/script'
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import {
+  createDetector,
+  SupportedModels,
+  HandPoseDetection,
+  Hand,
+} from '@tensorflow-models/hand-pose-detection'
+import '@tensorflow/tfjs-backend-webgl'
+import '@tensorflow/tfjs-backend-wasm'
+import * as tfjsWasm from '@tensorflow/tfjs-backend-wasm'
+import { drawHands } from '@/lib/utils' // Adjust path if needed
+import { useAnimationFrame } from '@/lib/hooks/useAnimationFrame' // Adjust path
+import styles from '@/styles/Home.module.css' // Adjust path if needed
 
-export default function AirJugglerPage() {
+// Set WASM paths once (recommended to do early)
+tfjsWasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@latest/')
+
+export default function HandPoseDetection() {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const detectorRef = useRef<HandPoseDetection | null>(null)
+  const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null)
+  const [status, setStatus] = useState<string>('Initializing...')
   const [error, setError] = useState<string | null>(null)
-  const [isReady, setIsReady] = useState(false)
-  const [isTracking, setIsTracking] = useState(false)
 
-  // Wait for scripts → then auto-init webcam
+  // ────────────────────────────────────────────────
+  // Initialize webcam, detector, and canvas
+  // ────────────────────────────────────────────────
   useEffect(() => {
-    if (!isReady || !videoRef.current) return
+    let stream: MediaStream | null = null
 
-    const video = videoRef.current
-
-    const initWebcam = async () => {
+    const initialize = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+        setStatus('Requesting camera access...')
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'user',
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+          },
           audio: false,
         })
 
+        const video = videoRef.current
+        if (!video) throw new Error('Video element not found')
+
         video.srcObject = stream
+        await new Promise<void>((resolve) => {
+          video.onloadedmetadata = () => resolve()
+        })
         await video.play()
-        console.log('Webcam stream started')
+
+        video.width = video.videoWidth
+        video.height = video.videoHeight
+
+        setStatus('Setting up canvas...')
+        const canvas = canvasRef.current
+        if (!canvas) throw new Error('Canvas element not found')
+
+        const context = canvas.getContext('2d')
+        if (!context) throw new Error('Failed to get canvas context')
+
+        canvas.width = video.width
+        canvas.height = video.height
+        setCtx(context)
+
+        setStatus('Loading hand detection model...')
+        const model = SupportedModels.MediaPipeHands
+        const detector = await createDetector(model, {
+          runtime: 'mediapipe',
+          solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4',
+          maxHands: 2,
+          modelType: 'full',
+        })
+
+        detectorRef.current = detector
+        setStatus('Ready — hands should be detected')
       } catch (err: any) {
-        console.error('Webcam error:', err)
-        let msg = 'Could not access webcam.'
-        if (err.name === 'NotAllowedError') {
-          msg = 'Camera permission denied. Please allow access in your browser settings.'
-        } else if (err.name === 'NotFoundError') {
-          msg = 'No camera detected on this device.'
-        } else {
-          msg += ` (${err.message || err.name})`
-        }
-        setError(msg)
+        console.error('Initialization failed:', err)
+        setError(err.message || 'Failed to initialize hand detection')
+        setStatus('Error occurred')
       }
     }
 
-    initWebcam()
-  }, [isReady])
+    initialize()
 
-  // Start game – using (window as any) to avoid TS error
-  const startGame = () => {
-    if (!(window as any).handTracking?.setupHandTracking) {
-      alert('Hand tracking not ready yet — please wait a moment')
-      return
+    // Cleanup: stop camera stream when component unmounts
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop())
+      }
     }
+  }, [])
 
-    const video = videoRef.current
-    if (!video) return
+  // ────────────────────────────────────────────────
+  // Animation loop: detect hands and draw
+  // ────────────────────────────────────────────────
+  useAnimationFrame(async () => {
+    if (!detectorRef.current || !videoRef.current || !ctx) return
 
-    (window as any).handTracking
-      .setupHandTracking(video, (hands: any[]) => {
-        console.log('Detected hand positions:', hands)
-        // You can pass these positions to your game logic here
+    try {
+      const hands: Hand[] = await detectorRef.current.estimateHands(videoRef.current, {
+        flipHorizontal: false,
       })
-      .then((success: boolean) => {
-        if (success) {
-          (window as any).handTracking.startDetection()
-          setIsTracking(true)
-          const overlay = document.getElementById('overlay')
-          if (overlay) overlay.style.display = 'none'
-        }
-      })
-      .catch((err: any) => {
-        console.error('Setup failed:', err)
-        setError('Failed to initialize hand tracking: ' + err.message)
-      })
-  }
 
-  const stopGame = () => {
-    if ((window as any).handTracking?.stopDetection) {
-      (window as any).handTracking.stopDetection()
-      setIsTracking(false)
+      // Clear canvas and redraw video frame
+      ctx.clearRect(0, 0, videoRef.current.videoWidth, videoRef.current.videoHeight)
+      ctx.drawImage(
+        videoRef.current,
+        0,
+        0,
+        videoRef.current.videoWidth,
+        videoRef.current.videoHeight
+      )
+
+      // Draw detected hands
+      drawHands(hands, ctx)
+    } catch (err) {
+      console.error('Detection error:', err)
     }
-  }
+  }, !!(detectorRef.current && videoRef.current && ctx))
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
-      {/* Loading / Error Overlay */}
-      {isLoading && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
-          <div className="text-center">
-            <div className="loader w-16 h-16 border-4 border-t-blue-500 border-gray-600 rounded-full animate-spin mx-auto mb-6"></div>
-            <h2 className="text-2xl mb-2">Loading Air Juggler</h2>
-            <p className="text-gray-400">Initializing hand tracking models...</p>
-          </div>
-        </div>
-      )}
+    <div className={styles.container}>
+      <main className={styles.main}>
+        <h2 style={{ fontWeight: 'normal' }}>
+          <Link href="/" style={{ fontWeight: 'bold' }}>
+            Home
+          </Link>{' '}
+          / Hand Pose Detection 👋
+        </h2>
 
-      {error && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-6">
-          <div className="bg-red-900/80 p-8 rounded-xl max-w-lg text-center">
-            <h2 className="text-2xl font-bold mb-4 text-red-300">Error</h2>
-            <p className="mb-6">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-white text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-200"
-            >
-              Refresh Page
-            </button>
-          </div>
-        </div>
-      )}
+        <code style={{ marginBottom: '1rem' }}>
+          {error ? `Error: ${error}` : status}
+        </code>
 
-      {/* Main Game UI */}
-      <div className="relative w-full max-w-4xl">
-        <h1 className="text-5xl font-bold mb-6 text-center text-blue-400">Air Juggler</h1>
-        <p className="text-xl text-center mb-8">Use your hands to keep the balls in the air!</p>
+        <canvas
+          ref={canvasRef}
+          style={{
+            transform: 'scaleX(-1)',
+            zIndex: 1,
+            borderRadius: '1rem',
+            boxShadow: '0 3px 10px rgb(0 0 0)',
+            maxWidth: '85vw',
+          }}
+        />
 
-        <div className="relative rounded-xl overflow-hidden border-4 border-gray-700 shadow-2xl bg-black">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            width={640}
-            height={480}
-            className="w-full h-auto transform scale-x-[-1]" // mirror for natural hand movement
-          />
-
-          <canvas
-            id="gameCanvas"
-            width={640}
-            height={480}
-            className="absolute inset-0 pointer-events-none"
-          />
-
-          <div
-            id="overlay"
-            className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center"
-          >
-            <h2 id="overlayMessage" className="text-4xl font-bold mb-8">
-              Ready to Play?
-            </h2>
-            <button
-              id="startButton"
-              onClick={startGame}
-              disabled={!isReady}
-              className={`px-10 py-5 text-2xl font-bold rounded-full transition-all ${
-                isReady
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-gray-600 cursor-not-allowed'
-              }`}
-            >
-              {isReady ? 'Start Game' : 'Loading...'}
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-6 text-center">
-          <p className="text-xl mb-4">
-            Time: <span id="score" className="text-3xl font-bold text-yellow-400">0</span>s
-          </p>
-
-          {isTracking && (
-            <button
-              onClick={stopGame}
-              className="mt-4 px-8 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-lg font-medium"
-            >
-              Stop Game
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Scripts */}
-      <Script
-        src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"
-        strategy="beforeInteractive"
-        onLoad={() => console.log('TensorFlow.js loaded')}
-      />
-
-      <Script
-        src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js"
-        strategy="beforeInteractive"
-        onLoad={() => console.log('MediaPipe Hands loaded')}
-      />
-
-      <Script
-        src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.1.0"
-        strategy="afterInteractive"
-        onLoad={() => {
-          console.log('Hand Pose Detection loaded')
-          setTimeout(() => {
-            if ((window as any).handPoseDetection) {
-              console.log('handPoseDetection ready')
-              setIsReady(true)
-              setIsLoading(false)
-            }
-          }, 800)
-        }}
-      />
-
-      {isReady && (
-        <>
-          <Script
-            src="/js/handTracking.js"
-            strategy="afterInteractive"
-            onLoad={() => console.log('handTracking.js loaded')}
-          />
-          <Script
-            src="/js/game.js"
-            strategy="afterInteractive"
-            onLoad={() => console.log('game.js loaded')}
-          />
-        </>
-      )}
+        <video
+          ref={videoRef}
+          style={{
+            visibility: 'hidden',
+            transform: 'scaleX(-1)',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: 0,
+            height: 0,
+          }}
+          playsInline
+        />
+      </main>
     </div>
   )
 }
