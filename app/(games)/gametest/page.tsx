@@ -124,7 +124,7 @@ export default function GamesPage() {
       <p className="mb-8">Logged in as: <strong>{user.email}</strong></p>
 
       {/* Dropdown for selecting game */}
-      <div className="w-full max-w-md mb-10">
+   {/*   <div className="w-full max-w-md mb-10">
         <label htmlFor="game-select" className="block text-lg font-medium mb-2">
           Select Game:
         </label>
@@ -145,13 +145,15 @@ export default function GamesPage() {
             ))
           )}
         </select>
-      </div>
-
+      </div> End of dropdown */}
+{/* 
       <div className="mb-10 text-center">
         <h2 className="text-2xl font-semibold mb-3">Your Current Score for this game</h2>
         <div className="text-5xl font-bold text-blue-600">{score.toLocaleString()}</div>
       </div>
+      */}
 
+{/* 
       <div className="flex flex-wrap gap-4 justify-center">
         <button
           onClick={incrementScore}
@@ -175,14 +177,20 @@ export default function GamesPage() {
           Submit Score to Leaderboard
         </button>
       </div>
+      */}
 
+{/* 
       <p className="mt-12 text-sm text-gray-600 text-center max-w-lg">
         Score is saved **per user + per game**.<br />
         You can now create a leaderboard page that groups by game_id and orders by score DESC.
       </p>
 
+  <div>Hello</div>
+  <p>This whole block is commented out</p>
+  <Button>Click me</Button>
+*/}
 
- <div className="container">
+ <div style={{ backgroundColor: '#000000' }} className="container">
       <h1>Air Juggler</h1>
       <p className="instructions">Use your hands to keep the balls in the air!</p>
 
