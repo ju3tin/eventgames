@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { User } from '@supabase/supabase-js'
 
 type GameOption = {
-  game_id: string  // uuid as string
+  game_id: string
   title: string
 }
 
@@ -15,18 +15,19 @@ export default function AirJugglerPage() {
   const [loading, setLoading] = useState(true)
   const [games, setGames] = useState<GameOption[]>([])
   const [selectedGameId, setSelectedGameId] = useState<string>('')
-  const [score, setScore] = useState(0)
+  
   const router = useRouter()
+
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const overlayRef = useRef<HTMLDivElement | null>(null)
+  const overlayMessageRef = useRef<HTMLHeadingElement | null>(null)
   const startButtonRef = useRef<HTMLButtonElement | null>(null)
   const scoreRef = useRef<HTMLSpanElement | null>(null)
-  const overlayMessageRef = useRef<HTMLHeadingElement | null>(null)
   const loadingOverlayRef = useRef<HTMLDivElement | null>(null)
   const loadingStatusRef = useRef<HTMLParagraphElement | null>(null)
 
-  // --- Game config & state ---
+  // --- Game Config ---
   const config = {
     ballCount: 1,
     ballRadius: 20,
@@ -36,6 +37,7 @@ export default function AirJugglerPage() {
     countdownTime: 3,
   }
 
+  // --- Game State ---
   const gameState = {
     balls: [] as { x: number; y: number; vx: number; vy: number; radius: number; color: string }[],
     hands: [] as { x: number; y: number }[],
@@ -52,6 +54,7 @@ export default function AirJugglerPage() {
   let isDetecting = false
   let sendHandsCallback: ((hands: { x: number; y: number }[]) => void) | null = null
 
+  // --- Utility: Load Scripts ---
   const loadScript = (src: string) =>
     new Promise<void>((resolve, reject) => {
       const script = document.createElement('script')
@@ -71,9 +74,7 @@ export default function AirJugglerPage() {
     sendHandsCallback = sendHands
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
-      })
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
       videoEl.srcObject = stream
       await videoEl.play()
 
@@ -85,10 +86,7 @@ export default function AirJugglerPage() {
         modelType: 'full',
       }
 
-      detector = await (window as any).handPoseDetection.createDetector(
-        model,
-        detectorConfig
-      )
+      detector = await (window as any).handPoseDetection.createDetector(model, detectorConfig)
       console.log('Hand tracking initialized successfully')
       return true
     } catch (error) {
@@ -117,7 +115,7 @@ export default function AirJugglerPage() {
         const palmBase = [0, 5, 9, 13, 17].map((i) => hand.keypoints[i])
         const avgX = palmBase.reduce((sum, kp) => sum + kp.x, 0) / palmBase.length
         const avgY = palmBase.reduce((sum, kp) => sum + kp.y, 0) / palmBase.length
-        return { x: 640 - avgX, y: avgY } // mirror x
+        return { x: 640 - avgX, y: avgY } // mirror horizontally
       })
       if (sendHandsCallback) sendHandsCallback(handPositions)
     } catch (error) {
@@ -149,6 +147,7 @@ export default function AirJugglerPage() {
       ball.x += ball.vx
       ball.y += ball.vy
 
+      // Bounce off walls
       if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
         ball.vx *= -1
         ball.x = ball.x < canvas.width / 2 ? ball.radius : canvas.width - ball.radius
@@ -178,8 +177,7 @@ export default function AirJugglerPage() {
     })
   }
 
-  const checkGameOver = () =>
-    gameState.balls.some((ball) => ball.y - ball.radius > canvasRef.current!.height)
+  const checkGameOver = () => gameState.balls.some((ball) => ball.y - ball.radius > canvasRef.current!.height)
 
   const updateScore = () => {
     if (gameState.startTime && !gameState.gameOver && scoreRef.current) {
@@ -188,12 +186,13 @@ export default function AirJugglerPage() {
     }
   }
 
-  // --- Render ---
+  // --- Rendering ---
   const render = () => {
     const ctx = canvasRef.current!.getContext('2d')!
     const video = videoRef.current!
 
-    if (video && video.readyState === video.HAVE_ENOUGH_DATA) {
+    // Draw video
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
       ctx.save()
       ctx.scale(-1, 1)
       ctx.drawImage(video, -canvasRef.current!.width, 0, 640, 480)
@@ -205,7 +204,7 @@ export default function AirJugglerPage() {
       ctx.fillRect(0, 0, 640, 480)
     }
 
-    // Balls
+    // Draw balls
     gameState.balls.forEach((ball) => {
       ctx.fillStyle = ball.color
       ctx.beginPath()
@@ -216,7 +215,7 @@ export default function AirJugglerPage() {
       ctx.stroke()
     })
 
-    // Hands
+    // Draw hands
     gameState.hands.forEach((hand, index) => {
       ctx.strokeStyle = 'rgba(255,255,255,0.8)'
       ctx.lineWidth = 4
@@ -229,7 +228,6 @@ export default function AirJugglerPage() {
       ctx.beginPath()
       ctx.arc(hand.x, hand.y, 5, 0, Math.PI * 2)
       ctx.fill()
-      ctx.fillStyle = 'white'
       ctx.font = 'bold 16px Arial'
       ctx.textAlign = 'center'
       ctx.fillText(`Hand ${index + 1}`, hand.x, hand.y - config.handRadius - 10)
@@ -251,6 +249,7 @@ export default function AirJugglerPage() {
 
   const gameLoop = () => {
     if (gameState.gameOver) return
+
     if (gameState.isCountingDown) {
       gameState.countdown -= 1 / 60
       if (gameState.countdown <= 0) {
@@ -263,13 +262,47 @@ export default function AirJugglerPage() {
       updateScore()
       if (checkGameOver()) endGame()
     }
+
     render()
     gameState.animationId = requestAnimationFrame(gameLoop)
+  }
+
+  // --- Game Controls ---
+  const startGame = async () => {
+    if (!overlayRef.current || !videoRef.current || !loadingOverlayRef.current || !loadingStatusRef.current) return
+
+    // Reset game state
+    gameState.gameOver = false
+    gameState.startTime = 0
+    gameState.score = 0
+    gameState.hands = []
+    gameState.countdown = config.countdownTime
+    gameState.isCountingDown = true
+    initBalls()
+
+    // Show loading overlay
+    loadingOverlayRef.current.style.display = 'flex'
+    loadingStatusRef.current.textContent = 'Requesting camera access...'
+
+    const success = await setupHandTracking(videoRef.current, (hands) => (gameState.hands = hands))
+    
+    loadingOverlayRef.current.style.display = 'none'
+    if (!success) {
+      endGame()
+      if (overlayMessageRef.current) overlayMessageRef.current.textContent = 'Camera access required to play!'
+      return
+    }
+
+    overlayRef.current.style.display = 'none'
+    startDetection()
+    gameLoop()
   }
 
   const endGame = () => {
     gameState.gameOver = true
     cancelAnimationFrame(gameState.animationId)
+    stopDetection()
+
     if (!overlayRef.current || !overlayMessageRef.current || !startButtonRef.current) return
 
     const emoji = gameState.score > 30 ? '🎉' : gameState.score > 15 ? '👏' : '💪'
@@ -283,56 +316,18 @@ export default function AirJugglerPage() {
       </div>
     `
     startButtonRef.current.textContent = 'Play Again'
-    overlayRef.current.classList.remove('hidden')
+    overlayRef.current.style.display = 'flex'
   }
 
-  const startGame = async () => {
-    if (!overlayRef.current) return
-    gameState.gameOver = false
-    gameState.startTime = 0
-    gameState.score = 0
-    gameState.hands = []
-    gameState.countdown = config.countdownTime
-    gameState.isCountingDown = true
-
-    initBalls()
-
-    const video = videoRef.current!
-    const loadingOverlay = loadingOverlayRef.current!
-    const loadingStatus = loadingStatusRef.current!
-
-    loadingOverlay.classList.remove('hidden')
-    loadingStatus.textContent = 'Requesting camera access...'
-
-    const success = await setupHandTracking(video, (hands) => {
-      gameState.hands = hands
-    })
-
-    loadingOverlay.classList.add('hidden')
-    if (!success) {
-      endGame()
-      if (overlayMessageRef.current) overlayMessageRef.current.textContent = 'Camera access required to play!'
-      return
-    }
-
-    startDetection()
-    overlayRef.current.classList.add('hidden')
-    gameLoop()
-  }
-
+  // --- Load Scripts & Attach Button ---
   useEffect(() => {
-    // Load TFJS and MediaPipe Hands
     const initScripts = async () => {
       await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs')
       await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/hands')
       await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection')
+      startButtonRef.current?.addEventListener('click', startGame)
     }
-
-    initScripts().then(() => {
-      if (startButtonRef.current) {
-        startButtonRef.current.addEventListener('click', startGame)
-      }
-    })
+    initScripts()
 
     return () => {
       cancelAnimationFrame(gameState.animationId)
@@ -340,45 +335,40 @@ export default function AirJugglerPage() {
     }
   }, [])
 
+  // --- Supabase User & Games ---
   useEffect(() => {
-      const supabase = createClient()
-  
-      const initialize = async () => {
-        // 1. Get current user
-        const { data: { session } } = await supabase.auth.getSession()
-  
-        if (!session?.user) {
-          router.push('/auth/login')
-          return
-        }
-  
-        setUser(session.user)
-  
-        // 2. Load list of games
-        const { data: gamesData, error: gamesError } = await supabase
-          .from('gameslist')
-          .select('game_id, title')
-          .order('title', { ascending: true })
-  
-        if (gamesError) {
-          console.error('Error loading games:', gamesError.message)
-        } else if (gamesData && gamesData.length > 0) {
-          setGames(gamesData as GameOption[])
-          // Auto-select first game
-          setSelectedGameId(gamesData[0].game_id)
-        }
-  
-        setLoading(false)
+    const supabase = createClient()
+    const initialize = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) {
+        router.push('/auth/login')
+        return
       }
-  
-      initialize()
-    }, [router])
+
+      setUser(session.user)
+
+      const { data: gamesData, error: gamesError } = await supabase
+        .from('gameslist')
+        .select('game_id, title')
+        .order('title', { ascending: true })
+
+      if (gamesError) console.error('Error loading games:', gamesError.message)
+      else if (gamesData?.length) {
+        setGames(gamesData as GameOption[])
+        setSelectedGameId(gamesData[0].game_id)
+      }
+
+      setLoading(false)
+    }
+
+    initialize()
+  }, [router])
 
   return (
     <div className="container">
       <h1>Air Juggler</h1>
       <p className="instructions">Use your hands to keep the balls in the air!</p>
-   <p className="mb-8">Logged in as: <strong>{user?.email}</strong></p>
+      <p className="mb-8">Logged in as: <strong>{user?.email}</strong></p>
 
       <div className="canvas-wrapper" style={{ position: 'relative', width: 640, height: 480 }}>
         <video
@@ -388,30 +378,16 @@ export default function AirJugglerPage() {
           muted
           width={640}
           height={480}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            transform: 'scaleX(-1)',
-            zIndex: 1,
-          }}
+          style={{ position: 'absolute', top: 0, left: 0, transform: 'scaleX(-1)', zIndex: 1 }}
         />
         <canvas
           ref={canvasRef}
           width={640}
           height={480}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            zIndex: 2,
-            pointerEvents: 'none',
-          }}
+          style={{ position: 'absolute', top: 0, left: 0, zIndex: 2, pointerEvents: 'none' }}
         />
         <div
           ref={overlayRef}
-          id="overlay"
-          className="overlay"
           style={{
             position: 'absolute',
             top: '50%',
@@ -426,19 +402,17 @@ export default function AirJugglerPage() {
             zIndex: 3,
           }}
         >
-          <h2 ref={overlayMessageRef} id="overlayMessage">Ready to Play?</h2>
-          <button ref={startButtonRef} id="startButton">Start Game</button>
+          <h2 ref={overlayMessageRef}>Ready to Play?</h2>
+          <button ref={startButtonRef}>Start Game</button>
         </div>
       </div>
 
       <div id="scoreDisplay">
-        <p>Time: <span ref={scoreRef} id="score">0</span>s</p>
+        <p>Time: <span ref={scoreRef}>0</span>s</p>
       </div>
 
       <div
         ref={loadingOverlayRef}
-        id="loadingOverlay"
-        className="loading-overlay hidden"
         style={{
           position: 'absolute',
           top: 0,
@@ -446,16 +420,16 @@ export default function AirJugglerPage() {
           width: 640,
           height: 480,
           background: 'rgba(0,0,0,0.7)',
-          display: 'flex',
+          display: 'none',
           justifyContent: 'center',
           alignItems: 'center',
           zIndex: 4,
         }}
       >
-        <div className="loading-content" style={{ textAlign: 'center', color: 'white' }}>
+        <div style={{ textAlign: 'center', color: 'white' }}>
           <div className="loader" />
           <h2>Loading TensorFlow.js</h2>
-          <p ref={loadingStatusRef} id="loadingStatus">Initializing models...</p>
+          <p ref={loadingStatusRef}>Initializing models...</p>
         </div>
       </div>
     </div>
