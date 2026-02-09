@@ -1,3 +1,4 @@
+'use client'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
