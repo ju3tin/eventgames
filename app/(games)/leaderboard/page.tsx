@@ -26,7 +26,7 @@ const gameOptions = [
 ]
 
 export default function LeaderboardPage() {
-  const {games, loading} = useGames()
+  const {games} = useGames()
   const [scores, setScores] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedGame, setSelectedGame] = useState("all")
