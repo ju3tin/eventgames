@@ -230,18 +230,39 @@ export default function GamesPage() {
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
-
-   
-   <Script 
-        src="/js/handTracking.js" 
-        strategy="beforeInteractive"   // or "lazyOnload", "beforeInteractive"
+  <Script
+        src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"
+        strategy="beforeInteractive"
       />
-    <Script 
-        src="/js/game.js" 
-        strategy="beforeInteractive"   // or "lazyOnload", "beforeInteractive"
+
+      {/* MediaPipe Hands runtime */}
+      <Script
+        src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js"
+        strategy="beforeInteractive"
+      />
+
+      {/* Hand Pose Detection model (depends on tfjs + mediapipe) */}
+      <Script
+        src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.1.0"
+        strategy="beforeInteractive"
+      />
+
+      {/* ──────────────────────────────────────────────── */}
+      {/* 2. Your own scripts – load AFTER libraries */}
+      {/* ──────────────────────────────────────────────── */}
+
+      {/* Your hand tracking logic */}
+      <Script
+        src="/js/handTracking.js"
+        strategy="afterInteractive"   // ← important: after libraries load
+        onLoad={() => console.log("handTracking.js loaded")}
+      />
+
+      {/* Your game logic / main loop */}
+      <Script
+        src="/js/game.js"
+        strategy="afterInteractive"
+        onLoad={() => console.log("game.js loaded")}
       />
     </div>
   )
