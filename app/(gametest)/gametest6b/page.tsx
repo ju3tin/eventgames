@@ -352,6 +352,7 @@ const submitScore = async () => {
 
 
   const endGame = () => {
+    submitScore()
     gameState.gameOver = true
     cancelAnimationFrame(gameState.animationId)
     stopDetection()
@@ -372,7 +373,7 @@ const submitScore = async () => {
     `
     startButtonRef.current.textContent = 'Play Again'
     overlayRef.current.style.display = 'flex'
-    submitScore()
+    
   }
 
   // --- Load Scripts & Attach Button ---
