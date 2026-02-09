@@ -7,15 +7,15 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Trophy, Medal, Award, Flame, Clock, Target, ChevronDown } from "lucide-react"
-import { games } from "@/lib/games-data"
+import { games } from "@/lib/game-data1"
 
 interface LeaderboardEntry {
   id: string;
   user_id: string;
   game_id: string;
-  game_title: string;
   username: string;
   score: number;
+  game_title: string;
   duration_seconds: number;
   created_at: string;
   
@@ -43,9 +43,9 @@ export default function LeaderboardPage() {
           id,
           user_id,
           game_id,
-          game_title,
           username,
           score,
+          game_title,
           duration_seconds,
           created_at
         `)
@@ -182,7 +182,7 @@ export default function LeaderboardPage() {
                           {entry.username || "Anonymous Player"}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {getGameName(entry.game_id)}
+                          {getGameName(entry.game_title)}
                         </p>
                       </div>
 
