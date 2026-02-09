@@ -351,7 +351,42 @@ const submitScore = async () => {
 
 
 
-  const endGame = () => {
+  const endGame = async () => {
+
+ const supabase = createClient()
+
+  const gameId = '1566566c-4083-4036-9325-b2121ef46592' // your fixed game ID
+  const duration_seconds = gameState.score // replace with actual game duration in seconds
+  const payload = {
+    user_id: user?.id,
+    game_id: gameId,
+    score: gameState.juggles,
+    duration_seconds: duration_seconds,
+    // created_at will default automatically
+  }
+
+  console.log('Submitting score:', payload)
+
+  const { data, error } = await supabase
+    .from('leaderboard')
+    .upsert(payload, {
+        onConflict: 'user_id,game_id',   // ← important for upsert to work per user+game
+      })
+      .select()
+      .single()
+
+  if (error) {
+    console.error('Error submitting score:', error.message)
+    alert('Failed to submit score: ' + error.message)
+    return
+  }
+
+  console.log('Score saved:', data)
+  alert(`Score of ${gameState.juggles} saved for this game!`)
+
+  // Refresh displayed score if needed
+ // fetchScore(user.id, gameId)
+
     submitScore()
     gameState.gameOver = true
     cancelAnimationFrame(gameState.animationId)
