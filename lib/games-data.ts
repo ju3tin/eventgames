@@ -1,11 +1,13 @@
-import { Hand, Target, Swords, Music, Dumbbell, Bird } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
+import { Hand } from 'lucide-react' // fallback icon if needed
 
 export interface Game {
-  id: string
+  id: string           // map from game_id in Supabase
   title: string
   description: string
-  icon: LucideIcon
+  icon: LucideIcon     // optional: you can map icon string to actual Lucide icon
   difficulty: 'Easy' | 'Medium' | 'Hard'
   duration: string
   calories: string
@@ -14,84 +16,49 @@ export interface Game {
   link: string
   isLocked?: boolean
   comingSoon?: boolean
+  slug?: string
 }
 
-export const games: Game[] = [
-  {
-    id: 'catch-the-fruit',
-    title: 'Catch the Fruit',
-    description: 'Move your hands to catch falling fruits. Speed increases as you score more points!',
-    icon: Hand,
-    difficulty: 'Easy',
-    duration: '2-5 min',
-    calories: '50-100',
-    players: '1 Player',
-    color: 'bg-chart-1',
-    comingSoon: true,
-    link: '/game/index.html',
-  },
-  {
-    id: 'punch-targets',
-    title: 'Punch the Targets',
-    description: 'Use your fists to punch targets that appear on screen. Build combos for bonus points!',
-    icon: Target,
-    difficulty: 'Medium',
-    duration: '1 min',
-    calories: '80-120',
-    players: '1 Player',
-    color: 'bg-accent',
-    link: '/game2/index.html',
-  },
-  {
-    id: 'dodge-master',
-    title: 'Dodge Master',
-    description: 'Duck, jump, and weave to avoid incoming obstacles. How long can you survive?',
-    icon: Swords,
-    difficulty: 'Hard',
-    duration: '2-4 min',
-    calories: '100-150',
-    players: '1 Player',
-    color: 'bg-chart-4',
-    comingSoon: true,
-    link: '/game3/index.html',
-  },
-  {
-    id: 'rhythm-move',
-    title: 'Rhythm Move',
-    description: 'Follow the beat and match poses to the music. Perfect for dance lovers!',
-    icon: Music,
-    difficulty: 'Medium',
-    duration: '3-6 min',
-    calories: '120-200',
-    players: '1-2 Players',
-    color: 'bg-chart-3',
-    comingSoon: true,
-    link: '/game4/index.html',
-  },
-  {
-    id: 'fitness-challenge',
-    title: 'Fitness Challenge',
-    description: 'Complete exercises like squats, jumping jacks, and stretches. Get fit while gaming!',
-    icon: Dumbbell,
-    difficulty: 'Hard',
-    duration: '5-10 min',
-    calories: '150-300',
-    players: '1 Player',
-    color: 'bg-destructive',
-    isLocked: true,
-    link: '/game5/index.html',
-  },
-  {
-    id: 'flappy-arms',
-    title: 'Flappy Arms',
-    description: 'Flap your arms like a bird to fly through obstacles. A fun twist on the classic!',
-    icon: Bird,
-    difficulty: 'Easy',
-    duration: '2-5 min',
-    calories: '60-100',
-    players: '1 Player',
-    color: 'bg-chart-5',
-    isLocked: true,
-    link: '/game6/index.html',
-  },
-]
+export function useGames() {
+  const [games, setGames] = useState<Game[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchGames = async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('gameslist')
+        .select('*')
+        .order('title', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching games:', error.message)
+        setLoading(false)
+        return
+      }
+
+      const mappedGames: Game[] = (data ?? []).map(row => ({
+        id: row.game_id ?? row.id.toString(),
+        title: row.title ?? '',
+        description: row.description ?? '',
+        icon: Hand, // fallback icon; you can map row.icon string to actual LucideIcon
+        difficulty: row.difficulty as 'Easy' | 'Medium' | 'Hard',
+        duration: row.duration ?? '',
+        calories: row.calories ?? '',
+        players: row.players ?? '',
+        color: row.color ?? '',
+        link: row.link ?? '',
+        isLocked: row.isLocked ?? false,
+        comingSoon: row.comingSoon ?? false,
+        slug: row.slug ?? '',
+      }))
+
+      setGames(mappedGames)
+      setLoading(false)
+    }
+
+    fetchGames()
+  }, [])
+
+  return { games, loading }
+}
