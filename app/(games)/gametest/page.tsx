@@ -182,35 +182,40 @@ export default function GamesPage() {
       </p>
 
 
- <div class="container">
+ <div className="container">
       <h1>Air Juggler</h1>
-      <p class="instructions">Use your hands to keep the balls in the air!</p>
+      <p className="instructions">Use your hands to keep the balls in the air!</p>
 
-      <!-- Canvas wrapper for video and game canvas -->
-      <div class="canvas-wrapper">
-        <!-- Video element for webcam (mirrored) -->
-        <video id="webcam" autoplay playsinline></video>
+      
+      <div className="canvas-wrapper">
+       <video
+  id="webcam"
+  autoPlay
+  playsInline
+  muted           // almost always needed for autoplay to work in modern browsers
+  // loop         // optional
+  // controls     // optional – add if you want user controls
+>
+  {/* If you want a fallback message */}
+  Your browser does not support the video tag.
+</video>
 
-        <!-- Game canvas (transparent, overlays video) -->
         <canvas id="gameCanvas" width="640" height="480"></canvas>
 
-        <!-- Game state overlay -->
-        <div id="overlay" class="overlay">
+        <div id="overlay" className="overlay">
           <h2 id="overlayMessage">Ready to Play?</h2>
           <button id="startButton">Start Game</button>
         </div>
       </div>
 
-      <!-- Score display -->
       <div id="scoreDisplay">
         <p>Time: <span id="score">0</span>s</p>
       </div>
     </div>
 
-    <!-- Loading overlay -->
-    <div id="loadingOverlay" class="loading-overlay hidden">
-      <div class="loading-content">
-        <div class="loader"></div>
+    <div id="loadingOverlay" className="loading-overlay hidden">
+      <div className="loading-content">
+        <div className="loader"></div>
         <h2>Loading TensorFlow.js</h2>
         <p id="loadingStatus">Initializing models...</p>
       </div>
