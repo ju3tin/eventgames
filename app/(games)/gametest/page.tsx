@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react"
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { User } from '@supabase/supabase-js'
+import styles from '@app/public/styles/gametest.module.css'
 
 type GameOption = {
   game_id: string  // uuid as string
