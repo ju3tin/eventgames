@@ -4,7 +4,7 @@ import { GameCard } from '@/components/game-card'
 import { useGames } from '@/lib/games-data'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-
+  
 export default async function GamesPage() {
   const { games, loading } = useGames()
   const supabase = await createClient()
