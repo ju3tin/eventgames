@@ -2,7 +2,7 @@ import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
+//import './globals.css'
 
 const _inter = Inter({ subsets: ['latin'] })
 const _spaceGrotesk = Space_Grotesk({ subsets: ['latin'] })
