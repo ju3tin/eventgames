@@ -11,7 +11,7 @@ import {
 import '@tensorflow/tfjs-backend-webgl'
 import '@tensorflow/tfjs-backend-wasm'
 import * as tfjsWasm from '@tensorflow/tfjs-backend-wasm'
-import { drawHands } from '@/lib/utils' // Adjust path if needed
+import { drawHands } from '@/lib/utils1' // Adjust path if needed
 import { useAnimationFrame } from '@/lib/hooks/useAnimationFrame' // Adjust path
 import styles from '@/styles/Home.module.css' // Adjust path if needed
 
