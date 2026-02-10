@@ -2840,18 +2840,18 @@ function submitScore(score, durationMs) {
         metadata: {
           duration_ms: durationMs,
           engine: "trex-runner",
-          round: playCount,
+          round: playCount1,
         },
       }),
     })
     .then(async (res) => {
       if (!res.ok) {
-        console.error(`Round ${playCount} submission failed:`, res.status, await res.text());
+        console.error(`Round ${playCount1} submission failed:`, res.status, await res.text());
       } else {
-        console.log(`Round ${playCount} submitted successfully!`);
+        console.log(`Round ${playCount1} submitted successfully!`);
       }
     })
-    .catch((err) => console.error(`Round ${playCount} submission error:`, err));
+    .catch((err) => console.error(`Round ${playCount1} submission error:`, err));
 
     // Call the original gameOver to preserve normal behavior
     originalGameOver.apply(this, arguments);
