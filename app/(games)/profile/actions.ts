@@ -24,7 +24,7 @@ export async function getProfile() {
 
   return { 
     user,
-    profile: profile || { id: user.id, display_name: null, avatar_url: null }
+    profile: profile || { id: user.id, username: null, avatar_url: null }
   }
 }
 
@@ -37,7 +37,7 @@ export async function updateProfile(formData: FormData) {
     return { error: 'Not authenticated' }
   }
 
-  const displayName = formData.get('display_name') as string
+  const UserName = formData.get('username') as string
   const avatarUrl = formData.get('avatar_url') as string
 
   // Check if profile exists
@@ -54,7 +54,7 @@ export async function updateProfile(formData: FormData) {
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
-        display_name: displayName || null,
+        username: UserName || null,
         avatar_url: avatarUrl || null,
       })
       .eq('id', user.id)
@@ -65,7 +65,7 @@ export async function updateProfile(formData: FormData) {
       .from('profiles')
       .insert({
         id: user.id,
-        display_name: displayName || null,
+        username: UserName || null,
         avatar_url: avatarUrl || null,
       })
     error = insertError
