@@ -50,9 +50,7 @@ export function Navbar({ user }: NavbarProps) {
               Profile
             </Link>
             </>
-            ):(
-              <></>
-            )}
+            ):(<></>)}
           </div>
 
           {/* Auth Buttons */}
