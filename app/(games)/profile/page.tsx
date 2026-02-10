@@ -58,6 +58,7 @@ export default async function ProfilePage() {
       <Navbar />
       
       <main className="flex-1 py-12">
+        <br />
         <div className="container mx-auto px-4 max-w-4xl">
           {/* Header */}
           <div className="mb-8">
