@@ -1,6 +1,6 @@
 import { HeroSection } from '@/components/hero-section'
 import { FeaturesSection } from '@/components/features-section'
-import { GamesGrid } from '@/components/games-grid'
+import  GamesGrid  from '@/components/games-grid'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { createClient } from '@/lib/supabase/server'
