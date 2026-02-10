@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Submit Score</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #111;
+      color: #fff;
+      padding: 20px;
+    }
+
+    form {
+      max-width: 320px;
+      margin: auto;
+      background: #1e1e1e;
+      padding: 16px;
+      border-radius: 8px;
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 6px;
+      border-radius: 4px;
+      border: none;
+    }
+
+    input {
+      background: #2b2b2b;
+      color: #fff;
+    }
+
+    button {
+      background: #00e5ff;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+
+    #status {
+      margin-top: 12px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<form id="scoreForm">
+  <h3>Submit Score</h3>
+
+  <label>
+    Game ID
+    <input type="text" id="game_id" required />
+  </label>
+
+  <label>
+    Score
+    <input type="number" id="score" min="0" required />
+  </label>
+
+  <label>
+    Duration (seconds)
+    <input type="number" id="duration" min="0" required />
+  </label>
+
+  <button type="submit">Submit</button>
+  <div id="status"></div>
+</form>
+
+<script>
+  const form = document.getElementById("scoreForm");
+  const status = document.getElementById("status");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    status.textContent = "Submitting...";
+    status.style.color = "#aaa";
+
+    const payload = {
+      game_id: document.getElementById("game_id").value,
+      score: Number(document.getElementById("score").value),
+      duration_seconds: Number(document.getElementById("duration").value),
+    };
+
+    try {
+      const res = await fetch("/api/leaderboard/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        status.textContent = "✅ Score submitted!";
+        status.style.color = "#00ff99";
+        form.reset();
+      } else {
+        status.textContent = `❌ ${data.error || "Failed to submit score"}`;
+        status.style.color = "#ff6b6b";
+      }
+    } catch (err) {
+      status.textContent = "❌ Network error";
+      status.style.color = "#ff6b6b";
+    }
+  });
+</script>
+
+</body>
+</html>
