@@ -2827,7 +2827,7 @@ function submitScore(score, durationMs) {
     const score = this.distanceMeter.getActualDistance(this.distanceMeter.digits); // T-Rex score
     const durationMs = this.timeElapsed || 0; // approximate duration (or track manually if needed)
 
-    console.log(`Submitting round ${playCount} score: ${score}`);
+    console.log(`Submitting round ${playCount1} score: ${score}`);
 
     // Submit score
     fetch("/api/leaderboard/submit", {
