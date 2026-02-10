@@ -3,9 +3,21 @@ import { Footer } from "@/components/footer"
 import { GameCard } from "@/components/game-card"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import * as Icons from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 export default async function GamesPage() {
   const supabase = await createClient()
+
+  const iconMap: Record<string, LucideIcon> = {
+    Hand: Icons.Hand,
+    Target: Icons.Target,
+    Swords: Icons.Swords,
+    Music: Icons.Music,
+    Dumbbell: Icons.Dumbbell,
+    Bird: Icons.Bird,
+  }
+  
 
   const {
     data: { user },
@@ -83,7 +95,7 @@ export default async function GamesPage() {
                 id={game.game_id}
                 title={game.title}
                 description={game.description}
-                icon={game.icon}
+                icon={iconMap[game.icon]}
                 difficulty={game.difficulty}
                 duration={game.duration}
                 calories={game.calories}
