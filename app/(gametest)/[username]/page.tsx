@@ -10,7 +10,7 @@ interface Props {
 export const revalidate = 3600;
 
 export default async function PlayerProfile({ params }: Props) {
-  const res = await fetch(`/api/profile1`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://motionplay.vercel.app'}/api/profile1`, {
     cache: 'no-store',
   });
 
