@@ -2,11 +2,20 @@ import { GameCard } from '@/components/game-card'
 //import { games } from '@/lib/games-data'
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import * as Icons from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 export default async function GamesGrid() {
    const supabase = await createClient()
 
-
+const iconMap: Record<string, LucideIcon> = {
+  Hand: Icons.Hand,
+  Target: Icons.Target,
+  Swords: Icons.Swords,
+  Music: Icons.Music,
+  Dumbbell: Icons.Dumbbell,
+  Bird: Icons.Bird,
+}
 
   const { data: games1, error } = await supabase
     .from("gameslist")
@@ -52,7 +61,7 @@ export default async function GamesGrid() {
                 id={game.game_id}
                 title={game.title}
                 description={game.description}
-                icon={game.icon}
+                icon={iconMap[game.icon]}
                 difficulty={game.difficulty}
                 duration={game.duration}
                 calories={game.calories}
