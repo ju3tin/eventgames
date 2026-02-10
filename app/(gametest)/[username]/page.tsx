@@ -8,7 +8,7 @@ interface Props {
 }
 
 export async function generateStaticParams() {
-  const supabase = createClient();
+ const supabase = await createClient()
 
   const { data: profiles } = await supabase
     .from('profiles')
@@ -24,7 +24,7 @@ export async function generateStaticParams() {
 export const revalidate = 3600; // optional — ISR every hour
 
 export default async function PlayerProfile({ params }: Props) {
-  const supabase = createServerClient();
+  const supabase = await createClient()
 
   const { data: profile, error } = await supabase
     .from('profiles')
