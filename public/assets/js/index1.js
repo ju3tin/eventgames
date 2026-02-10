@@ -2786,14 +2786,14 @@ Runner.prototype.gameOver = function () {
   return originalGameOver.apply(this, arguments);
 };
 
-const GAME_ID = '3080a6b7-0689-4560-932b-7e27d0ef0554'
+//const GAME_ID = '3080a6b7-0689-4560-932b-7e27d0ef0554'
 
 function submitScore(score, durationMs) {
   fetch("/api/leaderboard/submit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      game_id: GAME_ID, // your UUID
+      game_id: '3080a6b7-0689-4560-932b-7e27d0ef0554',
       score,
       duration_seconds: Math.floor(durationMs / 1000),
       metadata: {
@@ -2801,5 +2801,13 @@ function submitScore(score, durationMs) {
         engine: "trex-runner",
       },
     }),
-  });
+  })
+  .then(async (res) => {
+    if (!res.ok) {
+      console.error("Failed to submit score:", res.status, await res.text());
+    } else {
+      console.log("Score submitted successfully!");
+    }
+  })
+  .catch((err) => console.error("Error submitting score:", err));
 }
