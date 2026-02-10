@@ -44,6 +44,15 @@ export function Navbar({ user }: NavbarProps) {
             <Link href="/leaderboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Leaderboard
             </Link>
+            {user ? (
+              <>
+               <Link href="/profile" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Profile
+            </Link>
+            </>
+            ):(
+              <></>
+            )}
           </div>
 
           {/* Auth Buttons */}
