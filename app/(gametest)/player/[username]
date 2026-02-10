@@ -30,7 +30,7 @@ export default async function Page({ params }: PageProps) {
     <main>
       <h1>Profile page</h1>
       <p>Username: {username}</p>
-      <p>Check the server console</p>
+      <p>Check the server console</p> 
     </main>
   )
 }
