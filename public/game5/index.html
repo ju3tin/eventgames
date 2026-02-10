@@ -462,12 +462,11 @@ function submitScore(score, maxCombo) {
     body: JSON.stringify({
       game_id: '4adfb0a9-2b3b-4716-b02e-8ac3c5a9b261',
       score,
-      duration_seconds: Math.floor(60 / 1000),
+      duration_seconds: 60,
       metadata: {
         duration_ms: 60,
         engine: "punchgame",
         maxCombo: maxCombo
-
       },
     }),
   })
