@@ -92,7 +92,7 @@ export default async function GamesPage() {
                 link={game.link}
                 isLocked={game.isLocked}
               />
-            ))}
+            ))} 
           </div>
 
           {/* Tips */}
