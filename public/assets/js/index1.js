@@ -2814,46 +2814,48 @@ function submitScore(score, durationMs) {
 }
 // Auto-submit on T-Rex Runner game over
 (function autoSubmitTrekScore() {
-  let playCount1 = 0; // track rounds automatically
+  let runnerCount = 0; // renamed from playCount
 
   // Keep a reference to the original gameOver function
   const originalGameOver = Runner.prototype.gameOver;
 
   Runner.prototype.gameOver = function() {
-    // Increment play count
-    playCount1++;
+    runnerCount++; // increment round count
 
-    // Grab current score and duration
-    const score = this.distanceMeter.getActualDistance(this.distanceMeter.digits); // T-Rex score
-    const durationMs = this.timeElapsed || 0; // approximate duration (or track manually if needed)
+    // Ensure score is a number
+    const score = parseInt(this.distanceMeter.getActualDistance(this.distanceMeter.digits), 10) || 0;
 
-    console.log(`Submitting round ${playCount1} score: ${score}`);
+    // Track duration in ms
+    const durationMs = this.timeElapsed || 0;
 
-    // Submit score
+    console.log(`Submitting round ${runnerCount} score: ${score}`);
+
+    const payload = {
+      game_id: '3080a6b7-0689-4560-932b-7e27d0ef0554',
+      score: score,
+      duration_seconds: Math.floor(durationMs / 1000),
+      metadata: {
+        duration_ms: durationMs,
+        engine: "trex-runner"
+      }
+    };
+
     fetch("/api/leaderboard/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        game_id: '3080a6b7-0689-4560-932b-7e27d0ef0554',
-        score,
-        duration_seconds: Math.floor(durationMs / 1000),
-        metadata: {
-          duration_ms: durationMs,
-          engine: "trex-runner",
-          round: playCount1,
-        },
-      }),
+      body: JSON.stringify(payload),
     })
-    .then(async (res) => {
+    .then(async res => {
       if (!res.ok) {
-        console.error(`Round ${playCount1} submission failed:`, res.status, await res.text());
+        console.error(`Round ${runnerCount} submission failed:`, res.status, await res.text());
       } else {
-        console.log(`Round ${playCount1} submitted successfully!`);
+        console.log(`Round ${runnerCount} submitted successfully!`);
       }
     })
-    .catch((err) => console.error(`Round ${playCount1} submission error:`, err));
+    .catch(err => console.error(`Round ${runnerCount} submission error:`, err));
 
     // Call the original gameOver to preserve normal behavior
     originalGameOver.apply(this, arguments);
   };
 })();
+
