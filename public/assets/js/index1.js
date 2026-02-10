@@ -2823,8 +2823,8 @@ function submitScore(score, durationMs) {
     runnerCount++; // increment round count
 
     // Ensure score is a number
-    const score = parseInt(this.distanceMeter.getActualDistance(this.distanceMeter.digits), 10) || 0;
-
+//    const score = parseInt(this.distanceMeter.getActualDistance(this.distanceMeter.digits), 10) || 0;
+ const score = Math.floor(this.distanceRan);
     // Track duration in ms
     const durationMs = this.timeElapsed || 0;
 
