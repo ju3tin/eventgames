@@ -2811,3 +2811,48 @@ function submitScore(score, durationMs) {
   })
   .catch((err) => console.error("Error submitting score:", err));
 }
+// Auto-submit on T-Rex Runner game over
+(function autoSubmitTrekScore() {
+  let playCount1 = 0; // track rounds automatically
+
+  // Keep a reference to the original gameOver function
+  const originalGameOver = Runner.prototype.gameOver;
+
+  Runner.prototype.gameOver = function() {
+    // Increment play count
+    playCount1++;
+
+    // Grab current score and duration
+    const score = this.distanceMeter.getActualDistance(this.distanceMeter.digits); // T-Rex score
+    const durationMs = this.timeElapsed || 0; // approximate duration (or track manually if needed)
+
+    console.log(`Submitting round ${playCount} score: ${score}`);
+
+    // Submit score
+  /*  fetch("/api/leaderboard/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        game_id: '3080a6b7-0689-4560-932b-7e27d0ef0554',
+        score,
+        duration_seconds: Math.floor(durationMs / 1000),
+        metadata: {
+          duration_ms: durationMs,
+          engine: "trex-runner",
+          round: playCount,
+        },
+      }),
+    })
+    .then(async (res) => {
+      if (!res.ok) {
+        console.error(`Round ${playCount} submission failed:`, res.status, await res.text());
+      } else {
+        console.log(`Round ${playCount} submitted successfully!`);
+      }
+    })
+    .catch((err) => console.error(`Round ${playCount} submission error:`, err));
+
+    // Call the original gameOver to preserve normal behavior
+    originalGameOver.apply(this, arguments);
+  }; */
+})();
