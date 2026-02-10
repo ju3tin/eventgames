@@ -31,11 +31,6 @@ interface GameOption {
   id: string
   name: string
 }
-export async function dude() {
- 
-
-}
-
 
 export default function LeaderboardPage() {
 
