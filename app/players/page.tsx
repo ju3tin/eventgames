@@ -6,7 +6,7 @@ import Image from 'next/image';
 export const revalidate = 3600; // revalidate every hour (optional ISR)
 
 export default async function PlayersPage() {
-  const supabase = createServerClient();
+  const supabase = await createClient()
 
   const { data: profiles, error } = await supabase
     .from('profiles')
