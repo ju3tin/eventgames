@@ -2,7 +2,7 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Profile } from '@/types/profile';
-
+import { createClient } from "@/lib/supabase/server"
 interface Props {
   params: { username: string };
 }
@@ -10,6 +10,34 @@ interface Props {
 export const revalidate = 3600;
 
 export default async function PlayerProfile({ params }: Props) {
+   const supabase = await createClient()
+
+
+ const { data: profile2, error } = await supabase
+    .from("profile")
+    .select(`
+      id,
+      game_id,
+      title,
+      description,
+      icon,
+      difficulty,
+      duration,
+      calories,
+      players,
+      color,
+      link,
+      isLocked,
+      comingSoon,
+      slug
+    `)
+    .order("created_at", { ascending: true })
+
+  if (error) {
+    console.error("Error fetching games:", error)
+  }
+
+
   const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://motionplay.vercel.app'}/api/profile1`, {
     cache: 'no-store',
   });
