@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 // extract from chromium source code by @liuwayong
+
 (function () {
+
+    
     'use strict';
     /**
      * T-Rex runner.
@@ -2750,3 +2753,35 @@ function onDocumentLoad() {
 }
 
 document.addEventListener('DOMContentLoaded', onDocumentLoad);
+
+let runStartTime = null;
+let runSubmitted = false;
+
+const originalStartGame = Runner.prototype.startGame;
+
+Runner.prototype.startGame = function () {
+  runStartTime = performance.now();
+  runSubmitted = false;
+
+  return originalStartGame.apply(this, arguments);
+};
+
+
+const originalGameOver = Runner.prototype.gameOver;
+
+Runner.prototype.gameOver = function () {
+  if (!runSubmitted && runStartTime !== null) {
+    runSubmitted = true;
+
+    const durationMs = Math.round(performance.now() - runStartTime);
+    const score = Math.floor(this.distanceRan);
+
+    console.log("🦖 Game Over");
+    console.log("Score:", score);
+    console.log("Duration (ms):", durationMs);
+
+    submitScore(score, durationMs);
+  }
+
+  return originalGameOver.apply(this, arguments);
+};
