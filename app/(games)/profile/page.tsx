@@ -55,7 +55,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
+       <Navbar user={user} />
       
       <main className="flex-1 py-12">
         <br />
