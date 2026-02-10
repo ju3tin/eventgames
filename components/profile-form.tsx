@@ -53,7 +53,7 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
           Profile Information
         </CardTitle>
         <CardDescription>
-          Update your display name and profile picture
+          Update your UserName and profile picture
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -101,13 +101,13 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
             </p>
           </div>
 
-          {/* Display Name */}
+          {/* username */}
           <div className="space-y-2">
-            <Label htmlFor="username">Display Name</Label>
+            <Label htmlFor="username">UserName</Label>
             <Input
               id="username"
               type="text"
-              placeholder="Enter your display name"
+              placeholder="Enter your UserName"
               value={UserName}
               onChange={(e) => setUserName(e.target.value)}
               className="bg-background/50"
