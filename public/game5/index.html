@@ -447,21 +447,13 @@ function endGame() {
   document.getElementById('finalScore').textContent = score;
   document.getElementById('finalCombo').textContent = maxCombo;
   document.getElementById('pauseBtn').style.display = 'none';
-  submitScore();
-}
 
-// ──────────────────────────────────────────────
-window.addEventListener('load', () => {
-  loadModel();
-});
-
-function submitScore(score, maxCombo) {
-   fetch("/api/leaderboard/submit", {
+fetch("/api/leaderboard/submit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       game_id: '4adfb0a9-2b3b-4716-b02e-8ac3c5a9b261',
-      score,
+      score: score,
       duration_seconds: 60,
       metadata: {
         duration_ms: 60,
@@ -478,6 +470,18 @@ function submitScore(score, maxCombo) {
     }
   })
   .catch((err) => console.error("Error submitting score:", err));
+
+
+  submitScore();
+}
+
+// ──────────────────────────────────────────────
+window.addEventListener('load', () => {
+  loadModel();
+});
+
+function submitScore(score, maxCombo) {
+   
   
 }
 
