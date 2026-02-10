@@ -37,12 +37,8 @@ export async function dude() {
 }
 
 
-export default async function LeaderboardPage() {
+export default function LeaderboardPage() {
 
-  const supabase = await createClient()
-   const {
-    data: { user },
-  } = await supabase.auth.getUser()
 
   const [scores, setScores] = useState<LeaderboardEntry[]>([])
   const [gameOptions, setGameOptions] = useState<GameOption[]>([
