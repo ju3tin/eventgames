@@ -14,13 +14,13 @@ async function getPlayerStats(userId: string) {
   
   // Get total games played
   const { count: gamesPlayed } = await supabase
-    .from('game_scores')
+    .from('leaderboard')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
 
   // Get best score
   const { data: bestScore } = await supabase
-    .from('game_scores')
+    .from('leaderboard')
     .select('score')
     .eq('user_id', userId)
     .order('score', { ascending: false })
@@ -29,7 +29,7 @@ async function getPlayerStats(userId: string) {
 
   // Get total time played
   const { data: totalTime } = await supabase
-    .from('game_scores')
+    .from('leaderboard')
     .select('duration_seconds')
     .eq('user_id', userId)
 
