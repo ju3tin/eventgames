@@ -29,7 +29,7 @@ export default async function Page({ params }: PageProps) {
   return (
     <main>
       <h1>Profile page</h1>
-      <p>Username: {data.username}</p>
+      <p>Username: {data?.username}</p>
       <p>Check the server console</p> 
     </main>
   )
