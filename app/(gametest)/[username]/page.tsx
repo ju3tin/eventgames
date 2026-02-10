@@ -1,41 +1,28 @@
 // app/[username]/page.tsx
-import { createClient } from "@/lib/supabase/server"
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import { Profile } from '@/types/profile';
 
 interface Props {
   params: { username: string };
 }
 
-export async function generateStaticParams() {
-   const supabase = await createClient()
-
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('username')
-    .not('username', 'is', null); // skip null usernames
-
-  if (!profiles) return [];
-
-  // Return format: array of { username: "..." }
-  return profiles.map((p) => ({ username: p.username }));
-}
-
-export const revalidate = 3600; // optional — ISR every hour
+export const revalidate = 3600;
 
 export default async function PlayerProfile({ params }: Props) {
-  const supabase = await createClient()
-   
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('username, full_name, avatar_url, website, bio, created_at')
-    .eq('username', params.username)
-    .single();
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/profile1`, {
+    cache: 'no-store',
+  });
 
-  if (error || !profile) {
-    console.error(error);
-    notFound(); // shows app/not-found.tsx or default 404
-  }
+  if (!res.ok) notFound();
+
+  const json = await res.json() as { success: boolean; data: Profile[] };
+
+  if (!json.success) notFound();
+
+  const profile = json.data.find(p => p.username === params.username);
+
+  if (!profile) notFound();
 
   return (
     <div className="container mx-auto py-12 px-4 max-w-4xl">
@@ -64,24 +51,8 @@ export default async function PlayerProfile({ params }: Props) {
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-6">
               @{profile.username}
             </p>
-
-            {profile.bio && (
-              <p className="text-lg mb-6 leading-relaxed">{profile.bio}</p>
-            )}
-
-            {profile.website && (
-              <a
-                href={profile.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline block mb-4"
-              >
-                {profile.website.replace(/^https?:\/\//, '')}
-              </a>
-            )}
-
             <p className="text-sm text-gray-500">
-              Joined {new Date(profile.created_at!).toLocaleDateString()}
+              Joined {new Date(profile.created_at).toLocaleDateString()}
             </p>
           </div>
         </div>
