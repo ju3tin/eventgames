@@ -1,5 +1,5 @@
 // app/players/page.tsx
-import { createServerClient } from '@/lib/supabase/server'; // ← your server client helper
+import { createClient } from "@/lib/supabase/server"
 import Link from 'next/link';
 import Image from 'next/image';
 
