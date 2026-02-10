@@ -6,6 +6,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { LeaderboardNavbar } from "@/components/leaderboard-navbar"
 import {
   Trophy,
   Medal,
