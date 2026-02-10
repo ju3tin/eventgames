@@ -2789,7 +2789,7 @@ Runner.prototype.gameOver = function () {
 //const GAME_ID = '3080a6b7-0689-4560-932b-7e27d0ef0554'
 
 function submitScore(score, durationMs) {
-  fetch("/api/leaderboard/submit", {
+  /* fetch("/api/leaderboard/submit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -2810,6 +2810,7 @@ function submitScore(score, durationMs) {
     }
   })
   .catch((err) => console.error("Error submitting score:", err));
+  */
 }
 // Auto-submit on T-Rex Runner game over
 (function autoSubmitTrekScore() {
@@ -2829,7 +2830,7 @@ function submitScore(score, durationMs) {
     console.log(`Submitting round ${playCount} score: ${score}`);
 
     // Submit score
-  /*  fetch("/api/leaderboard/submit", {
+    fetch("/api/leaderboard/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2854,5 +2855,5 @@ function submitScore(score, durationMs) {
 
     // Call the original gameOver to preserve normal behavior
     originalGameOver.apply(this, arguments);
-  }; */
+  };
 })();
