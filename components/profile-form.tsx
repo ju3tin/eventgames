@@ -13,7 +13,7 @@ import { User, ImageIcon, Loader2, Check, AlertCircle } from 'lucide-react'
 interface ProfileFormProps {
   profile: {
     id: string
-    display_name: string | null
+    username: string | null
     avatar_url: string | null
   }
   email: string
@@ -23,7 +23,7 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || '')
-  const [displayName, setDisplayName] = useState(profile.display_name || '')
+  const [UserName, setUserName] = useState(profile.username || '')
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -31,7 +31,7 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
     setMessage(null)
 
     const formData = new FormData()
-    formData.set('display_name', displayName)
+    formData.set('username', UserName)
     formData.set('avatar_url', avatarUrl)
 
     const result = await updateProfile(formData)
@@ -82,7 +82,7 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              {displayName || email.split('@')[0]}
+              {UserName || email.split('@')[0]}
             </p>
           </div>
 
@@ -103,13 +103,13 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
 
           {/* Display Name */}
           <div className="space-y-2">
-            <Label htmlFor="display_name">Display Name</Label>
+            <Label htmlFor="username">Display Name</Label>
             <Input
-              id="display_name"
+              id="username"
               type="text"
               placeholder="Enter your display name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              value={UserName}
+              onChange={(e) => setUserName(e.target.value)}
               className="bg-background/50"
             />
             <p className="text-xs text-muted-foreground">
