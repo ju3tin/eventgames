@@ -32,7 +32,14 @@ interface GameOption {
   name: string
 }
 
-export default function LeaderboardPage() {
+
+export async function LeaderboardPage() {
+
+   const supabase = await createClient()
+   const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  
   const [scores, setScores] = useState<LeaderboardEntry[]>([])
   const [gameOptions, setGameOptions] = useState<GameOption[]>([
     { id: "all", name: "All Games" },
@@ -118,7 +125,7 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
+      <Navbar user={user} />
 
       <main className="flex-1 pt-24 pb-16">
         <div className="container mx-auto px-4">
