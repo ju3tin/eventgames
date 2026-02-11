@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useGameStore, LANE_WIDTH, playerPositionRef, groundHeightRef, particleSystemRef } from '../store';
-import { Train, Barrier, CoinInstances, HighBarrier, Ramp, StreetLight, TrackBase } from './Obstacles';
-import { ParticleSystem } from './Particles';
-import { audioManager } from '../utils/audio';
+import { useGameStore, LANE_WIDTH, playerPositionRef, groundHeightRef, particleSystemRef } from '@/store';
+import { Train, Barrier, CoinInstances, HighBarrier, Ramp, StreetLight, TrackBase } from '@/components/Obstacles';
+import { ParticleSystem } from '@/components/Particles';
+import { audioManager } from '@/utils/audio';
 import * as THREE from 'three';
 
 const SEGMENT_LENGTH = 40;
