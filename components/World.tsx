@@ -288,7 +288,11 @@ export const World = () => {
       <directionalLight position={[10, 30, 20]} intensity={1.5} castShadow shadow-mapSize={[2048, 2048]} />
 
       <ParticleSystem />
-    <Coin data={allCoins} collectedIds={collectedRef.current} />
+   <Coin 
+  data={allCoins} 
+  collectedIds={collectedRef.current}
+  version={coinVersion}
+/>
       <group>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, -90]}>
             <planeGeometry args={[300, 1000]} />

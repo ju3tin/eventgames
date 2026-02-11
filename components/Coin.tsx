@@ -13,19 +13,19 @@ interface CoinData {
 interface CoinProps {
   data: CoinData[]
   collectedIds: Set<string>
+  version: number   // ✅ ADD THIS
 }
 
-export const Coin: React.FC<CoinProps> = ({ data, collectedIds }) => {
+export const Coin: React.FC<CoinProps> = ({ data, collectedIds, version }) => {
   const meshRef = useRef<THREE.InstancedMesh>(null!)
   const dummy = new THREE.Object3D()
 
-  // 🔁 Spin animation
+  // Spin animation
   useFrame((_, delta) => {
     if (!meshRef.current) return
     meshRef.current.rotation.y += delta * 3
   })
 
-  // 📦 Update instances when data changes
   useEffect(() => {
     if (!meshRef.current) return
 
@@ -35,7 +35,7 @@ export const Coin: React.FC<CoinProps> = ({ data, collectedIds }) => {
       if (collectedIds.has(coin.id)) return
 
       dummy.position.set(coin.x, coin.y, coin.z)
-      dummy.rotation.set(Math.PI / 2, 0, 0) // Flat coin
+      dummy.rotation.set(Math.PI / 2, 0, 0)
       dummy.updateMatrix()
 
       meshRef.current.setMatrixAt(index, dummy.matrix)
@@ -44,7 +44,7 @@ export const Coin: React.FC<CoinProps> = ({ data, collectedIds }) => {
 
     meshRef.current.count = index
     meshRef.current.instanceMatrix.needsUpdate = true
-  }, [data, collectedIds])
+  }, [data, version]) // ✅ use version here
 
   return (
     <instancedMesh
