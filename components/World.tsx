@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGameStore, LANE_WIDTH, playerPositionRef, groundHeightRef, particleSystemRef } from '@/store';
-import { Train, Barrier, CoinInstances, HighBarrier, Ramp, StreetLight, TrackBase } from '@/components/Obstacles';
+import { Train, Barrier, CoinInstances, HighBarrier, Ramp, StreetLight } from '@/components/Obstacles';
 import { ParticleSystem } from '@/components/Particles';
 import { audioManager } from '@/utils/audio';
 import * as THREE from 'three';
@@ -298,9 +298,9 @@ export const World = () => {
 
         {segments.map((seg, i) => (
             <group key={seg.id} position={[0, 0, seg.z]}>
-                {/* Stable TrackBase Component (Uses Instances internally) */}
+                {/* Stable TrackBase Component (Uses Instances internally)
                 <TrackBase /> 
-
+ */}
                 <UrbanScenery side="left" heights={seg.sceneryLeft} graffiti={seg.graffitiLeft} />
                 <UrbanScenery side="right" heights={seg.sceneryRight} graffiti={seg.graffitiRight} />
                 
