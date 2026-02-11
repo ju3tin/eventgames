@@ -2,7 +2,7 @@
 import React, { useRef, useLayoutEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { InstancedMesh, Object3D, Vector3, MathUtils, Color, DynamicDrawUsage } from 'three';
-import { particleSystemRef } from '../store';
+import { particleSystemRef } from '@/store';
 
 const COUNT = 300;
 const DUMMY = new Object3D();
