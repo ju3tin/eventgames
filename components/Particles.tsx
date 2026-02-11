@@ -1,4 +1,5 @@
 // @ts-nocheck
+'use client'
 import React, { useRef, useLayoutEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { InstancedMesh, Object3D, Vector3, MathUtils, Color, DynamicDrawUsage } from 'three';

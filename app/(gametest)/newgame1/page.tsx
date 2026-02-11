@@ -1,3 +1,4 @@
+'use client'
 import React, { useEffect } from 'react';
 import { Game } from '@/components/Game';
 import { useGameStore } from '@/store';

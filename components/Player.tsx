@@ -1,4 +1,5 @@
 // @ts-nocheck
+'use client'
 import React, { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Group, Vector3, MathUtils } from 'three';
