@@ -4,7 +4,8 @@ import { Inter, Space_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { SidebarLayout } from '@/components/SidebarLayout'
-import { getUser } from '@/lib/supabase/server'
+import { createClient as getUser } from '@/lib/supabase/server2';
+
 
 
 const _inter = Inter({ subsets: ['latin'] })

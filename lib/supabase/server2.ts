@@ -1,13 +1,6 @@
+// server.ts
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-
-/**
- * Especially important if using Fluid compute: Don't put this client in a
- * global variable. Always create a new client within each function when using
- * it.
- */
-
-
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -26,12 +19,24 @@ export async function createClient() {
               cookieStore.set(name, value, options),
             )
           } catch {
-            // The "setAll" method was called from a Server Component.
-            // This can be ignored if you have proxy refreshing
-            // user sessions.
+            // Can ignore if called from a Server Component
           }
         },
       },
     },
   )
+}
+
+/**
+ * Get the currently logged-in user
+ */
+export async function getUser() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error) throw error
+  return user
 }
