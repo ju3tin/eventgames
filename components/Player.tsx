@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber';
 import { Group, Vector3, MathUtils } from 'three';
 import { useGameStore, LANE_WIDTH, JUMP_FORCE, GRAVITY, SLIDE_DURATION, playerPositionRef, groundHeightRef, cameraShakeRef } from '../store';
 import { RoundedBox, Sphere } from '@react-three/drei';
-import { audioManager } from '../utils/audio';
+import { audioManager } from '@/utils/audio';
 
 export const Player = () => {
   const group = useRef<Group>(null);
