@@ -41,11 +41,12 @@ export default function RootLayout({
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Metro Runner 3D</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
+   <style>{`
       body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
       #root { width: 100%; height: 100%; }
       /* Custom scrollbar for webkit */
       ::-webkit-scrollbar { width: 0px; background: transparent; }
+      `}
     </style>
     </head>
       <body className={`font-sans antialiased`}>
