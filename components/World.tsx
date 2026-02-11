@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGameStore, LANE_WIDTH, playerPositionRef, groundHeightRef, particleSystemRef } from '@/store';
-import { Train, Barrier, CoinInstances, HighBarrier, Ramp, StreetLight } from '@/components/Obstacles';
+import { Train, Barrier, HighBarrier, Ramp, StreetLight } from '@/components/Obstacles';
 import { ParticleSystem } from '@/components/Particles';
 import { audioManager } from '@/utils/audio';
 import * as THREE from 'three';
@@ -286,8 +286,7 @@ export const World = () => {
       <directionalLight position={[10, 30, 20]} intensity={1.5} castShadow shadow-mapSize={[2048, 2048]} />
 
       <ParticleSystem />
-      <CoinInstances data={allCoins} collectedIds={collectedRef.current} />
-
+    
       <group>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, -90]}>
             <planeGeometry args={[300, 1000]} />
