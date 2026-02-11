@@ -198,7 +198,7 @@ export const Ramp: React.FC<ObstacleProps> = ({ position }) => {
         <group position={position}>
             {/* The inclined plane */}
             {/* Visual Center Y adjusted to 3.0 (half of 6.0) */}
-            <mesh position={[0, 3.0, 0]} rotation={[-0.44, 0, 0]}>
+            <mesh position={[0, 3.0, 0]} rotation={[0.44, 0, 0]}>
                 <boxGeometry args={[3.6, 0.3, 14]} />
                 <meshStandardMaterial color={COLORS.ramp} roughness={0.8} />
             </mesh>
