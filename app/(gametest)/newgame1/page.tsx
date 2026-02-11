@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Game } from './components/Game';
-import { useGameStore } from './store';
+import { useGameStore } from '@/store';
 import { Coins, Trophy, Play, RotateCcw } from 'lucide-react';
 import { audioManager } from '@/utils/audio';
 
