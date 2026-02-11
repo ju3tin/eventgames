@@ -5,6 +5,8 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { SidebarLayout } from '@/components/SidebarLayout'
 import { createClient } from "@/lib/supabase/server"
+import { Sidebar } from "@/components/Sidebar2"
+
 
 
 
@@ -47,9 +49,9 @@ const {
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <SidebarLayout user={user}>
+        <Sidebar />
         {children}
-          </ SidebarLayout>
+         
         <Analytics />
       </body>
     </html>
