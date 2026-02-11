@@ -4,6 +4,7 @@ import  GamesGrid  from '@/components/games-grid'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { createClient } from '@/lib/supabase/server'
+import { Sidebar } from '@/components/Sidebar'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -11,7 +12,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={user} />
+      <Sidebar user={user} />
       <main className="pt-16">
         <HeroSection />
         <FeaturesSection />
