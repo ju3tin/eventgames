@@ -4,7 +4,7 @@ import { Inter, Space_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { SidebarLayout } from '@/components/SidebarLayout'
-import { createClient as getUser } from '@/lib/supabase/server2';
+import { createClient } from "@/lib/supabase/server"
 
 
 
@@ -34,11 +34,16 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+const supabase = await createClient()
+const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
