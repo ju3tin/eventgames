@@ -3,11 +3,11 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGameStore, LANE_WIDTH, playerPositionRef, groundHeightRef, particleSystemRef } from '@/store';
-import { Train, Barrier, HighBarrier, Ramp, StreetLight } from '@/components/Obstacles';
+import { Train, Barrier, HighBarrier, Ramp, StreetLight, Coin } from '@/components/Obstacles';
 import { ParticleSystem } from '@/components/Particles';
 import { audioManager } from '@/utils/audio';
 import * as THREE from 'three';
-import { Coin } from '@/components/Coin';
+//import { Coin } from '@/components/Coin';
 
 const SEGMENT_LENGTH = 40;
 const VISIBLE_SEGMENTS = 10; // Pool Size
@@ -320,6 +320,7 @@ export const World = () => {
                     if (obs.type === 'barrier') return <Barrier key={idx} position={pos} />;
                     if (obs.type === 'high_barrier') return <HighBarrier key={idx} position={pos} />;
                     if (obs.type === 'ramp') return <Ramp key={idx} position={pos} />;
+                    if (obs.type === 'coins') return <Coin key={idx} position={pos} name={`c-${seg.id}-${idx}`} />;
                     return null;
                 })}
             </group>
