@@ -95,7 +95,8 @@ const App = () => {
             </div>
 
             <button 
-              onClick={handleReset}
+            onClick={() => window.location.reload()}
+             {/* onClick={handleReset} */}
               className="w-full py-4 bg-white text-black rounded-xl font-bold text-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
             >
               <RotateCcw className="w-5 h-5" /> TRY AGAIN
