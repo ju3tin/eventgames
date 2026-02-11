@@ -3,6 +3,9 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import { SidebarLayout } from '@/components/SidebarLayout'
+import { getUser } from '@/lib/supabase/server'
+
 
 const _inter = Inter({ subsets: ['latin'] })
 const _spaceGrotesk = Space_Grotesk({ subsets: ['latin'] })
@@ -38,7 +41,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
+        <SidebarLayout user={user}>
         {children}
+          <SidebarLayout />
         <Analytics />
       </body>
     </html>
