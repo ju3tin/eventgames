@@ -13,13 +13,16 @@ interface CoinData {
 interface CoinProps {
   data: CoinData[]
   collectedIds: Set<string>
-  version: number   // ✅ ADD THIS
+  version: number
 }
 
 export const Coin: React.FC<CoinProps> = ({ data, collectedIds, version }) => {
   const meshRef = useRef<THREE.InstancedMesh>(null!)
   const dummy = new THREE.Object3D()
 
+  const MAX_COINS = 200  // Adjust to your max possible coins in all segments
+
+  // Spin animation
   useFrame((_, delta) => {
     if (!meshRef.current) return
     meshRef.current.rotation.y += delta * 3
@@ -34,7 +37,7 @@ export const Coin: React.FC<CoinProps> = ({ data, collectedIds, version }) => {
       if (collectedIds.has(coin.id)) return
 
       dummy.position.set(coin.x, coin.y, coin.z)
-      dummy.rotation.set(0, 0, 0) // 🔥 remove X rotation
+      dummy.rotation.set(0, 0, 0) // no weird X rotation
       dummy.updateMatrix()
 
       meshRef.current.setMatrixAt(index, dummy.matrix)
@@ -48,8 +51,8 @@ export const Coin: React.FC<CoinProps> = ({ data, collectedIds, version }) => {
   return (
     <instancedMesh
       ref={meshRef}
-      args={[undefined, undefined, data.length]}
-      frustumCulled={false}   // 🔥 important
+      args={[undefined, undefined, MAX_COINS]}
+      frustumCulled={false}   // important!
       castShadow
     >
       <cylinderGeometry args={[0.6, 0.6, 0.2, 16]} />

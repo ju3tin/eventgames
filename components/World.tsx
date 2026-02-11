@@ -268,17 +268,19 @@ export const World = () => {
 
   // Extract all coins from all segments for the instanced mesh
   const allCoins = useMemo(() => {
-      return segments.flatMap(seg => 
-          seg.obstacles
-            .filter(o => o.type === 'coins')
-            .map(o => ({
-                id: `c-${seg.id}-${o.localZ}-${o.lane}`,
-                x: o.lane * LANE_WIDTH,
-                y: o.y || 1,
-                z: seg.z + o.localZ
-            }))
-      );
-  }, [segments, coinVersion]); // Re-calc when coinVersion changes
+  return segments.flatMap(seg => 
+    seg.obstacles
+      .filter(o => o.type === 'coins')
+      .map(o => ({
+        // Use world-Z rounded + lane for stable ID
+        id: `c-${Math.round(seg.z + o.localZ * 1000)/1000}-${o.lane}`, 
+        x: o.lane * LANE_WIDTH,
+        y: o.y || 1,
+        z: seg.z + o.localZ
+      }))
+  )
+}, [segments, coinVersion])
+
 
   return (
     <>
