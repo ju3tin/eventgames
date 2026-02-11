@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { notFound } from 'next/navigation'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -6,31 +7,35 @@ const supabase = createClient(
 )
 
 type PageProps = {
-  params: {
+  params: Promise<{
     username: string
-  }
+  }>
 }
 
 export default async function Page({ params }: PageProps) {
-  const { username } = params
+  const { username } = await params
 
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('username', username)
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error('Supabase error:', error)
-  } else {
-    console.log('Profile:', data)
+    return <div>Error loading profile</div>
   }
+
+  if (!data) {
+    return notFound()
+  }
+
+  console.log('Profile:', data)
 
   return (
     <main>
       <h1>Profile page</h1>
-      <p>Username: {data?.username}</p>
-      <p>Check the server console</p> 
+      <p>Username: {data.username}</p>
     </main>
   )
 }
