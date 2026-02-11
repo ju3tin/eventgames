@@ -43,7 +43,7 @@ export default function RootLayout({
       <body className={`font-sans antialiased`}>
         <SidebarLayout user={user}>
         {children}
-          <SidebarLayout />
+          </ SidebarLayout>
         <Analytics />
       </body>
     </html>
