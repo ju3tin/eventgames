@@ -3,10 +3,11 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGameStore, LANE_WIDTH, playerPositionRef, groundHeightRef, particleSystemRef } from '@/store';
-import { Train, Barrier, HighBarrier, Ramp, StreetLight, Coin } from '@/components/Obstacles';
+import { Train, Barrier, HighBarrier, Ramp, StreetLight } from '@/components/Obstacles';
 import { ParticleSystem } from '@/components/Particles';
 import { audioManager } from '@/utils/audio';
 import * as THREE from 'three';
+import { Coin } from '@/components/Coin';
 
 const SEGMENT_LENGTH = 40;
 const VISIBLE_SEGMENTS = 10; // Pool Size
