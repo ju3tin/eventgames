@@ -3,7 +3,7 @@ import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh, Group } from 'three';
 import { RoundedBox, Cylinder, Box } from '@react-three/drei';
-import { LANE_WIDTH } from '../store';
+import { LANE_WIDTH } from '@/store';
 
 const COLORS = {
   trainBody: "#475569", // Darker slate

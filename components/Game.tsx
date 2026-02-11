@@ -2,8 +2,8 @@
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Sky, Stars, Environment } from '@react-three/drei';
-import { Player } from './Player';
-import { World } from './World';
+import { Player } from '@/components/Player';
+import { World } from '@/components/World';
 
 export const Game = () => {
   return (
