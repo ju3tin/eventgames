@@ -37,8 +37,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-    <head><link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="stylesheet" href="/css/style.css" />
+    <head>    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Metro Runner 3D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+      #root { width: 100%; height: 100%; }
+      /* Custom scrollbar for webkit */
+      ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
     </head>
       <body className={`font-sans antialiased`}>
         {children}
