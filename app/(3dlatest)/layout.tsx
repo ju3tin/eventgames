@@ -2,13 +2,7 @@ import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
-import { SidebarLayout } from '@/components/SidebarLayout'
-import { createClient } from "@/lib/supabase/server"
-import { Sidebar } from "@/components/Sidebar2"
-
-
-
+//import './globals.css'
 
 const _inter = Inter({ subsets: ['latin'] })
 const _spaceGrotesk = Space_Grotesk({ subsets: ['latin'] })
@@ -36,22 +30,18 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-const supabase = await createClient()
-const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
   return (
     <html lang="en">
+    <head><link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="/css/style.css" />
+    </head>
       <body className={`font-sans antialiased`}>
-        <Sidebar />
         {children}
-         
         <Analytics />
       </body>
     </html>
