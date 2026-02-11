@@ -20,12 +20,6 @@ interface SidebarProps {
 export function Sidebar({ user }: SidebarProps) {
      const router = useRouter()
   const pathname = usePathname()
-  const navItem = (
-    href: string,
-    label: string,
-    Icon: any
-  ) => {
-    const active = pathname === href
 
 const handleSignOut = async () => {
     const supabase = createClient()
@@ -33,6 +27,15 @@ const handleSignOut = async () => {
     router.push('/')
     router.refresh()
   }
+
+
+  const navItem = (
+    href: string,
+    label: string,
+    Icon: any
+  ) => {
+    const active = pathname === href
+
 
 
     
