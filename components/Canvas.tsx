@@ -1,4 +1,5 @@
 // /components/Canvas.tsx
+"use client"
 import { useRef, useEffect } from 'react';
 
 interface CanvasProps {
