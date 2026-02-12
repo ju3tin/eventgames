@@ -418,6 +418,30 @@
         function endGame() {
             if (!gameRunning) return;
             gameRunning = false;
+            fetch("/api/leaderboard/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      game_id: '5830f38c-2f0f-4cfc-bcba-2206f147e8ee',
+      score: score,
+      duration_seconds: 60,
+      metadata: {
+        duration_ms: 60,
+        engine: "punchgame",
+        maxCombo: maxCombo
+      },
+    }),
+  })
+  .then(async (res) => {
+    if (!res.ok) {
+      console.error("Failed to submit score:", res.status, await res.text());
+    } else {
+      console.log("Score submitted successfully!");
+    }
+  })
+  .catch((err) => console.error("Error submitting score:", err));
+
+
             tutorialVideo.pause();
             const finalScore = Math.round(score);
             alert(`Game Over! Final Score: ${finalScore}`);
