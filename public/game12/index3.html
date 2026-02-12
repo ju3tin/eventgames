@@ -23,51 +23,22 @@
         .video-box {
             position: relative;
             width: 480px;
-            overflow: hidden;
+        }
+        video, canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;  /* Ensures aspect ratio is maintained */
             border: 3px solid #444;
             border-radius: 8px;
         }
-        .video-box video,
-        .video-box canvas {
-            display: block;
-            border: none;
-            border-radius: 5px;
-        }
-        #tutorial-box video,
-        #tutorial-box canvas {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-        #tutorial-box canvas {
+        canvas {
             position: absolute;
             top: 0;
             left: 0;
-            pointer-events: none;
-        }
-        #user-box {
-            border-color: #2196F3;
-        }
-        /* User video: same box size as tutorial, mask keeps aspect ratio (cover) */
-        #user-box .user-video-wrap {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-        #user-box #user-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        #user-box #user-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
             pointer-events: none;
         }
         #tutorial-box { border-color: #4CAF50; }
+        #user-box { border-color: #2196F3; }
         #score { font-size: 32px; margin: 20px; }
         #current-move { font-size: 28px; color: #FFD700; margin: 10px; }
         button { 
@@ -108,46 +79,14 @@
                 <source id="video-source" src="/videos/1.mp4" type="video/mp4">
                 Your browser does not support the video tag.
               </video>
-              
-              <script>
-                // Step 1: Retrieve the videoId from the URL parameters
-                const urlParams = new URLSearchParams(window.location.search);
-                const videoId = urlParams.get('videoId') || '1'; // Default to '1' if no videoId is found
-                
-                // Step 2: Construct the video URL from the videoId
-                const videoUrl = `/videos/${videoId}.mp4`;  // Assuming video files are stored like /videos/1.mp4
-                
-                // Step 3: Update the <source> element's src with the new URL
-                const videoElement = document.getElementById('tutorial-video');
-                const sourceElement = document.getElementById('video-source');
-                sourceElement.src = videoUrl;
-                
-                // Step 4: Reload the video and optionally start playback
-                videoElement.load();  // This will reload the video with the new src
-              
-
-                videoElement.addEventListener('loadedmetadata', () => {
-    // Now the video metadata is loaded, and we can access videoWidth and videoHeight
-    const videoWidth = videoElement.videoWidth;
-    const videoHeight = videoElement.videoHeight;
-    console.log(`Video Width: ${videoWidth}`);
-    console.log(`Video Height: ${videoHeight}`);
-
-    // Optionally, you can play the video after it's loaded
-    videoElement.play();  // Automatically start playing the new video (optional)
-});
-              </script>
-              
             <canvas id="tutorial-canvas"></canvas>
         </div>
 
-        <!-- Your webcam – masked to same size as tutorial, keeps video ratio -->
+        <!-- Your webcam -->
         <div class="video-box" id="user-box">
-            <h3 style="position: absolute; top: 0; left: 0; color: white; z-index: 2;">Your Webcam (Cyan Pose)</h3>
-            <div class="user-video-wrap">
-                <video id="user-video" autoplay playsinline></video>
-                <canvas id="user-canvas"></canvas>
-            </div>
+            <h3 style="position: absolute; top: 0; left: 0; color: white;">Your Webcam (Cyan Pose)</h3>
+            <video id="user-video" autoplay playsinline></video>
+            <canvas id="user-canvas"></canvas>
         </div>
     </div>
 
@@ -169,34 +108,33 @@
         const userVideo = document.getElementById('user-video');
         const userCanvas = document.getElementById('user-canvas');
         const userCtx = userCanvas.getContext('2d');
-        const tutorialBox = document.getElementById('tutorial-box');
-        const userBox = document.getElementById('user-box');
 
         const statusEl = document.getElementById('status');
         const startBtn = document.getElementById('start-button');
 
-        // Same display size as tutorial; user video keeps ratio via object-fit: cover
-        function syncBoxSizes() {
-            if (tutorialVideo.videoWidth <= 0) return;
-            const w = 480;
-            const h = Math.round(w * tutorialVideo.videoHeight / tutorialVideo.videoWidth);
-            tutorialBox.style.width = w + 'px';
-            tutorialBox.style.height = h + 'px';
-            userBox.style.width = w + 'px';
-            userBox.style.height = h + 'px';
-            userCanvas.width = w;
-            userCanvas.height = h;
-        }
-
         // Resize canvases when video metadata loads
         function resizeCanvases() {
-            if (tutorialVideo.videoWidth > 0) {
-                tutorialCanvas.width = tutorialVideo.videoWidth;
-                tutorialCanvas.height = tutorialVideo.videoHeight;
-            }
-            syncBoxSizes();
+            const tutorialBox = document.getElementById('tutorial-box');
+            const userBox = document.getElementById('user-box');
+
+            // Resize tutorial video and canvas
+            const tutorialAspect = tutorialVideo.videoWidth / tutorialVideo.videoHeight;
+            const tutorialWidth = tutorialBox.clientWidth;
+            const tutorialHeight = tutorialWidth / tutorialAspect;
+
+            tutorialCanvas.width = tutorialWidth;
+            tutorialCanvas.height = tutorialHeight;
+
+            // Resize user video and canvas
+            const userAspect = userVideo.videoWidth / userVideo.videoHeight;
+            const userWidth = userBox.clientWidth;
+            const userHeight = userWidth / userAspect;
+
+            userCanvas.width = userWidth;
+            userCanvas.height = userHeight;
         }
         tutorialVideo.onloadedmetadata = resizeCanvases;
+        userVideo.onloadedmetadata = resizeCanvases;
 
         // Basic move detection rules (you can add more)
         const danceMoves = [
@@ -291,10 +229,10 @@
                 drawPose(tutorialCtx, poses, 'lime');
             }
 
-            // User pose (cyan) – drawn with cover transform so skeleton matches masked video
+            // User pose (cyan)
             if (userVideo.readyState >= 2) {
                 const poses = await detector.estimatePoses(userVideo);
-                drawPoseCover(userCtx, poses, 'cyan', userVideo, userCanvas.width, userCanvas.height);
+                drawPose(userCtx, poses, 'cyan');
 
                 if (poses.length > 0 && currentMoveIndex < danceMoves.length) {
                     if (danceMoves[currentMoveIndex].check(poses[0].keypoints)) {
@@ -337,46 +275,6 @@
                     }
                 });
             }
-        }
-
-        // Transform from video coords to canvas (object-fit: cover) so skeleton aligns with masked user video
-        function drawPoseCover(ctx, poses, color, videoEl, canvasW, canvasH) {
-            ctx.clearRect(0, 0, canvasW, canvasH);
-            if (poses.length === 0 || videoEl.videoWidth <= 0) return;
-            const vw = videoEl.videoWidth;
-            const vh = videoEl.videoHeight;
-            const scale = Math.max(canvasW / vw, canvasH / vh);
-            const offsetX = (canvasW - vw * scale) / 2;
-            const offsetY = (canvasH - vh * scale) / 2;
-            const keypoints = poses[0].keypoints;
-            const pairs = poseDetection.util.getAdjacentPairs(poseDetection.SupportedModels.MoveNet);
-
-            const tx = (x, y) => ({ x: offsetX + x * scale, y: offsetY + y * scale });
-
-            keypoints.forEach(kp => {
-                if (kp.score > 0.35) {
-                    const { x, y } = tx(kp.x, kp.y);
-                    ctx.beginPath();
-                    ctx.arc(x, y, 7, 0, 2 * Math.PI);
-                    ctx.fillStyle = color;
-                    ctx.fill();
-                }
-            });
-
-            pairs.forEach(([i, j]) => {
-                const a = keypoints[i];
-                const b = keypoints[j];
-                if (a.score > 0.35 && b.score > 0.35) {
-                    const pa = tx(a.x, a.y);
-                    const pb = tx(b.x, b.y);
-                    ctx.beginPath();
-                    ctx.moveTo(pa.x, pa.y);
-                    ctx.lineTo(pb.x, pb.y);
-                    ctx.lineWidth = 5;
-                    ctx.strokeStyle = color;
-                    ctx.stroke();
-                }
-            });
         }
 
         function updateUI() {
