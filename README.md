@@ -37,7 +37,7 @@ Wave your arms, jump, squat, dance — the game sees you and reacts instantly.
 
 ## 🚀 Live Demo
 
-→ **[Try it live!](https://your-username.github.io/move-your-body-to-play/)** ←  
+→ **[Try it live!](https://motionplay.vercel.app/)** ←  
 *(replace with your actual GitHub Pages link once deployed)*
 
 Best experienced on a device with a **front-facing camera** and decent lighting.
