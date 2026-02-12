@@ -1,4 +1,5 @@
 // /pages/index.tsx
+"use client"
 import { useState, useEffect, useRef } from 'react';
 import Canvas from '@/components/Canvas';
 import AnimationControls from '@/components/AnimationControls';
