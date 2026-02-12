@@ -94,8 +94,8 @@
 </head>
 <body>
     <h1>Dance Mirror Game</h1>
-    <p>Follow the tutorial video — it plays **once** when you start.<br>
-    Match the green skeleton with your cyan one to score points!<br>
+    <p>Follow the tutorial video — it plays once when you start.<br>
+    TensorFlow pose detection gets joint angles from the tutorial; match those angles with your pose. The closer your angles (elbows, knees, shoulders), the higher your score.<br>
     (Video sound will play if the file contains audio)</p>
 
     <div id="status">Loading models... Please wait.</div>
@@ -151,7 +151,7 @@
         </div>
     </div>
 
-    <div id="current-move">Current Move: Waiting...</div>
+    <div id="current-move">Match: — Match the green pose (joint angles). Closer = higher score.</div>
     <div id="score">Score: 0</div>
     <button id="start-button" disabled>Start Game</button>
 
@@ -160,7 +160,66 @@
         let detector = null;
         let score = 0;
         let gameRunning = false;
-        let currentMoveIndex = 0;
+        const MIN_CONFIDENCE = 0.35;
+
+        // Joint angles we compare: elbow, knee, shoulder (left/right)
+        const ANGLE_JOINTS = [
+            { key: 'leftElbow',  a: 'left_shoulder',  b: 'left_elbow',  c: 'left_wrist' },
+            { key: 'rightElbow', a: 'right_shoulder', b: 'right_elbow', c: 'right_wrist' },
+            { key: 'leftKnee',   a: 'left_hip',       b: 'left_knee',   c: 'left_ankle' },
+            { key: 'rightKnee',  a: 'right_hip',      b: 'right_knee',  c: 'right_ankle' },
+            { key: 'leftShoulder',  a: 'left_hip',    b: 'left_shoulder',  c: 'left_elbow' },
+            { key: 'rightShoulder', a: 'right_hip',   b: 'right_shoulder', c: 'right_elbow' },
+        ];
+
+        function getKp(keypoints, name) {
+            const k = keypoints.find(kp => kp.name === name);
+            return k && k.score >= MIN_CONFIDENCE ? k : null;
+        }
+
+        // Angle at joint b (between segment a->b and b->c) in degrees, 0–180
+        function angleDeg(a, b, c) {
+            const v1 = { x: a.x - b.x, y: a.y - b.y };
+            const v2 = { x: c.x - b.x, y: c.y - b.y };
+            const d1 = Math.hypot(v1.x, v1.y);
+            const d2 = Math.hypot(v2.x, v2.y);
+            if (d1 < 1e-5 || d2 < 1e-5) return null;
+            const dot = (v1.x * v2.x + v1.y * v2.y) / (d1 * d2);
+            const clamped = Math.max(-1, Math.min(1, dot));
+            return (Math.acos(clamped) * 180) / Math.PI;
+        }
+
+        function getAngles(keypoints) {
+            const angles = {};
+            for (const { key, a, b, c } of ANGLE_JOINTS) {
+                const pa = getKp(keypoints, a);
+                const pb = getKp(keypoints, b);
+                const pc = getKp(keypoints, c);
+                if (pa && pb && pc) angles[key] = angleDeg(pa, pb, pc);
+                else angles[key] = null;
+            }
+            return angles;
+        }
+
+        // Closer angles = better. Returns 0–100 (100 = perfect match)
+        function angleMatchScore(tutorialAngles, userAngles) {
+            let totalError = 0;
+            let count = 0;
+            for (const key of Object.keys(tutorialAngles)) {
+                const ta = tutorialAngles[key];
+                const ua = userAngles[key];
+                if (ta == null || ua == null) continue;
+                let diff = Math.abs(ua - ta);
+                if (diff > 180) diff = 360 - diff;
+                totalError += diff;
+                count++;
+            }
+            if (count === 0) return 0;
+            const avgError = totalError / count;
+            // 0° error = 100, 30° error ≈ 67, 60° ≈ 33, 90°+ ≈ 0
+            const score = Math.max(0, 100 - avgError * (100 / 90));
+            return score;
+        }
 
         const tutorialVideo = document.getElementById('tutorial-video');
         const tutorialCanvas = document.getElementById('tutorial-canvas');
@@ -198,31 +257,6 @@
         }
         tutorialVideo.onloadedmetadata = resizeCanvases;
 
-        // Basic move detection rules (you can add more)
-        const danceMoves = [
-            { name: "Arms Up ✋", check: (kps) => {
-                const lw = kps.find(k => k.name === 'left_wrist');
-                const rw = kps.find(k => k.name === 'right_wrist');
-                const ls = kps.find(k => k.name === 'left_shoulder');
-                const rs = kps.find(k => k.name === 'right_shoulder');
-                return lw?.score > 0.4 && rw?.score > 0.4 && lw.y < ls.y - 50 && rw.y < rs.y - 50;
-            }},
-            { name: "Arms Out 🤗", check: (kps) => {
-                const lw = kps.find(k => k.name === 'left_wrist');
-                const rw = kps.find(k => k.name === 'right_wrist');
-                const ls = kps.find(k => k.name === 'left_shoulder');
-                const rs = kps.find(k => k.name === 'right_shoulder');
-                return lw?.score > 0.4 && rw?.score > 0.4 && Math.abs(lw.x - ls.x) > 120 && Math.abs(rw.x - rs.x) > 120;
-            }},
-            { name: "Knees Up 🦵", check: (kps) => {
-                const lk = kps.find(k => k.name === 'left_knee');
-                const rk = kps.find(k => k.name === 'right_knee');
-                const lh = kps.find(k => k.name === 'left_hip');
-                const rh = kps.find(k => k.name === 'right_hip');
-                return lk?.score > 0.4 && rk?.score > 0.4 && lk.y < lh.y - 70 && rk.y < rh.y - 70;
-            }}
-        ];
-
         async function initTF() {
             try {
                 statusEl.textContent = "Setting up TensorFlow.js...";
@@ -257,7 +291,6 @@
             if (gameRunning || !detector) return;
             gameRunning = true;
             score = 0;
-            currentMoveIndex = 0;
             updateUI();
 
             // Reset and play tutorial video **once**
@@ -268,41 +301,40 @@
                 statusEl.textContent = "Cannot play video – check file or browser settings.";
             });
 
-            statusEl.textContent = "Game started! Follow the video.";
+            statusEl.textContent = "Game started! Match the green pose — the closer your angles, the higher the score.";
             detectLoop();
-            nextMove();
-        }
-
-        function nextMove() {
-            if (currentMoveIndex >= danceMoves.length) {
-                endGame();
-                return;
-            }
-            document.getElementById('current-move').textContent = 
-                `Do this: ${danceMoves[currentMoveIndex].name}`;
         }
 
         async function detectLoop() {
             if (!gameRunning) return;
 
-            // Tutorial pose (green) – only while video is playing
+            let tutorialAngles = null;
+
+            // Tutorial pose (green) – get angles from TensorFlow pose on tutorial video
             if (tutorialVideo.readyState >= 2 && !tutorialVideo.paused && !tutorialVideo.ended) {
-                const poses = await detector.estimatePoses(tutorialVideo);
-                drawPose(tutorialCtx, poses, 'lime');
+                const tutorialPoses = await detector.estimatePoses(tutorialVideo);
+                drawPose(tutorialCtx, tutorialPoses, 'lime');
+                if (tutorialPoses.length > 0) {
+                    tutorialAngles = getAngles(tutorialPoses[0].keypoints);
+                }
+            } else if (tutorialVideo.ended) {
+                endGame();
+                return;
             }
 
-            // User pose (cyan) – drawn with cover transform so skeleton matches masked video
+            // User pose (cyan) – draw and compare angles to tutorial (closer = better score)
             if (userVideo.readyState >= 2) {
-                const poses = await detector.estimatePoses(userVideo);
-                drawPoseCover(userCtx, poses, 'cyan', userVideo, userCanvas.width, userCanvas.height);
+                const userPoses = await detector.estimatePoses(userVideo);
+                drawPoseCover(userCtx, userPoses, 'cyan', userVideo, userCanvas.width, userCanvas.height);
 
-                if (poses.length > 0 && currentMoveIndex < danceMoves.length) {
-                    if (danceMoves[currentMoveIndex].check(poses[0].keypoints)) {
-                        score += 25;
-                        updateUI();
-                        currentMoveIndex++;
-                        nextMove();
-                    }
+                if (userPoses.length > 0 && tutorialAngles) {
+                    const userAngles = getAngles(userPoses[0].keypoints);
+                    const matchPercent = angleMatchScore(tutorialAngles, userAngles);
+                    document.getElementById('current-move').textContent =
+                        `Match: ${Math.round(matchPercent)}% — match the green pose angles`;
+                    // Accumulate score: higher match = more points per frame (closer = better)
+                    score += matchPercent * 0.15;
+                    updateUI();
                 }
             }
 
@@ -380,13 +412,15 @@
         }
 
         function updateUI() {
-            document.getElementById('score').textContent = `Score: ${score}`;
+            document.getElementById('score').textContent = `Score: ${Math.round(score)}`;
         }
 
         function endGame() {
+            if (!gameRunning) return;
             gameRunning = false;
             tutorialVideo.pause();
-            alert(`Game Over! Final Score: ${score}`);
+            const finalScore = Math.round(score);
+            alert(`Game Over! Final Score: ${finalScore}`);
             document.getElementById('current-move').textContent = 'Finished!';
             statusEl.textContent = "Refresh page to play again.";
         }
