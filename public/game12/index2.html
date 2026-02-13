@@ -424,11 +424,10 @@
     body: JSON.stringify({
       game_id: '5830f38c-2f0f-4cfc-bcba-2206f147e8ee',
       score: score,
-      duration_seconds: 60,
+      duration_seconds: Math.floor(tutorialVideo.duration),
       metadata: {
-        duration_ms: 60,
-        engine: "punchgame",
-        maxCombo: maxCombo
+        duration_ms: Math.floor(tutorialVideo.duration),
+        engine: "dance-mirror"
       },
     }),
   })
