@@ -1,8 +1,8 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/uis/card'
+import { Badge } from '@/components/uis/badge'
+import { Progress } from '@/components/uis/progress'
 import { Calendar, CheckCircle2, Clock, Coins } from 'lucide-react'
 
 interface Challenge {
