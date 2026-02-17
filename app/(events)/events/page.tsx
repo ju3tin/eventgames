@@ -273,7 +273,7 @@ export default function EventsPage() {
                       <Label htmlFor="game">Game</Label>
                       <Select
                         value={newEventData.game}
-                        onValueChange={(value) => setNewEventData({ ...newEventData, game: value })}
+                        onValueChange={(value: string) => setNewEventData({ ...newEventData, game: value })}
                       >
                         <SelectTrigger id="game">
                           <SelectValue placeholder="Select game" />
@@ -291,7 +291,7 @@ export default function EventsPage() {
                       <Label htmlFor="rule">Prize Rule</Label>
                       <Select
                         value={newEventData.rule}
-                        onValueChange={(value) =>
+                        onValueChange={(value: string) =>
                           setNewEventData({ ...newEventData, rule: value as EventRule })
                         }
                       >
