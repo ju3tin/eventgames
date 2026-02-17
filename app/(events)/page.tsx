@@ -1,9 +1,9 @@
 'use client'
 
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent } from '@/components/uis/card'
+import { Badge } from '@/components/uis/badge'
+import { Progress } from '@/components/uis/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/uis/tabs'
 import { Trophy, Star, Target, Zap, Award, Lock, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import Image from 'next/image'
