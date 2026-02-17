@@ -310,7 +310,7 @@ export default function EventsPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="date">Date</Label>
+                      <Label htmlFor="date">Start Date</Label>
                       <Input
                         id="date"
                         type="date"
@@ -319,7 +319,27 @@ export default function EventsPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="time">Time</Label>
+                      <Label htmlFor="time">Start Time</Label>
+                      <Input
+                        id="time"
+                        type="time"
+                        value={newEventData.time}
+                        onChange={(e) => setNewEventData({ ...newEventData, time: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="date">Finish Date</Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={newEventData.date}
+                        onChange={(e) => setNewEventData({ ...newEventData, date: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="time">Finish Time</Label>
                       <Input
                         id="time"
                         type="time"
