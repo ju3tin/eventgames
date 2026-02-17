@@ -2,7 +2,6 @@
 
 import * as React from 'react'
 import * as RechartsPrimitive from 'recharts'
-import type { TooltipProps } from 'recharts'
 
 import { cn } from '@/lib/utils2'
 
@@ -105,14 +104,26 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
-type ChartTooltipContentProps = TooltipProps<number, string> &
-  React.ComponentProps<'div'> & {
-    hideLabel?: boolean
-    hideIndicator?: boolean
-    indicator?: 'line' | 'dot' | 'dashed'
-    nameKey?: string
-    labelKey?: string
-  }
+interface ChartTooltipContentProps extends React.ComponentProps<'div'> {
+  active?: boolean
+  payload?: any[]
+  hideLabel?: boolean
+  hideIndicator?: boolean
+  indicator?: 'line' | 'dot' | 'dashed'
+  label?: React.ReactNode
+  labelFormatter?: (value: React.ReactNode, payload: any[]) => React.ReactNode
+  labelClassName?: string
+  formatter?: (
+    value: number,
+    name: string,
+    item: any,
+    index: number,
+    payload: any,
+  ) => React.ReactNode
+  color?: string
+  nameKey?: string
+  labelKey?: string
+}
 
 function ChartTooltipContent({
   active,
@@ -129,7 +140,7 @@ function ChartTooltipContent({
   nameKey,
   labelKey,
 }: ChartTooltipContentProps) {
-ss  const { config } = useChart()
+  const { config } = useChart()
 
   const tooltipLabel = React.useMemo(() => {
     if (hideLabel || !payload?.length) {
