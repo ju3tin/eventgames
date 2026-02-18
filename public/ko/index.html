@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pose K.O.</title>
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="styles.css" />
+        <link rel="icon" type="image/x-icon" href="/assets/icon.ico">
+    </head>
+
+    <body>
+        <div class="header">
+            <div class="title">Pose K.O.</div>
+            <div class="author">Retro Fight, Real Sweat</div>
+        </div>
+
+        <div class="main-container">
+            <div class="game-container">
+                <canvas id="gameCanvas"></canvas>
+
+                <!-- Health bars -->
+                <div class="health-bar-container player-health">
+                    <div class="health-label">PLAYER</div>
+                    <div
+                        class="health-bar high"
+                        id="playerHealthBar"
+                        style="width: 100%"
+                    >
+                    </div>
+                </div>
+
+                <div class="health-bar-container opponent-health">
+                    <div class="health-label">DODO</div>
+                    <div
+                        class="health-bar"
+                        id="opponentHealthBar"
+                        style="width: 100%"
+                    >
+                    </div>
+                </div>
+
+                <!-- Corner decorations -->
+                <div class="corner-decoration top-left"></div>
+                <div class="corner-decoration top-right"></div>
+                <div class="corner-decoration bottom-left"></div>
+                <div class="corner-decoration bottom-right"></div>
+
+                <!-- Flame accent -->
+                <div class="flame-accent"></div>
+
+                <!-- Initial Control Screen -->
+                <div id="controlScreen" class="game-overlay">
+                    <h1 class="game-title">Pose K.O.</h1>
+                    <p class="game-subtitle">Pose to Victory!</p>
+
+                    <div class="game-instructions">
+                        <h3 class="instruction-title">CONTROLS</h3>
+                        <ul class="instruction-list">
+                            <li class="instruction-item">
+                                <div class="instruction-icon">👊</div>
+                                <span>LEFT PUNCH = THROW LEFT PUNCH</span>
+                            </li>
+                            <li class="instruction-item">
+                                <div class="instruction-icon">👊</div>
+                                <span>RIGHT PUNCH = THROW RIGHT PUNCH</span>
+                            </li>
+                            <li class="instruction-item">
+                                <div class="instruction-icon">🛡️</div>
+                                <span>BLOCK = RAISE BOTH ARMS</span>
+                            </li>
+                            <li class="instruction-item">
+                                <div class="instruction-icon">↔️</div>
+                                <span>DODGE = LEAN LEFT/RIGHT</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <button id="startBtn" class="start-btn">NEXT</button>
+                </div>
+
+                <!-- Character Selection Screen -->
+                <div id="characterScreen" class="game-overlay hidden">
+                    <h1 class="game-title">SELECT FIGHTER</h1>
+                    <p class="game-subtitle">Choose your warrior</p>
+
+                    <div class="selection-container">
+                        <div class="character-option" data-character="mac">
+                            <canvas
+                                class="character-image"
+                                id="macPreview"
+                                width="180"
+                                height="180"
+                            ></canvas>
+                            <div class="character-name">INIGO</div>
+                        </div>
+                        <div class="character-option" data-character="don">
+                            <canvas
+                                class="character-image"
+                                id="donPreview"
+                                width="180"
+                                height="180"
+                            ></canvas>
+                            <div class="character-name">CASSIE</div>
+                        </div>
+                        <div class="character-option" data-character="king">
+                            <canvas
+                                class="character-image"
+                                id="kingPreview"
+                                width="180"
+                                height="180"
+                            ></canvas>
+                            <div class="character-name">MIKA</div>
+                        </div>
+                    </div>
+
+                    <button id="characterSelectBtn" class="start-btn">
+                        NEXT
+                    </button>
+                </div>
+
+                <!-- Arena Selection Screen -->
+                <div id="arenaScreen" class="game-overlay hidden">
+                    <h1 class="game-title">SELECT ARENA</h1>
+                    <p class="game-subtitle">Choose your battlefield</p>
+
+                    <div class="selection-container">
+                        <div class="arena-option" data-arena="lab">
+                            <canvas
+                                class="arena-image"
+                                id="labPreview"
+                            ></canvas>
+                            <div class="arena-name">COMPUTER LAB</div>
+                        </div>
+                        <div class="arena-option" data-arena="struggle">
+                            <canvas
+                                class="arena-image"
+                                id="strugglePreview"
+                            ></canvas>
+                            <div class="arena-name">THE STRUGGLE</div>
+                        </div>
+                        <div class="arena-option" data-arena="eya">
+                            <canvas
+                                class="arena-image"
+                                id="eyaPreview"
+                            ></canvas>
+                            <div class="arena-name">EYA BUILDING</div>
+                        </div>
+                    </div>
+
+                    <button id="arenaSelectBtn" class="start-btn">FIGHT</button>
+                </div>
+
+                <!-- Game Over Screen -->
+                <div id="gameOverScreen" class="game-overlay hidden">
+                    <div class="game-over-container">
+                        <h1 id="gameOverTitle" class="game-over-title">
+                            GAME OVER
+                        </h1>
+                        <div id="gameOverMessage" class="game-over-message">
+                            YOU WIN!
+                        </div>
+
+                        <div class="game-over-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">YOUR HEALTH</div>
+                                <div id="finalPlayerHealth" class="stat-value">
+                                    100%
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">DODO'S HEALTH</div>
+                                <div
+                                    id="finalOpponentHealth"
+                                    class="stat-value"
+                                >
+                                    0%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-over-actions">
+                        <button id="playAgainBtn" class="game-over-btn">
+                            PLAY AGAIN
+                        </button>
+                        <button id="mainMenuBtn" class="game-over-btn">
+                            MAIN MENU
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="webcam-container">
+                <div class="webcam-header">
+                    <div class="webcam-title">PLAYER'S CAMERA</div>
+                    <div class="webcam-subtitle">POSE DETECTION</div>
+                </div>
+
+                <div class="video-wrapper">
+                    <video id="video" autoplay muted playsinline></video>
+                    <canvas id="poseCanvas"></canvas>
+                    <div id="loadingIndicator" class="loading-indicator hidden">
+                        <div class="loading-spinner"></div>
+                        <div>LOADING...</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button id="cameraBtn" class="btn">OPEN CAMERA</button>
+                    <button id="muteBtn" class="btn hidden">MUTE</button>
+
+                    <div class="status-container">
+                        <div class="status-label">CURRENT POSE</div>
+                        <div id="poseStatus" class="status-value">IDLE</div>
+                    </div>
+
+                    <div class="pose-indicator">
+                        <div class="pose-item" id="pose-left">
+                            <div class="pose-icon">L</div>
+                            <div class="pose-name">LEFT</div>
+                        </div>
+                        <div class="pose-item" id="pose-right">
+                            <div class="pose-icon">R</div>
+                            <div class="pose-name">RIGHT</div>
+                        </div>
+                        <div class="pose-item" id="pose-block">
+                            <div class="pose-icon">B</div>
+                            <div class="pose-name">BLOCK</div>
+                        </div>
+                        <div class="pose-item" id="pose-dodge">
+                            <div class="pose-icon">D</div>
+                            <div class="pose-name">DODGE</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="/scripts/uiManager.js"></script>
+        <script src="/scripts/spriteManager.js"></script>
+        <script src="/scripts/soundManager.js"></script>
+        <script src="/scripts/player.js"></script>
+        <script src="/scripts/opponent.js"></script>
+        <script src="/scripts/app.js"></script>
+        <script src="/scripts/sprite.js"></script>
+        <script src="/scripts/gameManager.js"></script>
+    </body>
+</html>
