@@ -1,0 +1,54 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+    font-family: Arial, sans-serif;
+}
+
+#game-container {
+    text-align: center;
+}
+
+#game-area {
+    position: relative;
+    width: 700px;
+    height: 500px;
+    border: 2px solid #333;
+    background-color: #fff;
+    overflow: hidden;
+    margin: 20px auto;
+}
+
+#score-board {
+    margin-top: 20px;
+}
+
+#score {
+    font-size: 1.5rem;
+}
+
+#result {
+    margin: 20px 0;
+    font-size: 1.2rem;
+    color: red;
+
+}
+
+#start-btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.fruit {
+    position: absolute;
+    width: 50px;
+}
