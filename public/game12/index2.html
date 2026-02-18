@@ -423,7 +423,7 @@
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       game_id: '5830f38c-2f0f-4cfc-bcba-2206f147e8ee',
-      score: score,
+      score: {Math.round(score),
       duration_seconds: Math.floor(tutorialVideo.duration),
       metadata: {
         duration_ms: Math.floor(tutorialVideo.duration),
