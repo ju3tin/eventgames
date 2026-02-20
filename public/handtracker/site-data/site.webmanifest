@@ -1,0 +1,26 @@
+{
+  "name": "Hand-Tracker by ThatSINEWAVE_",
+  "description": "A web application that uses MediaPipe's Hand Tracking solution to detect and recognize hand gestures in real-time through your device's camera.",
+  "short_name": "Hand-Tracker",
+  "start_url": "/Hand-Tracker",
+  "orientation": "portrait",
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "site-data/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "site-data/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "site-data/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    }
+  ]
+}
