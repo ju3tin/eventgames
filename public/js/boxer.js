@@ -34,7 +34,7 @@ var hey = document.getElementById("hey");
 
 function setup() {
   let cnv = createCanvas(640, 380);
-  cnv.position(450, 150);
+  cnv.position('50%', 150);
 
   background(256);
   //frameRate(10);
