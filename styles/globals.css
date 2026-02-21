@@ -121,6 +121,7 @@
     outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
