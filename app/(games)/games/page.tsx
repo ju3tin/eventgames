@@ -1,7 +1,7 @@
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { GameCard } from '@/components/game-card'
-import { games } from '@/lib/games-data1'
+import { games } from '@/lib/game-data1'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
