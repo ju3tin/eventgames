@@ -138,7 +138,7 @@
 	async function loadMenu() {
 		const response = await fetch("/menu.json");
 		const data = await response.json();
-		const menuContainer = document.getElementById("menu");
+		const panel = document.getElementById("menu");
 	
 		function createMenuItems(items) {
 			const ul = document.createElement("ul");
@@ -148,8 +148,8 @@
 				const li = document.createElement("li");
 	
 				// Divider
-				if(item.divider){
-					li.setAttribute("data-role","list-divider");
+				if (item.divider) {
+					li.setAttribute("data-role", "list-divider");
 					li.textContent = item.text;
 				}
 				// Section with nested items
@@ -163,23 +163,16 @@
 					li.appendChild(h3);
 					li.appendChild(div);
 				}
-				// Regular link item
+				// Normal link item
 				else {
 					const a = document.createElement("a");
 					a.href = item.href;
 					a.textContent = item.text;
 	
-					if (item.filterText)
-						li.setAttribute("data-filtertext", item.filterText);
-	
-					if (item.icon)
-						li.setAttribute("data-icon", item.icon);
-	
-					if (item.class)
-						li.className = item.class;
-	
-					if (item.ajax === false)
-						a.setAttribute("data-ajax", "false");
+					if (item.filterText) li.setAttribute("data-filtertext", item.filterText);
+					if (item.icon) li.setAttribute("data-icon", item.icon);
+					if (item.class) li.className = item.class;
+					if (item.ajax === false) a.setAttribute("data-ajax", "false");
 	
 					li.appendChild(a);
 				}
@@ -190,9 +183,8 @@
 			return ul;
 		}
 	
-		menuContainer.appendChild(createMenuItems(data.menu));
+		panel.appendChild(createMenuItems(data.menu));
 	}
-	
 	loadMenu();
 	</script>
 
