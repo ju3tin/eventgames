@@ -5,18 +5,18 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>jQuery Mobile Demos</title>
 	<link rel="shortcut icon" href="favicon.ico">
-	<link rel="stylesheet" href="../css/themes/default/jquery.mobile.css">
-	<link rel="stylesheet" href="_assets/css/jqm-demos.css">
+	<link rel="stylesheet" href="../css/jquery.mobile.css">
+	<link rel="stylesheet" href="/css/jqm-demos.css">
     <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,700">
 	<script src="../external/jquery/jquery.js"></script>
-	<script src="_assets/js/"></script>
+	<script src="/js/"></script>
 	<script src="../js/"></script>
 </head>
 <body>
 <div data-role="page" class="jqm-demos jqm-home">
 
 	<div data-role="toolbar" data-type="header" class="jqm-header">
-		<h2><img src="_assets/img/jquerymobile-logo.png" alt="jQuery Mobile"></h2>
+		<h2><img src="/img/jquerymobile-logo.png" alt="jQuery Mobile"></h2>
 		<a href="#" class="jqm-navmenu-link ui-button ui-button-icon-only ui-corner-all ui-nodisc-icon ui-alt-icon ui-toolbar-header-button-left">Menu<span class="ui-icon ui-icon-bars"></span></a>
 		<a href="#" class="jqm-search-link ui-button ui-button-icon-only ui-corner-all ui-nodisc-icon ui-alt-icon ui-toolbar-header-button-right">Search<span class="ui-icon ui-icon-search"></span></a>
 		<div class="jqm-banner"><h3>Version <span class="jqm-version"></span> Demos</h3></div>
@@ -27,7 +27,7 @@
 
 		<p><span class="jqm-intro-span">jQuery Mobile</span> is a touch-optimized HTML5 UI framework designed to make responsive web sites and apps that are accessible on all smartphone, tablet and desktop devices.</p>
 
-        <img src="_assets/img/devices.png" class="jqm-demos-hero">
+        <img src="/img/devices.png" class="jqm-demos-hero">
 
 		<p>New to jQuery Mobile? Get started by reading this <a href="intro/" data-ajax="false">introduction</a>. For technical info, visit the <a href="http://api.jquerymobile.com" title="jQuery Mobile API documentation" target="_blank">API documentation</a>. Downloads and info about the project can be found on <a href="http://jquerymobile.com" title="jQuery Mobile web site" target="_blank">jquerymobile.com</a>.</p>
 

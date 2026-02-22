@@ -11,16 +11,16 @@
 		window.grunticon=function(e){if(e&&3===e.length){var t=window,n=!(!t.document.createElementNS||!t.document.createElementNS("http://www.w3.org/2000/svg","svg").createSVGRect||!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#Image","1.1")||window.opera&&-1===navigator.userAgent.indexOf("Chrome")),o=function(o){var r=t.document.createElement("link"),a=t.document.getElementsByTagName("script")[0];r.rel="stylesheet",r.href=e[o&&n?0:o?1:2],a.parentNode.insertBefore(r,a)},r=new t.Image;r.onerror=function(){o(!1)},r.onload=function(){o(1===r.width&&1===r.height)},r.src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="}};
 
 		// Point to style sheet locations
-		grunticon( [ "../../css/themes/default/jquery.mobile.inline-svg.css", "../../css/themes/default/jquery.mobile.inline-png.css", "../../css/themes/default/jquery.mobile.external-png.css" ] );
+		grunticon( [ "../../css/jquery.mobile.inline-svg.css", "../../css/jquery.mobile.inline-png.css", "../../css/jquery.mobile.external-png.css" ] );
 	</script>
 	<!-- Fall back style sheet incase javascript is turned off -->
-	<noscript id="grunticon-fallback"><link href="../../css/themes/default/jquery.mobile.fallback.css" rel="stylesheet"></noscript>
+	<noscript id="grunticon-fallback"><link href="../../css/jquery.mobile.fallback.css" rel="stylesheet"></noscript>
 	<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,700">
-	<link rel="stylesheet" href="../../css/themes/default/jquery.mobile.css">
-	<link rel="stylesheet" href="../_assets/css/jqm-demos.css">
-	<script src="../../external/jquery/jquery.js"></script>
-	<script src="../_assets/js/"></script>
-	<script src="../../js/"></script>
+	<link rel="stylesheet" href="/css/jquery.mobile.css">
+	<link rel="stylesheet" href="/css/jqm-demos.css">
+	<script src="/js/jquery.js"></script>
+	<script src="/js/index1.js"></script>
+	<script src="/js/jquery.mobile-1.5.0-rc1.min.js"></script>
 	<script>
 		$( document ).on( "pagecreate", function() {
 			$( "#settings input" ).on( "change", function( event ) {
@@ -86,7 +86,7 @@
 				"height": "200px",
 				"display": "block",
 				"background-size": "200px 200px",
-				"background-image": svg ? "url('data:image/svg+xml;charset=US-ASCII,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22iso-8859-1%22%3F%3E%3C!DOCTYPE%20svg%20PUBLIC%20%22-%2F%2FW3C%2F%2FDTD%20SVG%201.1%2F%2FEN%22%20%22http%3A%2F%2Fwww.w3.org%2FGraphics%2FSVG%2F1.1%2FDTD%2Fsvg11.dtd%22%3E%3Csvg%20version%3D%221.1%22%20id%3D%22Layer_1%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20xmlns%3Axlink%3D%22http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%22%20x%3D%220px%22%20y%3D%220px%22%20%20width%3D%2214px%22%20height%3D%2210px%22%20viewBox%3D%220%200%2014%2010%22%20style%3D%22enable-background%3Anew%200%200%2014%2010%3B%22%20xml%3Aspace%3D%22preserve%22%3E%3Cpath%20fill%3D%22%23FFF%22%20d%3D%22M7%2C0C3%2C0%2C0%2C5%2C0%2C5s3%2C5%2C7%2C5s7-5%2C7-5S11%2C0%2C7%2C0z%20M7%2C8C5.343%2C8%2C4%2C6.657%2C4%2C5s1.343-3%2C3-3s3%2C1.343%2C3%2C3S8.657%2C8%2C7%2C8z%20M7%2C4%20C6.448%2C4%2C6%2C4.447%2C6%2C5s0.448%2C1%2C1%2C1s1-0.447%2C1-1S7.552%2C4%2C7%2C4z%22%2F%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3C%2Fsvg%3E')" : "url(../../css/themes/default/images/icons-png/eye-white.png)",
+				"background-image": svg ? "url('data:image/svg+xml;charset=US-ASCII,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22iso-8859-1%22%3F%3E%3C!DOCTYPE%20svg%20PUBLIC%20%22-%2F%2FW3C%2F%2FDTD%20SVG%201.1%2F%2FEN%22%20%22http%3A%2F%2Fwww.w3.org%2FGraphics%2FSVG%2F1.1%2FDTD%2Fsvg11.dtd%22%3E%3Csvg%20version%3D%221.1%22%20id%3D%22Layer_1%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20xmlns%3Axlink%3D%22http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%22%20x%3D%220px%22%20y%3D%220px%22%20%20width%3D%2214px%22%20height%3D%2210px%22%20viewBox%3D%220%200%2014%2010%22%20style%3D%22enable-background%3Anew%200%200%2014%2010%3B%22%20xml%3Aspace%3D%22preserve%22%3E%3Cpath%20fill%3D%22%23FFF%22%20d%3D%22M7%2C0C3%2C0%2C0%2C5%2C0%2C5s3%2C5%2C7%2C5s7-5%2C7-5S11%2C0%2C7%2C0z%20M7%2C8C5.343%2C8%2C4%2C6.657%2C4%2C5s1.343-3%2C3-3s3%2C1.343%2C3%2C3S8.657%2C8%2C7%2C8z%20M7%2C4%20C6.448%2C4%2C6%2C4.447%2C6%2C5s0.448%2C1%2C1%2C1s1-0.447%2C1-1S7.552%2C4%2C7%2C4z%22%2F%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3Cg%3E%3C%2Fg%3E%3C%2Fsvg%3E')" : "url(../../css/images/icons-png/eye-white.png)",
 				"background-color":  "rgba(0,0,0,.3)"
 			})
 			.insertAfter("#grunticon-icon-type");
@@ -105,7 +105,7 @@
 <div data-role="page" class="jqm-demos" data-quicklinks="true">
 
 	<div data-role="toolbar" data-type="header" class="jqm-header">
-		<h2><a href="../" title="jQuery Mobile Demos home"><img src="../_assets/img/jquerymobile-logo.png" alt="jQuery Mobile"></a></h2>
+		<h2><a href="../" title="jQuery Mobile Demos home"><img src="/img/jquerymobile-logo.png" alt="jQuery Mobile"></a></h2>
 		<a href="#" class="jqm-navmenu-link ui-button ui-button-icon-only ui-corner-all ui-nodisc-icon ui-alt-icon ui-toolbar-header-button-left">Menu<span class="ui-icon ui-icon-bars"></span></a>
 		<a href="#" class="jqm-search-link ui-button ui-button-icon-only ui-corner-all ui-nodisc-icon ui-alt-icon ui-toolbar-header-button-right">Search<span class="ui-icon ui-icon-search"></span></a>
 		<div class="jqm-banner"><h3>Version <span class="jqm-version"></span> Demos</h3></div>

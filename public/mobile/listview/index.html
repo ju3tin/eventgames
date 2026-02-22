@@ -6,14 +6,14 @@
 	<title>Listview - jQuery Mobile Demos</title>
 	<link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,700">
-	<link rel="stylesheet" href="../../css/themes/default/jquery.mobile.css">
-	<link rel="stylesheet" href="../_assets/css/jqm-demos.css">
-	<script src="../../external/jquery/jquery.js"></script>
-	<script src="../_assets/js/"></script>
-	<script src="../../js/"></script>
+	<link rel="stylesheet" href="/css/jquery.mobile.css">
+	<link rel="stylesheet" href="/css/jqm-demos.css">
+	<script src="/js/jquery.js"></script>
+	<script src="/js/index1.js"></script>
+	<script src="/js/jquery.mobile-1.5.0-rc1.min.js"></script>
 	<style id="custom-icon">
         .ui-icon.ui-icon-custom {
-			background-image: url("../_assets/img/glyphish-icons/21-skull.png");
+			background-image: url("/img/glyphish-icons/21-skull.png");
 			background-position: 3px 3px;
 			background-size: 70%;
 		}
@@ -23,7 +23,7 @@
 <div data-role="page" class="jqm-demos" data-quicklinks="true">
 
 	<div data-role="toolbar" data-type="header" class="jqm-header">
-		<h2><a href="../" title="jQuery Mobile Demos home"><img src="../_assets/img/jquerymobile-logo.png" alt="jQuery Mobile"></a></h2>
+		<h2><a href="../" title="jQuery Mobile Demos home"><img src="/img/jquerymobile-logo.png" alt="jQuery Mobile"></a></h2>
 		<a href="#" class="jqm-navmenu-link ui-button ui-button-icon-only ui-corner-all ui-nodisc-icon ui-alt-icon ui-toolbar-header-button-left">Menu<span class="ui-icon ui-icon-bars"></span></a>
 		<a href="#" class="jqm-search-link ui-button ui-button-icon-only ui-corner-all ui-nodisc-icon ui-alt-icon ui-toolbar-header-button-right">Search<span class="ui-icon ui-icon-search"></span></a>
 		<div class="jqm-banner"><h3>Version <span class="jqm-version"></span> Demos</h3></div>
@@ -178,11 +178,11 @@
 		<p>To use standard 16x16 pixel icons in list items, add the class of <code>ui-listview-item-icon</code> to the image element and insert 16x16 icons as <code>img</code> tags inside the list items.</p>
 			<div data-demo-html="true">
 				<ul data-role="listview" data-inset="true">
-					<li><a href="#"><img src="../_assets/img/gf.png" alt="France" class="ui-listview-item-icon ui-corner-none">France</a></li>
-					<li><a href="#"><img src="../_assets/img/de.png" alt="Germany" class="ui-listview-item-icon">Germany</a></li>
-					<li><a href="#"><img src="../_assets/img/gb.png" alt="Great Britain" class="ui-listview-item-icon">Great Britain</a></li>
-					<li><a href="#"><img src="../_assets/img/fi.png" alt="Finland" class="ui-listview-item-icon">Finland</a></li>
-					<li><a href="#"><img src="../_assets/img/us.png" alt="United States" class="ui-listview-item-icon ui-corner-none">United States</a></li>
+					<li><a href="#"><img src="/img/gf.png" alt="France" class="ui-listview-item-icon ui-corner-none">France</a></li>
+					<li><a href="#"><img src="/img/de.png" alt="Germany" class="ui-listview-item-icon">Germany</a></li>
+					<li><a href="#"><img src="/img/gb.png" alt="Great Britain" class="ui-listview-item-icon">Great Britain</a></li>
+					<li><a href="#"><img src="/img/fi.png" alt="Finland" class="ui-listview-item-icon">Finland</a></li>
+					<li><a href="#"><img src="/img/us.png" alt="United States" class="ui-listview-item-icon ui-corner-none">United States</a></li>
 				</ul>
 			</div><!--/demo-html -->
 
@@ -191,17 +191,17 @@
 			<div data-demo-html="true">
 				<ul data-role="listview" data-inset="true">
 					<li><a href="#">
-						<img src="../_assets/img/album-bb.jpg">
+						<img src="/img/album-bb.jpg">
 					<h2>Broken Bells</h2>
 					<p>Broken Bells</p></a>
 					</li>
 					<li><a href="#">
-						<img src="../_assets/img/album-hc.jpg">
+						<img src="/img/album-hc.jpg">
 					<h2>Warning</h2>
 					<p>Hot Chip</p></a>
 					</li>
 					<li><a href="#">
-						<img src="../_assets/img/album-p.jpg">
+						<img src="/img/album-p.jpg">
 					<h2>Wolfgang Amadeus Phoenix</h2>
 					<p>Phoenix</p></a>
 					</li>
@@ -213,19 +213,19 @@
 			<div data-demo-html="true">
 				<ul data-role="listview" data-split-icon="gear" data-split-theme="a" data-inset="true">
 					<li><a href="#">
-						<img src="../_assets/img/album-bb.jpg">
+						<img src="/img/album-bb.jpg">
 					<h2>Broken Bells</h2>
 					<p>Broken Bells</p></a>
 						<a href="#purchase" data-rel="popup" data-position-to="window" data-transition="pop">Purchase album</a>
 					</li>
 					<li><a href="#">
-						<img src="../_assets/img/album-hc.jpg">
+						<img src="/img/album-hc.jpg">
 					<h2>Warning</h2>
 					<p>Hot Chip</p></a>
 						<a href="#purchase" data-rel="popup" data-position-to="window" data-transition="pop">Purchase album</a>
 					</li>
 					<li><a href="#">
-						<img src="../_assets/img/album-p.jpg">
+						<img src="/img/album-p.jpg">
 					<h2>Wolfgang Amadeus Phoenix</h2>
 					<p>Phoenix</p></a>
 						<a href="#purchase" data-rel="popup" data-position-to="window" data-transition="pop">Purchase album</a>
@@ -415,19 +415,19 @@
 					<h2>Thumbnails and split button</h2>
 						<ul data-role="listview" data-split-icon="gear" data-split-theme="a">
 							<li><a href="index.php">
-								<img src="../_assets/img/album-bb.jpg">
+								<img src="/img/album-bb.jpg">
 								<h3>Broken Bells</h3>
 							<p>Broken Bells</p>
 								</a><a href="index.php" data-rel="dialog" data-transition="slideup">Purchase album
 							</a></li>
 							<li><a href="index.php">
-								<img src="../_assets/img/album-hc.jpg">
+								<img src="/img/album-hc.jpg">
 								<h3>Warning</h3>
 							<p>Hot Chip</p>
 							</a><a href="index.php" data-rel="dialog" data-transition="slideup">Purchase album
 							</a></li>
 							<li><a href="index.php">
-								<img src="../_assets/img/album-p.jpg">
+								<img src="/img/album-p.jpg">
 								<h3>Wolfgang Amadeus Phoenix</h3>
 							<p>Phoenix</p>
 								</a><a href="index.php" data-rel="dialog" data-transition="slideup">Purchase album

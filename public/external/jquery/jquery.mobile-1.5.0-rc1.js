@@ -863,7 +863,7 @@ return $.ui.keyCode = {
 //>>group: Core
 //>>description: Helper functions and references
 //>>css.structure: ../css/structure/jquery.mobile.core.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -1174,7 +1174,7 @@ return $.mobile;
 //>>group: Core
 //>>description: Default values for jQuery Mobile
 //>>css.structure: ../css/structure/jquery.mobile.core.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -1257,7 +1257,7 @@ return $.extend( $.mobile, {
 //>>group: Core
 //>>description: Mobile versions of Data functions to allow for namespaceing
 //>>css.structure: ../css/structure/jquery.mobile.core.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -1421,7 +1421,7 @@ return $.mobile;
 //>>label: Widget Factory
 //>>group: Core
 //>>description: Widget factory extentions for mobile.
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -1455,7 +1455,7 @@ return $.mobile.widget = $.mobile.widget || {};
 //>>label: Widget Theme
 //>>group: Widgets
 //>>description: Adds Theme option to widgets
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -1522,7 +1522,7 @@ return $.mobile.widget.theme;
 //>>docs: http://api.jquerymobile.com/loader/
 //>>demos: http://demos.jquerymobile.com/@VERSION/loader/
 //>>css.structure: ../css/structure/jquery.mobile.core.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -5011,7 +5011,7 @@ return $.enhance;
 //>>docs: http://api.jquerymobile.com/page/
 //>>demos: http://demos.jquerymobile.com/@VERSION/pages/
 //>>css.structure: ../css/structure/jquery.mobile.core.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -5152,7 +5152,7 @@ return $.mobile.page;
 //>>description: Widget to create page container which manages pages and transitions
 //>>docs: http://api.jquerymobile.com/pagecontainer/
 //>>demos: http://demos.jquerymobile.com/@VERSION/navigation/
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -6572,7 +6572,7 @@ return $;
 //>>demos: http://demos.jquerymobile.com/@VERSION/transitions/
 //>>css.structure: ../css/structure/jquery.mobile.transition.css
 //>>css.structure: ../css/structure/jquery.mobile.transition.fade.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -6922,8 +6922,8 @@ return $.mobile.transitionHandlers;
 //>>description: Widget to create page container which manages pages and transitions
 //>>docs: http://api.jquerymobile.com/pagecontainer/
 //>>demos: http://demos.jquerymobile.com/@VERSION/navigation/
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -7763,7 +7763,7 @@ return $.mobile.degradeInputsWithin;
 //>>docs: http://api.jquerymobile.com/page/
 //>>demos: http://demos.jquerymobile.com/@VERSION/pages-dialog/
 //>>css.structure: ../css/structure/jquery.mobile.dialog.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -8229,7 +8229,7 @@ return $.mobile.page;
 //>>docs: http://api.jquerymobile.com/collapsible/
 //>>demos: http://demos.jquerymobile.com/@VERSION/collapsible/
 //>>css.structure: ../css/structure/jquery.mobile.collapsible.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -8691,7 +8691,7 @@ return $.mobile.behaviors.addFirstLastClasses;
 //>>docs: http://api.jquerymobile.com/collapsibleset/
 //>>demos: http://demos.jquerymobile.com/@VERSION/collapsibleset/
 //>>css.structure: ../css/structure/jquery.mobile.collapsible.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -8831,7 +8831,7 @@ return $.widget( "mobile.collapsibleset", $.extend( {
 //>>docs: http://api.jquerymobile.com/grid-layout/
 //>>demos: http://demos.jquerymobile.com/@VERSION/grids/
 //>>css.structure:../css/structure/jquery.mobile.grid.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -10067,7 +10067,7 @@ return $.ui.button;
 //>>docs: http://api.jquerymobile.com/button/
 //>>demos: http://demos.jquerymobile.com/@VERSION/button/
 //>>css.structure: ../css/structure/jquery.mobile.forms.slider.tooltip.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -10137,7 +10137,7 @@ return $.ui.button;
 //>>docs: http://api.jquerymobile.com/navbar/
 //>>demos: http://demos.jquerymobile.com/@VERSION/navbar/
 //>>css.structure: ../css/structure/jquery.mobile.navbar.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -10292,7 +10292,7 @@ return $.widget( "mobile.navbar", {
 //>>docs: http://api.jquerymobile.com/navbar/
 //>>demos: http://demos.jquerymobile.com/@VERSION/navbar/
 //>>css.structure: ../css/structure/jquery.mobile.navbar.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
 
@@ -10447,7 +10447,7 @@ return $.ui.focusable;
 //>>css.structure: ../css/structure/jquery.mobile.popup.css
 //>>css.structure: ../css/structure/jquery.mobile.transition.css
 //>>css.structure: ../css/structure/jquery.mobile.transition.fade.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 // Lessons:
 // You must remove nav bindings even if there is no history. Make sure you
@@ -11526,7 +11526,7 @@ return $.mobile.popup;
 //>>docs: http://api.jquerymobile.com/listview/
 //>>demos: http://demos.jquerymobile.com/@VERSION/listview/
 //>>css.structure: ../css/structure/jquery.mobile.listview.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -11815,7 +11815,7 @@ return $.widget( "mobile.listview", $.extend( {
 //>>label: NavbarMoreButton
 //>>group: Widgets
 //>>css.structure: ../css/structure/jquery.mobile.navbar.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
     if ( typeof define === "function" && define.amd ) {
@@ -11975,7 +11975,7 @@ return $.widget( "mobile.navbar", $.mobile.navbar, {
 //>>docs: http://api.jquerymobile.com/listview/
 //>>demos: http://demos.jquerymobile.com/@VERSION/listview/
 //>>css.structure: ../css/structure/jquery.mobile.listview.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -12931,7 +12931,7 @@ return $.widget( "ui.accordion", {
 //>>docs: http://api.jquerymobile.com/button/
 //>>demos: http://demos.jquerymobile.com/@VERSION/button/
 //>>css.structure: ../css/structure/jquery.mobile.core.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -13017,7 +13017,7 @@ if ( $.mobileBackcompat !== false ) {
 //>>docs: http://api.jquerymobile.com/checkboxradio/
 //>>demos: http://demos.jquerymobile.com/@VERSION/checkboxradio-checkbox/
 //>>css.structure: ../css/structure/jquery.mobile.forms.checkboxradio.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -13081,7 +13081,7 @@ return $.ui.checkboxradio;
 //>>docs: http://api.jquerymobile.com/checkboxradio/
 //>>demos: http://demos.jquerymobile.com/@VERSION/checkboxradio-checkbox/
 //>>css.structure: ../css/structure/jquery.mobile.forms.checkboxradio.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -13197,7 +13197,7 @@ return $.mobile.zoom;
 //>>docs: http://api.jquerymobile.com/textinput/
 //>>demos: http://demos.jquerymobile.com/@VERSION/textinput/
 //>>css.structure: ../css/structure/jquery.mobile.forms.textinput.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -13436,7 +13436,7 @@ return $.mobile.behaviors.formReset;
 //>>docs: http://api.jquerymobile.com/button/
 //>>demos: http://demos.jquerymobile.com/@VERSION/button/
 //>>css.structure: ../css/structure/jquery.mobile.forms.slider.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -14003,7 +14003,7 @@ return $.mobile.slider;
 //>>docs: http://api.jquerymobile.com/slider/
 //>>demos: http://demos.jquerymobile.com/@VERSION/slider-tooltip/
 //>>css.structure: ../css/structure/jquery.mobile.forms.slider.tooltip.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -14148,7 +14148,7 @@ return $.widget( "mobile.slider", $.mobile.slider, {
 //>>docs: http://api.jquerymobile.com/flipswitch/
 //>>demos: http://demos.jquerymobile.com/@VERSION/flipswitch/
 //>>css.structure: ../css/structure/jquery.mobile.forms.flipswitch.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -14473,7 +14473,7 @@ return $.mobile.flipswitch;
 //>>docs: http://api.jquerymobile.com/rangeslider/
 //>>demos: http://demos.jquerymobile.com/@VERSION/rangeslider/
 //>>css.structure: ../css/structure/jquery.mobile.forms.rangeslider.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -14831,7 +14831,7 @@ return $.mobile.rangeslider;
 //>>docs: http://api.jquerymobile.com/textinput/
 //>>demos: http://demos.jquerymobile.com/@VERSION/textinput/
 //>>css.structure: ../css/structure/jquery.mobile.forms.textinput.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -14898,7 +14898,7 @@ return $.mobile.textinput;
 //>>docs: http://api.jquerymobile.com/textinput/#option-clearBtn
 //>>demos: http://demos.jquerymobile.com/@VERSION/textinput/
 //>>css.structure: ../css/structure/jquery.mobile.forms.textinput.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -15057,7 +15057,7 @@ return $.widget( "mobile.textinput", $.mobile.textinput, {
 //>>description: Textarea elements automatically grow/shrink to accommodate their contents.
 //>>docs: http://api.jquerymobile.com/textinput/#option-autogrow
 //>>css.structure: ../css/structure/jquery.mobile.forms.textinput.autogrow.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -15243,7 +15243,7 @@ return $.widget( "mobile.textinput", $.mobile.textinput, {
 //>>docs: http://api.jquerymobile.com/selectmenu/
 //>>demos: http://demos.jquerymobile.com/@VERSION/selectmenu/
 //>>css.structure: ../css/structure/jquery.mobile.forms.select.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -15617,7 +15617,7 @@ return $.mobile.selectmenu;
 //>>demos: http://demos.jquerymobile.com/@VERSION/toolbar/
 //>>css.structure: ../css/structure/jquery.mobile.core.css
 //>>css.structure: ../css/structure/jquery.mobile.toolbar.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -15814,7 +15814,7 @@ return $.widget( "mobile.toolbar", $.mobile.toolbar, $.mobile.widget.theme );
 //>>docs: http://api.jquerymobile.com/selectmenu/
 //>>demos: http://demos.jquerymobile.com/@VERSION/selectmenu-custom/
 //>>css.structure: ../css/structure/jquery.mobile.forms.select.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -16589,7 +16589,7 @@ return $.mobile.selectmenu;
 //>>docs: http://api.jquerymobile.com/toolbar/
 //>>demos: http://demos.jquerymobile.com/@VERSION/toolbar-fixed/
 //>>css.structure: ../css/structure/jquery.mobile.controlgroup.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -16660,7 +16660,7 @@ return $.ui.controlgroup;
 //>>docs: http://api.jquerymobile.com/controlgroup/
 //>>demos: http://demos.jquerymobile.com/@VERSION/controlgroup/
 //>>css.structure: ../css/structure/jquery.mobile.controlgroup.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -16836,7 +16836,7 @@ return $.widget( "ui.controlgroup", $.ui.controlgroup, {
 //>>docs: http://api.jquerymobile.com/toolbar/
 //>>demos: http://demos.jquerymobile.com/@VERSION/toolbar-fixed/
 //>>css.structure: ../css/structure/jquery.mobile.fixedToolbar.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -17113,7 +17113,7 @@ return $.widget( "mobile.toolbar", $.mobile.toolbar, {
 //>>docs: http://api.jquerymobile.com/toolbar/
 //>>demos: http://demos.jquerymobile.com/@VERSION/toolbar-fixed/
 //>>css.structure: ../css/structure/jquery.mobile.fixedToolbar.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -17363,7 +17363,7 @@ return $.mobile.popup;
 //>>docs: http://api.jquerymobile.com/popup/#option-arrow
 //>>demos: http://demos.jquerymobile.com/@VERSION/popup/#Arrow
 //>>css.structure: ../css/structure/jquery.mobile.popup.arrow.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -17703,7 +17703,7 @@ return $.mobile.popup;
 //>>docs: http://api.jquerymobile.com/panel/
 //>>demos: http://demos.jquerymobile.com/@VERSION/panel/
 //>>css.structure: ../css/structure/jquery.mobile.panel.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -18266,7 +18266,7 @@ return $.widget( "mobile.panel", {
 //>>description: Responsive presentation and behavior for HTML data tables
 //>>docs: http://api.jquerymobile.com/table/
 //>>css.structure: ../css/structure/jquery.mobile.table.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
@@ -19135,7 +19135,7 @@ return $.widget( "mobile.table", $.mobile.table, {
 //>>docs: http://api.jquerymobile.com/filterable/
 //>>demos: http://demos.jquerymobile.com/@VERSION/filterable/
 //>>css.structure: ../css/structure/jquery.mobile.filterable.css
-//>>css.theme: ../css/themes/default/jquery.mobile.theme.css
+//>>css.theme: ../css/jquery.mobile.theme.css
 
 ( function( factory ) {
 	if ( typeof define === "function" && define.amd ) {
