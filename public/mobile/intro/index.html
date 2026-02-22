@@ -115,9 +115,12 @@
 		<p>When you're ready to build a custom theme, use <a href="http://jquerymobile.com/themeroller" rel="external">ThemeRoller</a> to drag and drop, then download a custom theme.</p>
 
 	</div><!-- /content -->
-
-	<?php include( '../jqm-navmenu.php' ); ?>
-
+	<div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a">
+		<ul id="menu" class="ui-alt-icon ui-nodisc-icon">
+			<li data-role='list-divider'>Menu</li>
+			 <?php include( 'jqm-contents.php' ); ?>
+		 </ul>
+	</div><!-- /panel -->
 	<div data-role="toolbar" data-type="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
 		<h6>jQuery Mobile Version <span class="jqm-version"></span> Demos</h6>
 		<ul>
@@ -132,4 +135,58 @@
 <?php include( '../jqm-search.php' ); ?>
 
 </body>
+
+<script>
+	async function loadMenu() {
+	  const response = await fetch("/menu.json");
+	  const data = await response.json();
+	  const menuContainer = document.getElementById("menu");
+	
+	  function createMenuItems(items) {
+		const ul = document.createElement("ul");
+	
+		items.forEach(item => {
+		  const li = document.createElement("li");
+	
+		  // Section (has children)
+		  if (item.title) {
+			const h3 = document.createElement("h3");
+			h3.textContent = item.title;
+	
+			const div = document.createElement("div");
+			div.appendChild(createMenuItems(item.items));
+	
+			li.appendChild(h3);
+			li.appendChild(div);
+		  }
+		  // Normal link item
+		  else {
+			const a = document.createElement("a");
+			a.href = item.href;
+			a.textContent = item.text;
+	
+			if (item.filterText)
+			  li.setAttribute("data-filtertext", item.filterText);
+	
+			if (item.icon)
+			  li.setAttribute("data-icon", item.icon);
+	
+			if (item.class)
+			  li.className = item.class;
+	
+			li.appendChild(a);
+		  }
+	
+		  ul.appendChild(li);
+		});
+	
+		return ul;
+	  }
+	
+	  menuContainer.appendChild(createMenuItems(data.menu));
+	}
+	
+	loadMenu();
+	</script>
+
 </html>
