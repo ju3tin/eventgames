@@ -181,9 +181,7 @@
         "ajax": false
       },
   
-      /* Widgets section included exactly as previously generated */
-  
-      {
+     {
         "title": "Misc Demos",
         "items": [
           {
