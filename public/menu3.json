@@ -2,148 +2,148 @@
     {
       "title": "Home",
       "icon": "home",
-      "url": ".././"
+      "url": "/demos/index.html"
     },
     {
       "title": "Introduction",
-      "url": "../intro/"
+      "url": "/demos/intro/index.html"
     },
     {
       "title": "Buttons",
-      "url": "../button-markup/"
+      "url": "/demos/button-markup/index.html"
     },
     {
       "title": "Button widget",
-      "url": "../button/"
+      "url": "/demos/button/index.html"
     },
     {
       "title": "Checkboxradio widget",
       "children": [
-        { "title": "Checkboxes", "url": "../checkboxradio-checkbox/" },
-        { "title": "Radio buttons", "url": "../checkboxradio-radio/" }
+        { "title": "Checkboxes", "url": "/demos/checkboxradio-checkbox/index.html" },
+        { "title": "Radio buttons", "url": "/demos/checkboxradio-radio/index.html" }
       ]
     },
     {
       "title": "Collapsible (set) widget",
       "children": [
-        { "title": "Collapsible", "url": "../collapsible/" },
-        { "title": "Dynamic collapsibles", "url": "../collapsible-dynamic/" },
-        { "title": "Collapsible set", "url": "../collapsibleset/" }
+        { "title": "Collapsible", "url": "/demos/collapsible/index.html" },
+        { "title": "Dynamic collapsibles", "url": "/demos/collapsible-dynamic/index.html" },
+        { "title": "Collapsible set", "url": "/demos/collapsibleset/index.html" }
       ]
     },
     {
       "title": "Controlgroup widget",
       "children": [
-        { "title": "Controlgroup", "url": "../controlgroup/" },
-        { "title": "Dynamic controlgroups", "url": "../controlgroup-dynamic/" }
+        { "title": "Controlgroup", "url": "/demos/controlgroup/index.html" },
+        { "title": "Dynamic controlgroups", "url": "/demos/controlgroup-dynamic/index.html" }
       ]
     },
     {
       "title": "Datepicker",
-      "url": "../datepicker/"
+      "url": "/demos/datepicker/index.html"
     },
     {
       "title": "Events",
       "children": [
-        { "title": "Swipe list items", "url": "../swipe-list/" },
-        { "title": "Swipe page navigation", "url": "../swipe-page/" }
+        { "title": "Swipe list items", "url": "/demos/swipe-list/index.html" },
+        { "title": "Swipe page navigation", "url": "/demos/swipe-page/index.html" }
       ]
     },
     {
       "title": "Filterable widget",
-      "url": "../filterable/"
+      "url": "/demos/filterable/index.html"
     },
     {
       "title": "Flipswitch widget",
-      "url": "../flipswitch/"
+      "url": "/demos/flipswitch/index.html"
     },
     {
       "title": "Forms",
       "children": [
-        { "title": "Forms", "url": "../forms/" },
-        { "title": "Hide labels", "url": "../forms-label-hidden-accessible/" },
-        { "title": "Field containers", "url": "../forms-field-contain/" },
-        { "title": "Forms disabled", "url": "../forms-disabled/" },
-        { "title": "Forms gallery", "url": "../forms-gallery/" }
+        { "title": "Forms", "url": "/demos/forms/index.html" },
+        { "title": "Hide labels", "url": "/demos/forms-label-hidden-accessible/index.html" },
+        { "title": "Field containers", "url": "/demos/forms-field-contain/index.html" },
+        { "title": "Forms disabled", "url": "/demos/forms-disabled/index.html" },
+        { "title": "Forms gallery", "url": "/demos/forms-gallery/index.html" }
       ]
     },
     {
       "title": "Grids",
       "children": [
-        { "title": "Grids", "url": "../grids/" },
-        { "title": "Buttons in grids", "url": "../grids-buttons/" },
-        { "title": "Custom responsive grids", "url": "../grids-custom-responsive/" }
+        { "title": "Grids", "url": "/demos/grids/index.html" },
+        { "title": "Buttons in grids", "url": "/demos/grids-buttons/index.html" },
+        { "title": "Custom responsive grids", "url": "/demos/grids-custom-responsive/index.html" }
       ]
     },
     {
       "title": "Grouping and dividing content",
-      "url": "../body-bar-classes/"
+      "url": "/demos/body-bar-classes/index.html"
     },
     {
       "title": "Icons",
       "children": [
-        { "title": "Icons", "url": "../icons/" },
-        { "title": "Grunticon loader", "url": "../icons-grunticon/" }
+        { "title": "Icons", "url": "/demos/icons/index.html" },
+        { "title": "Grunticon loader", "url": "/demos/icons-grunticon/index.html" }
       ]
     },
     {
       "title": "Listview widget",
       "children": [
-        { "title": "Listview", "url": "../listview/" },
-        { "title": "Listview autocomplete", "url": "../listview-autocomplete/" },
-        { "title": "Listview autocomplete remote data", "url": "../listview-autocomplete-remote/" },
-        { "title": "Listview autodividers linkbar", "url": "../listview-autodividers-linkbar/" },
-        { "title": "Listview autodividers selector", "url": "../listview-autodividers-selector/" },
-        { "title": "Nested Listviews", "url": "../listview-nested-lists/" },
-        { "title": "Listview collapsible list items (flat)", "url": "../listview-collapsible-item-flat/" },
-        { "title": "Listview collapsible list items (indented)", "url": "../listview-collapsible-item-indented/" },
-        { "title": "Listview responsive grid", "url": "../listview-grid/" }
+        { "title": "Listview", "url": "/demos/listview/index.html" },
+        { "title": "Listview autocomplete", "url": "/demos/listview-autocomplete/index.html" },
+        { "title": "Listview autocomplete remote data", "url": "/demos/listview-autocomplete-remote/index.html" },
+        { "title": "Listview autodividers linkbar", "url": "/demos/listview-autodividers-linkbar/index.html" },
+        { "title": "Listview autodividers selector", "url": "/demos/listview-autodividers-selector/index.html" },
+        { "title": "Nested Listviews", "url": "/demos/listview-nested-lists/index.html" },
+        { "title": "Listview collapsible list items (flat)", "url": "/demos/listview-collapsible-item-flat/index.html" },
+        { "title": "Listview collapsible list items (indented)", "url": "/demos/listview-collapsible-item-indented/index.html" },
+        { "title": "Listview responsive grid", "url": "/demos/listview-grid/index.html" }
       ]
     },
     {
       "title": "Loader widget",
-      "url": "../loader/"
+      "url": "/demos/loader/index.html"
     },
     {
       "title": "Navbar widget",
-      "url": "../navbar/"
+      "url": "/demos/navbar/index.html"
     },
     {
       "title": "Navigation",
       "children": [
-        { "title": "Navigation", "url": "../navigation/" },
-        { "title": "Linking pages", "url": "../navigation-linking-pages/" },
-        { "title": "Hash processing demo", "url": "../navigation-hash-processing/" },
-        { "title": "Page Navigation Events", "url": "../page-events/" }
+        { "title": "Navigation", "url": "/demos/navigation/index.html" },
+        { "title": "Linking pages", "url": "/demos/navigation-linking-pages/index.html" },
+        { "title": "Hash processing demo", "url": "/demos/navigation-hash-processing/index.html" },
+        { "title": "Page Navigation Events", "url": "/demos/page-events/index.html" }
       ]
     },
     {
       "title": "Pages",
       "children": [
-        { "title": "Pages", "url": "../pages/" },
-        { "title": "Single page", "url": "../pages-single-page/" },
-        { "title": "Multi-page template", "url": "../pages-multi-page/" },
-        { "title": "Dialog page", "url": "../pages-dialog/" }
+        { "title": "Pages", "url": "/demos/pages/index.html" },
+        { "title": "Single page", "url": "/demos/pages-single-page/index.html" },
+        { "title": "Multi-page template", "url": "/demos/pages-multi-page/index.html" },
+        { "title": "Dialog page", "url": "/demos/pages-dialog/index.html" }
       ]
     },
     {
       "title": "Rangeslider widget",
-      "url": "../rangeslider/"
+      "url": "/demos/rangeslider/index.html"
     },
     {
       "title": "Responsive Web Design",
-      "url": "../rwd/"
+      "url": "/demos/rwd/index.html"
     },
     {
       "title": "Tabs widget",
-      "url": "../tabs/"
+      "url": "/demos/tabs/index.html"
     },
     {
       "title": "Textinput widget",
-      "url": "../textinput/"
+      "url": "/demos/textinput/index.html"
     },
     {
       "title": "Transitions",
-      "url": "../transitions/"
+      "url": "/demos/transitions/index.html"
     }
   ]

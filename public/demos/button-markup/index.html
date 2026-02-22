@@ -19,74 +19,46 @@
 	</style>
 	<script>
 		$(document).on("pagecontainershow", function () {
-	
+		
 			var $menu = $("#menuList");
-	
-			// Prevent loading twice
 			if ($menu.data("loaded")) return;
-	
-			$.ajax({
-				url: "/menu3.json",   // <-- ROOT JSON FILE
-				method: "GET",
-				dataType: "json",
-				success: function (data) {
-	
-					buildMenu(data, $menu);
-	
-					// Refresh jQuery Mobile components
-					$menu.listview().listview("refresh");
-					$("#mainPanel").trigger("create");
-	
-					$menu.data("loaded", true);
-	
-					console.log("Menu loaded from /menu.json");
-	
-				},
-				error: function (xhr) {
-					console.log("Error loading /menu.json");
-					console.log(xhr.status, xhr.statusText);
-				}
+		
+			$.getJSON("/menu3.json", function(data) {
+				buildMenu(data, $menu);
+				$menu.listview().listview("refresh"); // refresh the listview
+				$("#mainPanel").trigger("create");    // enhance collapsibles
+				$menu.data("loaded", true);
+				console.log("Menu loaded correctly");
+			}).fail(function(xhr){
+				console.log("Error loading /menu3.json", xhr.status, xhr.statusText);
 			});
-	
+		
 		});
-	
-	
+		
 		function buildMenu(items, container) {
-	
-			$.each(items, function (i, item) {
-	
+			$.each(items, function(i, item){
+		
 				// Collapsible item
 				if (item.children && item.children.length) {
-	
-					var li = $("<li data-role='collapsible'></li>");
-					li.append("<h3>" + item.title + "</h3>");
-	
+					// Create a collapsible set
+					var li = $(`<li data-role="collapsible" data-enhanced="true" data-collapsed-icon="carat-d" data-expanded-icon="carat-u" data-iconpos="right" data-inset="false" class="ui-collapsible ui-collapsible-themed-content ui-collapsible-collapsed"></li>`);
+					var collapsible = $("<div data-role='collapsible' data-iconpos='right'></div>");
+					collapsible.append("<h3 class='ui-collapsible-heading ui-collapsible-heading-collapsed'>" + item.title + "</h3>");
 					var ul = $("<ul data-role='listview'></ul>");
 					buildMenu(item.children, ul);
-	
-					li.append(ul);
+					collapsible.append(ul);
+					li.append(collapsible);
 					container.append(li);
 				}
 				// Normal item
 				else {
-	
 					var li = $("<li></li>");
-	
-					if (item.icon) {
-						li.attr("data-icon", item.icon);
-					}
-	
-					var link = $("<a></a>")
-						.attr("href", item.url || "#")
-						.attr("data-ajax", "false")
-						.text(item.title);
-	
-					li.append(link);
+					if(item.icon) li.attr("data-icon", item.icon);
+					li.append($("<a></a>").attr("href", item.url || "#").attr("data-ajax", "false").text(item.title));
 					container.append(li);
 				}
-	
+		
 			});
-	
 		}
 		</script>
 </head>
