@@ -2,13 +2,13 @@
     "menu": [
       {
         "text": "Home",
-        "href": ".././",
+        "href": "/mobile/./index.html",
         "filterText": "demos homepage",
         "icon": "home"
       },
       {
         "text": "Introduction",
-        "href": "../intro/",
+        "href": "/mobile/intro/index.html",
         "filterText": "introduction overview getting started",
         "ajax": false
       },
@@ -17,13 +17,13 @@
         "items": [
           {
             "text": "Swipe list items",
-            "href": "../swipe-list/",
+            "href": "/mobile/swipe-list/index.html",
             "filterText": "swipe to delete list items listviews swipe events",
             "ajax": false
           },
           {
             "text": "Swipe page navigation",
-            "href": "../swipe-page/",
+            "href": "/mobile/swipe-page/index.html",
             "filterText": "swipe to navigate swipe page navigation swipe events",
             "ajax": false
           }
@@ -34,31 +34,31 @@
         "items": [
           {
             "text": "Forms",
-            "href": "../forms/",
+            "href": "/mobile/forms/index.html",
             "filterText": "forms text checkbox radio range button submit reset inputs selects textarea slider flipswitch label form elements",
             "ajax": false
           },
           {
             "text": "Hide labels",
-            "href": "../forms-label-hidden-accessible/",
+            "href": "/mobile/forms-label-hidden-accessible/index.html",
             "filterText": "form hide labels hidden accessible ui-hidden-accessible forms",
             "ajax": false
           },
           {
             "text": "Field containers",
-            "href": "../forms-field-contain/",
+            "href": "/mobile/forms-field-contain/index.html",
             "filterText": "form field containers fieldcontain ui-field-contain forms",
             "ajax": false
           },
           {
             "text": "Forms disabled",
-            "href": "../forms-disabled/",
+            "href": "/mobile/forms-disabled/index.html",
             "filterText": "forms disabled form elements",
             "ajax": false
           },
           {
             "text": "Forms gallery",
-            "href": "../forms-gallery/",
+            "href": "/mobile/forms-gallery/index.html",
             "filterText": "forms gallery examples overview forms text checkbox radio range button submit reset inputs selects textarea slider flipswitch label form elements",
             "ajax": false
           }
@@ -69,13 +69,13 @@
         "items": [
           {
             "text": "Icons",
-            "href": "../icons/",
+            "href": "/mobile/icons/index.html",
             "filterText": "button icons svg disc alt custom icon position",
             "ajax": false
           },
           {
             "text": "Grunticon loader",
-            "href": "../icons-grunticon/",
+            "href": "/mobile/icons-grunticon/index.html",
             "filterText": "grunticon icons svg png fallback",
             "ajax": false
           }
@@ -89,19 +89,19 @@
             "items": [
               {
                 "text": "Grids",
-                "href": "../grids/",
+                "href": "/mobile/grids/index.html",
                 "filterText": "grids columns blocks content formatting rwd responsive css framework",
                 "ajax": false
               },
               {
                 "text": "Buttons in grids",
-                "href": "../grids-buttons/",
+                "href": "/mobile/grids-buttons/index.html",
                 "filterText": "buttons in grids css framework",
                 "ajax": false
               },
               {
                 "text": "Custom responsive grids",
-                "href": "../grids-custom-responsive/",
+                "href": "/mobile/grids-custom-responsive/index.html",
                 "filterText": "custom responsive grids rwd css framework",
                 "ajax": false
               }
@@ -109,13 +109,13 @@
           },
           {
             "text": "Grouping and dividing content",
-            "href": "../body-bar-classes/",
+            "href": "/mobile/body-bar-classes/index.html",
             "filterText": "blocks content formatting sections heading",
             "ajax": false
           },
           {
             "text": "Responsive Web Design",
-            "href": "../rwd/",
+            "href": "/mobile/rwd/index.html",
             "filterText": "responsive web design rwd adaptive progressive enhancement PE accessible mobile breakpoints media query media queries",
             "ajax": false
           }
@@ -126,32 +126,32 @@
         "items": [
           {
             "text": "Navigation",
-            "href": "../navigation/",
+            "href": "/mobile/navigation/index.html",
             "filterText": "ajax navigation navigate widget history event method",
             "ajax": false
           },
           {
             "text": "Linking pages",
-            "href": "../navigation-linking-pages/",
+            "href": "/mobile/navigation-linking-pages/index.html",
             "filterText": "linking pages page links navigation ajax prefetch cache",
             "ajax": false
           },
           {
             "text": "Hash processing demo",
-            "href": "../navigation-hash-processing/",
+            "href": "/mobile/navigation-hash-processing/index.html",
             "filterText": "navigation redirection hash processing query",
             "ajax": false
           },
           {
             "text": "Page Navigation Events",
-            "href": "../page-events/",
+            "href": "/mobile/page-events/index.html",
             "filterText": "navigation events redirection hash query 3rd party demo",
             "class": "jqm-3rd-party",
             "ajax": false
           },
           {
             "text": "Backbone RequireJS",
-            "href": "../backbone-requirejs/",
+            "href": "/mobile/backbone-requirejs/index.html",
             "filterText": "backbone requirejs navigation router 3rd party demo",
             "class": "jqm-3rd-party",
             "ajax": false
@@ -161,22 +161,22 @@
       {
         "title": "Pages",
         "items": [
-          { "text": "Pages", "href": "../pages/", "filterText": "pages page widget ajax navigation", "ajax": false },
-          { "text": "Single page", "href": "../pages-single-page/", "filterText": "single page", "ajax": false },
-          { "text": "Multi-page template", "href": "../pages-multi-page/", "filterText": "multipage multi-page page", "ajax": false },
-          { "text": "Dialog page", "href": "../pages-dialog/", "filterText": "dialog page widget modal popup", "ajax": false }
+          { "text": "Pages", "href": "/mobile/pages/index.html", "filterText": "pages page widget ajax navigation", "ajax": false },
+          { "text": "Single page", "href": "/mobile/pages-single-page/index.html", "filterText": "single page", "ajax": false },
+          { "text": "Multi-page template", "href": "/mobile/pages-multi-page/index.html", "filterText": "multipage multi-page page", "ajax": false },
+          { "text": "Dialog page", "href": "/mobile/pages-dialog/index.html", "filterText": "dialog page widget modal popup", "ajax": false }
         ]
       },
       {
         "title": "Theming",
         "items": [
-          { "text": "Default theme", "href": "../theme-default/", "filterText": "default theme swatches theming style css", "ajax": false },
-          { "text": "Classic theme", "href": "../theme-classic/", "filterText": "classic theme old theme swatches theming style css", "ajax": false }
+          { "text": "Default theme", "href": "/mobile/theme-default/index.html", "filterText": "default theme swatches theming style css", "ajax": false },
+          { "text": "Classic theme", "href": "/mobile/theme-classic/index.html", "filterText": "classic theme old theme swatches theming style css", "ajax": false }
         ]
       },
       {
         "text": "Transitions",
-        "href": "../transitions/",
+        "href": "/mobile/transitions/index.html",
         "filterText": "page transitions animated pages popup navigation flip slide fade pop",
         "ajax": false
       },
@@ -186,14 +186,14 @@
         "items": [
           {
             "text": "Google Maps geolocation",
-            "href": "../map-geolocation/",
+            "href": "/mobile/map-geolocation/index.html",
             "filterText": "google maps geolocation 3rd party demo",
             "class": "jqm-3rd-party",
             "ajax": false
           },
           {
             "text": "Google Maps list toggle",
-            "href": "../map-list-toggle/",
+            "href": "/mobile/map-list-toggle/index.html",
             "filterText": "google maps hybrid 3rd party demo",
             "class": "jqm-3rd-party",
             "ajax": false
