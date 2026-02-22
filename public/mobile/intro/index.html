@@ -115,11 +115,8 @@
 		<p>When you're ready to build a custom theme, use <a href="http://jquerymobile.com/themeroller" rel="external">ThemeRoller</a> to drag and drop, then download a custom theme.</p>
 
 	</div><!-- /content -->
-	<div data-role="panel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a">
-		<ul id="menu" class="ui-alt-icon ui-nodisc-icon">
-			<li data-role='list-divider'>Menu</li>
-			 <?php include( 'jqm-contents.php' ); ?>
-		 </ul>
+	<div id="menu" data-role="panel" id="menuPanel" class="jqm-navmenu-panel" data-position="left" data-display="overlay" data-theme="a">
+		
 	</div><!-- /panel -->
 	<div data-role="toolbar" data-type="footer" data-position="fixed" data-tap-toggle="false" class="jqm-footer">
 		<h6>jQuery Mobile Version <span class="jqm-version"></span> Demos</h6>
@@ -136,56 +133,64 @@
 
 </body>
 
-<script src="/js/menu.js"></script>
 
 <script>
 	async function loadMenu() {
-	  const response = await fetch("/menu.json");
-	  const data = await response.json();
-	  const menuContainer = document.getElementById("menu");
+		const response = await fetch("/menu.json");
+		const data = await response.json();
+		const menuContainer = document.getElementById("menu");
 	
-	  function createMenuItems(items) {
-		const ul = document.createElement("ul");
+		function createMenuItems(items) {
+			const ul = document.createElement("ul");
+			ul.classList.add("ui-alt-icon", "ui-nodisc-icon");
 	
-		items.forEach(item => {
-		  const li = document.createElement("li");
+			items.forEach(item => {
+				const li = document.createElement("li");
 	
-		  // Section (has children)
-		  if (item.title) {
-			const h3 = document.createElement("h3");
-			h3.textContent = item.title;
+				// Divider
+				if(item.divider){
+					li.setAttribute("data-role","list-divider");
+					li.textContent = item.text;
+				}
+				// Section with nested items
+				else if (item.title) {
+					const h3 = document.createElement("h3");
+					h3.textContent = item.title;
 	
-			const div = document.createElement("div");
-			div.appendChild(createMenuItems(item.items));
+					const div = document.createElement("div");
+					div.appendChild(createMenuItems(item.items));
 	
-			li.appendChild(h3);
-			li.appendChild(div);
-		  }
-		  // Normal link item
-		  else {
-			const a = document.createElement("a");
-			a.href = item.href;
-			a.textContent = item.text;
+					li.appendChild(h3);
+					li.appendChild(div);
+				}
+				// Regular link item
+				else {
+					const a = document.createElement("a");
+					a.href = item.href;
+					a.textContent = item.text;
 	
-			if (item.filterText)
-			  li.setAttribute("data-filtertext", item.filterText);
+					if (item.filterText)
+						li.setAttribute("data-filtertext", item.filterText);
 	
-			if (item.icon)
-			  li.setAttribute("data-icon", item.icon);
+					if (item.icon)
+						li.setAttribute("data-icon", item.icon);
 	
-			if (item.class)
-			  li.className = item.class;
+					if (item.class)
+						li.className = item.class;
 	
-			li.appendChild(a);
-		  }
+					if (item.ajax === false)
+						a.setAttribute("data-ajax", "false");
 	
-		  ul.appendChild(li);
-		});
+					li.appendChild(a);
+				}
 	
-		return ul;
-	  }
+				ul.appendChild(li);
+			});
 	
-	  menuContainer.appendChild(createMenuItems(data.menu));
+			return ul;
+		}
+	
+		menuContainer.appendChild(createMenuItems(data.menu));
 	}
 	
 	loadMenu();

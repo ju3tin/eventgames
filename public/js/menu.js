@@ -1,18 +1,20 @@
 $(document).on('pagecreate', '#menuPage', function() {
-    $.getJSON('menu.json', function(data) {
+    $.getJSON('/menu.json', function(data) {
         const $menu = $('#dynamicMenu');
-        
+
         function buildMenu(items, $parent) {
             items.forEach(item => {
                 // If it has a "title", create a nested collapsible set
                 if (item.title) {
                     const $li = $('<li></li>');
+                    // Create collapsible + nested ul with desired classes
                     const $collapsible = $(`
                         <div data-role="collapsible">
                             <h3>${item.title}</h3>
-                            <ul data-role="listview"></ul>
+                            <ul data-role="listview" class="ui-alt-icon ui-nodisc-icon"></ul>
                         </div>
                     `);
+                    // Recursively build nested items
                     buildMenu(item.items, $collapsible.find('ul'));
                     $li.append($collapsible);
                     $parent.append($li);
@@ -33,6 +35,9 @@ $(document).on('pagecreate', '#menuPage', function() {
                 }
             });
         }
+
+        // Add classes to the top-level ul as well
+        $menu.addClass('ui-alt-icon ui-nodisc-icon');
 
         buildMenu(data.menu, $menu);
         $menu.listview().listview('refresh');
