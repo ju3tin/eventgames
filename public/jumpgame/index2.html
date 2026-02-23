@@ -5,173 +5,143 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="mobile-web-app-capable" content="yes"/>
-  <title>PoseNet Dino Runner</title>
-
+  <title>Pose Dino Runner</title>
+  <link rel="stylesheet" href="/assets/css/index1.css">
+  <script src="/assets/js/index1.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet"> 
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
+    * { margin:0; padding:0; box-sizing:border-box; }
     body {
-      height: 100dvh;
-      background: #000;
-      color: #fff;
-      font-family: 'Press Start 2P', cursive;
-      overflow: hidden;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
+      height:100dvh; background:#000; color:#fff;
+      font-family:'Press Start 2P',cursive; overflow:hidden;
+      touch-action:manipulation; -webkit-tap-highlight-color:transparent;
     }
-    
     .game-wrapper {
-      position: relative;
-      width: 100%;
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background: linear-gradient(to bottom, #111, #000);
-    }
-    
-    #game-canvas, #canvas, #video {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      image-rendering: pixelated;
+      position:relative; width:100%; height:100dvh;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      background:linear-gradient(to bottom,#111,#000);
     }
 
     #video, #canvas {
-      display: none; /* controlled by checkbox */
-    }
-    
-    .hud {
-      position: absolute;
-      color: #fff;
-      text-shadow: 2px 2px 0 #000;
-      pointer-events: none;
-      user-select: none;
-      font-size: clamp(14px, 3vw, 20px);
-    }
-    
-    .top-left { top: 10px; left: 10px; }
-    
-    .center-message {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-      background: rgba(0,0,0,0.7);
-      font-size: clamp(18px, 5vw, 32px);
-      pointer-events: all;
-      z-index: 10;
-    }
-    
-    .bottom-bar {
-      position: absolute;
-      bottom: 10px;
-      left: 0; right: 0;
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      padding: 10px;
-      z-index: 10;
-    }
-    
-    button {
-      background: #222;
-      color: #fff;
-      border: 3px solid #444;
-      border-radius: 12px;
-      padding: 14px 28px;
-      font-family: inherit;
-      font-size: clamp(16px, 4vw, 22px);
-      cursor: pointer;
-      min-width: 120px;
-    }
-    
-    button:active { background: #444; }
-    
-    .modal {
       position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.85);
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      z-index: 100;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.85);
+      transform-origin: center center;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+      z-index: 3;
+      pointer-events: none;
     }
-    
+
+    .hud {
+      position:absolute; color:#fff; text-shadow:2px 2px 0 #000;
+      pointer-events:none; user-select:none;
+      font-size:clamp(14px,3vw,20px); z-index:10;
+    }
+    .top-left { top:10px; left:10px; }
+
+    .center-message {
+      position:absolute; inset:0; z-index:20;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      text-align:center; padding:20px; background:rgba(0,0,0,0.7);
+      font-size:clamp(18px,5vw,32px); pointer-events:all;
+    }
+
+    .bottom-bar {
+      position:absolute; bottom:10px; left:0; right:0; z-index:15;
+      display:flex; justify-content:center; gap:20px; padding:10px;
+    }
+
+    button {
+      background:#222; color:#fff; border:3px solid #444; border-radius:12px;
+      padding:14px 28px; font-family:inherit; font-size:clamp(16px,4vw,22px);
+      cursor:pointer; min-width:120px;
+    }
+    button:active { background:#444; }
+
+    .modal {
+      position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:100;
+      display:flex; justify-content:center; align-items:flex-end;
+    }
     .modal-content {
-      background: #111;
-      border-top-left-radius: 24px;
-      border-top-right-radius: 24px;
-      width: 100%;
-      max-width: 500px;
-      padding: 24px;
-      max-height: 80dvh;
-      overflow-y: auto;
-      position: relative;
+      background:#111; border-top-left-radius:24px; border-top-right-radius:24px;
+      width:100%; max-width:500px; padding:24px; max-height:80dvh;
+      overflow-y:auto; position:relative;
     }
-    
     .close-btn {
-      position: absolute;
-      top: 12px; right: 20px;
-      font-size: 32px;
-      background: none;
-      border: none;
-      color: #888;
-      cursor: pointer;
+      position:absolute; top:12px; right:20px; font-size:32px;
+      background:none; border:none; color:#888; cursor:pointer;
     }
-    
-    label { display: block; margin: 16px 0 8px; font-size: 14px; }
-    input[type="range"] { width: 100%; }
-    
-    .hidden { display: none !important; }
-    
+
+    label { display:block; margin:16px 0 8px; font-size:14px; }
+    input[type="range"] { width:100%; }
+
+    .hidden { display:none !important; }
+
     #info1 {
-      position: absolute;
-      top: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 24px;
-      color: #0f0;
-      text-shadow: 0 0 10px #0f0;
-      z-index: 5;
+      position:absolute; top:60px; left:50%; transform:translateX(-50%);
+      font-size:28px; color:#0f0; text-shadow:0 0 10px #0f0; z-index:5;
+      font-family: 'Open Sans', sans-serif; pointer-events:none;
     }
+
+    #quick-settings {
+      position:absolute; top:10px; right:10px; z-index:25;
+      background:rgba(255,255,255,0.92); color:#000; padding:12px;
+      border-radius:8px; font-family:'Open Sans',sans-serif; font-size:13px;
+      max-width:240px; box-shadow:0 2px 10px rgba(0,0,0,0.5);
+    }
+    #quick-settings label { margin:10px 0 6px; font-size:13px; }
   </style>
 </head>
 <body>
 
 <div class="game-wrapper">
 
-  <!-- Debug / settings panel (top-right) -->
-  <div id="settings" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.9); color:#000; padding: 12px; border-radius: 8px; font-family: 'Open Sans', sans-serif; z-index: 20; font-size: 14px;">
-    <label>Top Line (%): <input type="range" id="topLine" min="0" max="100" value="30"><span id="topLineValue">30</span></label>
-    <label>Bottom Line (%): <input type="range" id="bottomLine" min="0" max="100" value="70"><span id="bottomLineValue">70</span></label>
-    <label class="toggle">
-      <input id="remove" class="toggle-checkbox" type="checkbox" checked>
-      <span>Hide video & skeleton</span>
+  <!-- Quick settings panel -->
+  <div id="quick-settings">
+    <div style="font-weight:bold; margin-bottom:8px; text-align:center;">Quick Controls</div>
+
+    <label>Preview size (%):
+      <input type="range" id="previewScale" min="30" max="140" value="85" step="5">
+      <span id="previewScaleValue">85%</span>
+    </label>
+
+    <label>Top zone (%):
+      <input type="range" id="topLine" min="10" max="60" value="30">
+      <span id="topLineValue">30</span>
+    </label>
+
+    <label>Bottom zone (%):
+      <input type="range" id="bottomLine" min="40" max="90" value="70">
+      <span id="bottomLineValue">70</span>
+    </label>
+
+    <label>Detection scale (%):
+      <input type="range" id="detectScale" min="30" max="100" value="70" step="5">
+      <span id="detectScaleValue">70%</span>
+    </label>
+
+    <label style="margin-top:12px;">
+      <input type="checkbox" id="remove" checked> Hide preview
+    </label>
+
+    <label>
+      <input type="checkbox" id="mirror-webcam" checked> Mirror image
+    </label>
+
+    <label>
+      <input type="checkbox" id="previewCenter" checked> Center preview
     </label>
   </div>
 
-  <!-- Video & Canvas for pose detection -->
   <video id="video" playsinline autoplay muted></video>
   <canvas id="canvas"></canvas>
 
-  <!-- HUD -->
   <div class="hud top-left">
     <div>Score: <span id="score">0</span></div>
     <div>Pose: <span id="pose-status">—</span></div>
@@ -179,10 +149,9 @@
 
   <div id="info1">Idle</div>
 
-  <!-- Start / Game Over Overlay -->
   <div id="overlay" class="center-message">
     <h1>Pose Dino Runner</h1>
-    <p id="instructions">
+    <p>
       Stand fully in frame!<br>
       Jump = stand tall<br>
       Duck = crouch low<br><br>
@@ -192,27 +161,26 @@
     <button id="restart-btn" class="hidden">Restart</button>
   </div>
 
-  <!-- Bottom controls -->
   <div class="bottom-bar">
-    <button id="settings-btn">Settings ⚙</button>
+    <button id="settings-btn">More Settings ⚙</button>
   </div>
 
-  <!-- Settings Modal -->
+  <!-- Advanced settings modal -->
   <div id="settings-modal" class="modal hidden">
     <div class="modal-content">
       <button class="close-btn" id="close-settings">×</button>
-      <h2>Settings</h2>
-      
-      <label>Jump Sensitivity (lower = easier to jump)</label>
+      <h2>Advanced Settings</h2>
+
+      <label>Jump sensitivity (lower = easier)</label>
       <input type="range" id="jump-sens" min="0.1" max="0.9" step="0.05" value="0.45">
-      
-      <label>Duck Sensitivity</label>
+
+      <label>Duck sensitivity</label>
       <input type="range" id="duck-sens" min="0.1" max="0.9" step="0.05" value="0.55">
-      
-      <label><input type="checkbox" id="mirror-webcam" checked> Mirror webcam</label>
-      <label><input type="checkbox" id="show-webcam" checked> Show webcam & skeleton</label>
-      
-      <button id="save-settings" style="margin-top:24px; width:100%;">Save & Close</button>
+
+      <label>Min confidence (0.2–0.6)</label>
+      <input type="range" id="minConfidence" min="20" max="60" value="30">
+
+      <button id="save-settings" style="margin-top:28px; width:100%; padding:14px;">Save & Close</button>
     </div>
   </div>
 
@@ -223,35 +191,54 @@
 
 <script>
 // ────────────────────────────────────────────────
-// Global variables
+// State
 // ────────────────────────────────────────────────
 let detector = null;
 let video, canvas, ctx;
 let isJumping = false;
 let isDucking = false;
 
-let topLinePercent    = 30;
-let bottomLinePercent = 70;
+let topLinePercent     = 30;
+let bottomLinePercent  = 70;
+let detectScalePercent = 70;
+let previewScale       = 0.85;
+let previewCentered    = true;
+let mirror             = true;
+let showPreview        = true;
+let minConfidence      = 0.30;
 let jumpSens = 0.45;
 let duckSens = 0.55;
-let mirror = true;
-let showVideo = true;
 
 // ────────────────────────────────────────────────
-// DOM elements
+// DOM
 // ────────────────────────────────────────────────
-const overlay       = document.getElementById('overlay');
-const startBtn      = document.getElementById('start-btn');
-const restartBtn    = document.getElementById('restart-btn');
-const settingsBtn   = document.getElementById('settings-btn');
-const modal         = document.getElementById('settings-modal');
-const closeSettings = document.getElementById('close-settings');
-const saveSettings  = document.getElementById('save-settings');
-const info1         = document.getElementById('info1');
+const els = {
+  video: document.getElementById('video'),
+  canvas: document.getElementById('canvas'),
+  info: document.getElementById('info1'),
+  overlay: document.getElementById('overlay'),
+  startBtn: document.getElementById('start-btn'),
+  restartBtn: document.getElementById('restart-btn'),
+  settingsBtn: document.getElementById('settings-btn'),
+  modal: document.getElementById('settings-modal'),
+  closeSettings: document.getElementById('close-settings'),
+  saveSettings: document.getElementById('save-settings')
+};
 
 // ────────────────────────────────────────────────
-// Event listeners
+// Quick settings listeners
 // ────────────────────────────────────────────────
+document.getElementById('previewScale').addEventListener('input', e => {
+  previewScale = +e.target.value / 100;
+  document.getElementById('previewScaleValue').textContent = e.target.value + '%';
+  updatePreviewStyle();
+});
+
+document.getElementById('previewCenter').onchange = e => {
+  previewCentered = e.target.checked;
+  updatePreviewStyle();
+};
+
 document.getElementById('topLine').addEventListener('input', e => {
   topLinePercent = +e.target.value;
   document.getElementById('topLineValue').textContent = topLinePercent;
@@ -262,49 +249,84 @@ document.getElementById('bottomLine').addEventListener('input', e => {
   document.getElementById('bottomLineValue').textContent = bottomLinePercent;
 });
 
-document.getElementById('remove').onchange = e => {
-  showVideo = !e.target.checked;
-  video.style.display = showVideo ? 'block' : 'none';
-  canvas.style.display = showVideo ? 'block' : 'none';
-};
-
-startBtn.addEventListener('click', () => overlay.classList.add('hidden'));
-restartBtn.addEventListener('click', () => overlay.classList.add('hidden'));
-settingsBtn.addEventListener('click', () => modal.classList.remove('hidden'));
-closeSettings.addEventListener('click', () => modal.classList.add('hidden'));
-
-saveSettings.addEventListener('click', () => {
-  jumpSens = +document.getElementById('jump-sens').value;
-  duckSens = +document.getElementById('duck-sens').value;
-  mirror   = document.getElementById('mirror-webcam').checked;
-  showVideo = document.getElementById('show-webcam').checked;
-  video.style.display = canvas.style.display = showVideo ? 'block' : 'none';
-  modal.classList.add('hidden');
+document.getElementById('detectScale').addEventListener('input', e => {
+  detectScalePercent = +e.target.value;
+  document.getElementById('detectScaleValue').textContent = e.target.value + '%';
 });
 
+document.getElementById('remove').onchange = e => {
+  showPreview = !e.target.checked;
+  els.video.style.display = els.canvas.style.display = showPreview ? 'block' : 'none';
+};
+
+document.getElementById('mirror-webcam').onchange = e => {
+  mirror = e.target.checked;
+};
+
 // ────────────────────────────────────────────────
-// Init camera + model
+// Modal save
+// ────────────────────────────────────────────────
+els.saveSettings.addEventListener('click', () => {
+  jumpSens = +document.getElementById('jump-sens').value;
+  duckSens = +document.getElementById('duck-sens').value;
+  minConfidence = +document.getElementById('minConfidence').value / 100;
+  els.modal.classList.add('hidden');
+});
+
+// Overlay
+els.startBtn.addEventListener('click', () => els.overlay.classList.add('hidden'));
+els.restartBtn.addEventListener('click', () => els.overlay.classList.add('hidden'));
+els.settingsBtn.addEventListener('click', () => els.modal.classList.remove('hidden'));
+els.closeSettings.addEventListener('click', () => els.modal.classList.add('hidden'));
+
+// ────────────────────────────────────────────────
+// Preview styling
+// ────────────────────────────────────────────────
+function updatePreviewStyle() {
+  if (!els.video || !els.canvas) return;
+
+  const transform = `translate(-50%, -50%) scale(${previewScale})`;
+
+  els.video.style.transform  = transform;
+  els.canvas.style.transform = transform;
+
+  if (previewCentered) {
+    els.video.style.top = els.canvas.style.top = '50%';
+    els.video.style.left = els.canvas.style.left = '50%';
+    els.video.style.bottom = els.canvas.style.bottom = 'auto';
+    els.video.style.right = els.canvas.style.right = 'auto';
+  } else {
+    els.video.style.top = els.canvas.style.top = '10px';
+    els.video.style.left = els.canvas.style.left = '10px';
+    els.video.style.bottom = els.canvas.style.bottom = 'auto';
+    els.video.style.right = els.canvas.style.right = 'auto';
+  }
+
+  els.video.style.display = els.canvas.style.display = showPreview ? 'block' : 'none';
+}
+
+// ────────────────────────────────────────────────
+// Init
 // ────────────────────────────────────────────────
 async function init() {
-  video = document.getElementById('video');
-  canvas = document.getElementById('canvas');
-  ctx = canvas.getContext('2d');
+  ctx = els.canvas.getContext('2d');
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-    video.srcObject = stream;
-    await new Promise(r => video.onloadedmetadata = r);
-    video.play();
+    els.video.srcObject = stream;
+    await new Promise(r => els.video.onloadedmetadata = r);
+    els.video.play();
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    els.canvas.width = els.video.videoWidth;
+    els.canvas.height = els.video.videoHeight;
 
     detector = await poseDetection.createDetector(
       poseDetection.SupportedModels.MoveNet,
       { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
     );
 
-    requestAnimationFrame(detectAndDraw);
+    updatePreviewStyle();
+    requestAnimationFrame(loop);
   } catch (err) {
     console.error(err);
     alert("Camera or model failed to load.");
@@ -314,151 +336,65 @@ async function init() {
 // ────────────────────────────────────────────────
 // Main loop
 // ────────────────────────────────────────────────
-async function detectAndDraw() {
+async function loop() {
   if (!detector) return;
 
-  const poses = await detector.estimatePoses(video);
+  const scale = detectScalePercent / 100;
+  const w = Math.round(els.video.videoWidth * scale);
+  const h = Math.round(els.video.videoHeight * scale);
+
+  const off = document.createElement('canvas');
+  off.width = w; off.height = h;
+  const offCtx = off.getContext('2d');
+  offCtx.drawImage(els.video, 0, 0, w, h);
+
+  const poses = await detector.estimatePoses(off);
 
   ctx.save();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
 
   if (mirror) {
     ctx.scale(-1, 1);
-    ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+    ctx.drawImage(els.video, -els.canvas.width, 0, els.canvas.width, els.canvas.height);
     ctx.scale(-1, 1);
   } else {
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(els.video, 0, 0, els.canvas.width, els.canvas.height);
   }
 
-  if (poses.length > 0) {
-    const kp = poses[0].keypoints;
-    if (showVideo) {
-      drawKeypoints(kp);
-      drawSkeleton(kp);
-    }
-    evaluatePose(kp);
-  }
+  if (poses.length > 0 && showPreview) {
+    const kp = poses[0].keypoints.map(p => ({
+      ...p, x: p.x / scale, y: p.y / scale
+    }));
 
-  if (showVideo) drawThresholdLines();
+    // Draw only dots (no skeleton lines)
+    kp.forEach(p => {
+      if (p.score > minConfidence) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI*2);
+        ctx.fillStyle = p.name?.includes("eye") ? "#00ffff" : "#ff0044";
+        ctx.fill();
+      }
+    });
+
+    // Threshold lines always visible when preview is on
+    const t = els.canvas.height * (topLinePercent / 100);
+    const b = els.canvas.height * (bottomLinePercent / 100);
+
+    ctx.strokeStyle = "#ff4444";
+    ctx.lineWidth = 4;
+
+    ctx.beginPath(); ctx.moveTo(0, t); ctx.lineTo(els.canvas.width, t); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, b); ctx.lineTo(els.canvas.width, b); ctx.stroke();
+
+    // → Add your evaluatePose(kp) call here when ready
+    // evaluatePose(kp);
+  }
 
   ctx.restore();
-  requestAnimationFrame(detectAndDraw);
+  requestAnimationFrame(loop);
 }
 
-// ────────────────────────────────────────────────
-// Drawing functions
-// ────────────────────────────────────────────────
-function drawKeypoints(kp) {
-  kp.forEach(p => {
-    if (p.score > 0.3) {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 6, 0, Math.PI*2);
-      ctx.fillStyle = p.name?.includes("eye") ? "#00ffff" : "#ff0044";
-      ctx.fill();
-    }
-  });
-}
-
-function drawSkeleton(kp) {
-  const links = [
-    [0,1],[0,2],[1,3],[2,4],
-    [5,6],[5,7],[6,8],[7,9],[8,10],
-    [5,11],[6,12],[11,12],
-    [11,13],[12,14],[13,15],[14,16]
-  ];
-
-  ctx.strokeStyle = "#00ff88";
-  ctx.lineWidth = 3;
-
-  links.forEach(([a,b]) => {
-    const p1 = kp[a], p2 = kp[b];
-    if (p1.score > 0.28 && p2.score > 0.28) {
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.stroke();
-    }
-  });
-}
-
-function drawThresholdLines() {
-  const t = canvas.height * (topLinePercent / 100);
-  const b = canvas.height * (bottomLinePercent / 100);
-
-  ctx.strokeStyle = "#ff4444";
-  ctx.lineWidth = 4;
-
-  ctx.beginPath(); ctx.moveTo(0, t); ctx.lineTo(canvas.width, t); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0, b); ctx.lineTo(canvas.width, b); ctx.stroke();
-}
-
-// ────────────────────────────────────────────────
-// Pose → Game control logic
-// ────────────────────────────────────────────────
-function evaluatePose(kp) {
-  if (kp[0].score < 0.4) {
-    info1.textContent = "Not visible";
-    releaseAllKeys();
-    return;
-  }
-
-  const noseY       = kp[0].y;
-  const avgEyeY     = (kp[1].y + kp[2].y) / 2;
-  const avgShoulder = (kp[5].y + kp[6].y) / 2;
-  const avgHipY     = (kp[11].y + kp[12].y) / 2;
-
-  const topY    = canvas.height * (topLinePercent / 100);
-  const bottomY = canvas.height * (bottomLinePercent / 100);
-
-  // ── Jump ───────────────────────────────────────
-  if (avgEyeY < topY * (0.6 + jumpSens) || avgShoulder < topY * (0.75 + jumpSens)) {
-    if (!isJumping) {
-      isJumping = true;
-      simulateKey('keydown', ' ');
-      info1.textContent = "JUMP ↑";
-    }
-  } else if (isJumping) {
-    isJumping = false;
-    simulateKey('keyup', ' ');
-  }
-
-  // ── Duck ───────────────────────────────────────
-  if (avgHipY > bottomY * (1.05 + duckSens) || (avgShoulder - avgHipY) < canvas.height * 0.14) {
-    if (!isDucking) {
-      isDucking = true;
-      simulateKey('keydown', 'ArrowDown');
-      info1.textContent = "DUCK ↓";
-    }
-  } else if (isDucking) {
-    isDucking = false;
-    simulateKey('keyup', 'ArrowDown');
-  }
-
-  if (!isJumping && !isDucking) {
-    info1.textContent = "Idle";
-  }
-}
-
-function releaseAllKeys() {
-  if (isJumping)  simulateKey('keyup', ' ');
-  if (isDucking)  simulateKey('keyup', 'ArrowDown');
-  isJumping = isDucking = false;
-}
-
-function simulateKey(type, key) {
-  document.dispatchEvent(new KeyboardEvent(type, {
-    key,
-    code: key === ' ' ? 'Space' : key,
-    bubbles: true,
-    cancelable: true
-  }));
-}
-
-// ────────────────────────────────────────────────
-// Start
-// ────────────────────────────────────────────────
 window.addEventListener('load', init);
 </script>
-
 </body>
 </html>
