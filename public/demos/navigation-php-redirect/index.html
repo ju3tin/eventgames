@@ -44,7 +44,30 @@
 <body>
 <div data-role="page" class="jqm-demos">
 
-	<div data-role="header" class="jqm-header">
+	<div id="header-placeholder"></div>
+
+<script>
+$(document).on("pagecreate", function () {
+
+    var version = "1.4.5";
+    var title = "Demos";
+
+    var headerHTML = `
+        <div data-role="header" class="jqm-header ui-header ui-bar-inherit" role="banner">
+            <h2 class="ui-title">
+                <a href="../">
+                    <img src="../_assets/img/jquery-logo.png" alt="jQuery Mobile">
+                </a>
+            </h2>
+            <p><span class="jqm-version">${version}</span> ${title}</p>
+            <a href="#" class="jqm-navmenu-link ui-btn ui-icon-bars ui-btn-icon-notext ui-btn-left ui-corner-all">Menu</a>
+            <a href="#" class="jqm-search-link ui-btn ui-icon-search ui-btn-icon-notext ui-btn-right ui-corner-all">Search</a>
+        </div>
+    `;
+
+    $("#header-placeholder").html(headerHTML).enhanceWithin();
+});
+</script> <div data-role="header" class="jqm-header" style="display:none">
 		<h2><a href="../" title="jQuery Mobile Demos home"><img src="../_assets/img/jquery-logo.png" alt="jQuery Mobile"></a></h2>
 		<p><span class="jqm-version"></span> Demos</p>
 		<a href="#" class="jqm-navmenu-link ui-btn ui-btn-icon-notext ui-corner-all ui-icon-bars ui-nodisc-icon ui-alt-icon ui-btn-left">Menu</a>
