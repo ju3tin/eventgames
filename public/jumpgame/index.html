@@ -792,10 +792,11 @@ let previewOpacity = 1.0;  // 100% = fully visible
 document.getElementById('previewOpacity').addEventListener('input', e => {
   previewOpacity = +e.target.value / 100;
   document.getElementById('previewOpacityValue').textContent = e.target.value + '%';
-  
+  const video1 = document.getElementById('video');
+  const canvas1 = document.getElementById('canvas');
   // Apply opacity to both video and canvas
-  els.video.style.opacity  = previewOpacity;
-  els.canvas.style.opacity = previewOpacity;
+video1.style.opacity  = previewOpacity;
+  canvas1.style.opacity = previewOpacity;
 });
 
 // Optional: also apply it once when page loads (in case you want to start lower)
@@ -803,8 +804,8 @@ window.addEventListener('load', () => {
   // ... your existing init code ...
   
   // Set initial opacity
-  els.video.style.opacity  = previewOpacity;
-  els.canvas.style.opacity = previewOpacity;
+  video1.style.opacity  = previewOpacity;
+  canvas1.style.opacity = previewOpacity;
 });
 </script>
 </body>
