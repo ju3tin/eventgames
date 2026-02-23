@@ -1,182 +1,114 @@
-<!DOCTYPE html>
-<html lang="en">
+
+<!doctype html>
+<html>
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-  <title>PoseNet Dino Runner</title>
-  <link rel="stylesheet" href="/assets/css/index1.css">
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet"> 
-  <script src="/assets/js/index1.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, user-scalable=no">
+    <title >chrome easter egg: t-rex runner</title>
+    <link rel="stylesheet" href="/assets/css/index1.css">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet"> 
+    <script src="/assets/js/index1.js"></script>
+    <style>
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, ".SFNSText-Regular", "Helvetica Neue", "Roboto", "Segoe UI", sans-serif;
+  margin: 0;
+}
+
+.toggle {
+  cursor: pointer;
+  display: inline-block;
+}
+
+.toggle-switch {
+  display: inline-block;
+  background: #ccc;
+  border-radius: 16px;
+  width: 58px;
+  height: 32px;
+  position: relative;
+  vertical-align: middle;
+  transition: background 0.25s;
+}
+.toggle-switch:before, .toggle-switch:after {
+  content: "";
+}
+.toggle-switch:before {
+  display: block;
+  background: linear-gradient(to bottom, #fff 0%, #eee 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+  width: 24px;
+  height: 24px;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  transition: left 0.25s;
+}
+.toggle:hover .toggle-switch:before {
+  background: linear-gradient(to bottom, #fff 0%, #fff 100%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.toggle-checkbox:checked + .toggle-switch {
+  background: #56c080;
+}
+.toggle-checkbox:checked + .toggle-switch:before {
+  left: 30px;
+}
+
+.toggle-checkbox {
+  position: absolute;
+  visibility: hidden;
+}
+
+.toggle-label {
+  margin-left: 5px;
+  position: relative;
+  top: 2px;
+}
+        
+          #video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 440px;
+            height: 280px;
+        }
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 440px;
+            height: 280px;
+        }
+        .topright {
+        position: absolute;
+        top: 0px;
+        right: 16px;
+        font-size: 18px;
+        }
+        #info1 {
+        position: absolute;
+        bottom: 20px; /* Position 20px from the bottom */
+        left: 50%; /* Center horizontally */
+        transform: translateX(-50%); /* Adjust for centering */
+        color: rgb(0, 0, 0); /* Text color */
+        font-size: 24px; /* Font size */
+        text-align: center; /* Center text */
     }
-    
-    body {
-      height: 100dvh;
-      background: #000;
-      color: #fff;
-      font-family: 'Press Start 2P', cursive;
-      overflow: hidden;
-      touch-action: manipulation; /* Improves touch response */
-      -webkit-tap-highlight-color: transparent;
-    }
-    
-    .game-wrapper {
-      position: relative;
-      width: 100%;
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background: linear-gradient(to bottom, #111, #000);
-    }
-    
-    #game-canvas {
-      display: block;
-      background: #f0f0f0;
-      image-rendering: pixelated; /* Keeps pixel art crisp */
-      max-width: 100%;
-      max-height: 85dvh;
-      touch-action: none;
-    }
-    
-    /* HUD */
-    .hud {
-      position: absolute;
-      color: #fff;
-      text-shadow: 2px 2px 0 #000;
-      pointer-events: none;
-      user-select: none;
-    }
-    
-    .top-left {
-      top: 10px;
-      left: 10px;
-      font-size: clamp(14px, 3vw, 20px);
-    }
-    
-    .center-message {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-      background: rgba(0,0,0,0.6);
-      font-size: clamp(18px, 5vw, 32px);
-      pointer-events: all;
-    }
-    
-    .bottom-bar {
-      position: absolute;
-      bottom: 10px;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      padding: 10px;
-      pointer-events: all;
-    }
-    
-    button {
-      background: #222;
-      color: #fff;
-      border: 3px solid #444;
-      border-radius: 12px;
-      padding: 14px 28px;
-      font-family: inherit;
-      font-size: clamp(16px, 4vw, 22px);
-      cursor: pointer;
-      touch-action: manipulation;
-      min-width: 120px;
-    }
-    
-    button:active {
-      background: #444;
-    }
-    
-    /* Settings Modal */
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.85);
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      z-index: 100;
-      transition: opacity 0.3s;
-    }
-    
-    .modal-content {
-      background: #111;
-      border-top-left-radius: 24px;
-      border-top-right-radius: 24px;
-      width: 100%;
-      max-width: 500px;
-      padding: 24px;
-      max-height: 80dvh;
-      overflow-y: auto;
-    }
-    
-    .close-btn {
-      position: absolute;
-      top: 12px;
-      right: 20px;
-      font-size: 32px;
-      background: none;
-      border: none;
-      color: #888;
-    }
-    
-    label {
-      display: block;
-      margin: 16px 0 8px;
-      font-size: 14px;
-    }
-    
-    input[type="range"] {
-      width: 100%;
-    }
-    
-    .hidden { display: none !important; }
-    
-    @media (orientation: portrait) {
-      .center-message p { font-size: clamp(16px, 4.5vw, 24px); line-height: 1.5; }
-      #game-canvas { max-height: 60dvh; }
-    }
-    
-    @media (orientation: landscape) {
-      #game-canvas { max-height: 100dvh; }
-    }
-  </style>
+    </style>
 </head>
-<body>
-  <div style="z-index: 1000; position: absolute; left:25%; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.9); padding: 10px; border-radius: 5px;" id="settings-modal" class="hidden">
-    <div class="modal-content">
-      <button class="close-btn" id="close-setting">×</button>
-      <h2>Settings</h2>
-      <label>Video UP & DOWN Position (%):</label>
-      <input type="range" id="videoTop" min="-100" max="100" value="25">
-      <span id="videoTopValue">25</span>
-      <label>Video LEFT & RIGHT Position (%):</label>
-      <input type="range" id="videoBottom" min="-100" max="100" value="75">
-      <span id="videoBottomValue">75</span>
-      <label>Zoom</label>
-      <input type="range" id="zoomRange" min="0.5" max="2" step="0.1" value="1">
-       <label>Top Line (%):
+
+<body id="t" class="offline">
+    <div id="settings" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 5px;">
+        <input type="range" id="zoomRange" min="0.5" max="2" step="0.1" value="1">
+        <label>Top Line (%):
           <input type="range" id="topLine" min="0" max="100" value="25">
           <span id="topLineValue">25</span>
         </label>
@@ -186,41 +118,19 @@
           <span id="bottomLineValue">75</span>
         </label>
         <br /><label class="toggle">
-    <input id="remove" class="toggle-checkbox" type="checkbox" checked>
-    <div class="toggle-switch"></div>
-    <span class="toggle-label">Remove Video</span>
-    </label>
-      <label>Jump Sensitivity</label>
-      <input type="range" id="jump-sens" min="0.1" max="0.9" step="0.05" value="0.45">
-      
-      <label>Duck Sensitivity</label>
-      <input type="range" id="duck-sens" min="0.1" max="0.9" step="0.05" value="0.55">
-      
-      <label>
-        <input type="checkbox" id="show-webcam"> Show webcam preview (debug)
-      </label>
-      
-      <label>
-        <input type="checkbox" id="mirror-webcam" checked=""> Mirror webcam
-      </label>
-      
-      <label>Difficulty</label>
-      <select id="difficulty">
-        <option value="easy">Easy</option>
-        <option value="normal" selected="">Normal</option>
-        <option value="hard">Hard</option>
-      </select>
-      
-      <button id="save-settings" style="margin-top:24px;">Save &amp; Close</button>
+	<input id="remove" class="toggle-checkbox" type="checkbox" checked>
+	<div class="toggle-switch"></div>
+	<span class="toggle-label">Remove Video</span>
+</label>
+      </div>
+    <div style="display: none;" class="topright">Top Right</div>
+    <video id="video" playsinline autoplay muted></video>
+    <canvas id="canvas"></canvas>
+    <div id="messageBox" class="sendmessage">
+         <h1 style="text-align: center;font-family: 'Open Sans', sans-serif;">Jump to Start</h1>
+         <div class="niokbutton" onclick="okbuttonsend()"></div>
     </div>
-  </div>
-  <div class="bottom-bar">
-    <button id="settings-btn2">Settings ⚙</button>
-  </div>
- 
-  <video style="display: none;" id="video" playsinline autoplay muted></video>
-    <canvas  style="position: absolute; top:0%" id="canvas"></canvas>
-  <div id="main-frame-error" class="interstitial-wrapper">
+    <div id="main-frame-error" class="interstitial-wrapper">
         <div id="main-content">
             <div class="icon icon-offline" alt=""></div>
         </div>
@@ -240,155 +150,12 @@
     left: 50%;">
     <img src="/img/6amer.png" width="120px" />
 </div>
-
-
-
-<div id="dogfart" style="position: absolute; top: 0;" class="game-wrapper">
-  <!-- Hidden video for PoseNet -->
-  
-    <div style="display: none;" class="topright">Top Right</div>
-  
-    <div id="messageBox" class="sendmessage">
-         <h1 style="text-align: center;font-family: 'Open Sans', sans-serif;">Jump to Start</h1>
-         <div class="niokbutton" onclick="okbuttonsend()"></div>
-    </div>
-  
 <div class="topright">
 <img style="display: none;" src="/img/fitclash.png" width="120px" />
 </div>
-  <!-- HUD -->
-  <div class="hud top-left">
-    <div>Score: <span id="score">0</span></div>
-    <div id="pose-status">Pose: —</div>
-  </div>
-
-  <!-- Main overlay / start / game over -->
-  <div id="overlay" class="center-message">
-    <h1>Pose Dino Runner</h1>
-    <p id="instructions">
-      Stand fully in frame!<br>
-      Jump = stand tall<br>
-      Duck = crouch low<br><br>
-      Good lighting helps PoseNet
-    </p>
-    <button id="start-btn">Start Game</button>
-    <button id="restart-btn" class="hidden">Restart</button>
-  </div>
-
-  <!-- Bottom controls -->
-  <div class="bottom-bar">
-    <button id="settings-btn">Settings ⚙</button>
-  </div>
-
-  <!-- Settings modal -->
-  <div id="settings-modal" class="modal hidden">
-    <div class="modal-content">
-      <button class="close-btn" id="close-settings">×</button>
-      <h2>Settings</h2>
-      
-      <label>Jump Sensitivity</label>
-      <input type="range" id="jump-sens" min="0.1" max="0.9" step="0.05" value="0.45">
-      
-      <label>Duck Sensitivity</label>
-      <input type="range" id="duck-sens" min="0.1" max="0.9" step="0.05" value="0.55">
-      
-      <label>
-        <input type="checkbox" id="show-webcam"> Show webcam preview (debug)
-      </label>
-      
-      <label>
-        <input type="checkbox" id="mirror-webcam" checked> Mirror webcam
-      </label>
-      
-      <label>Difficulty</label>
-      <select id="difficulty">
-        <option value="easy">Easy</option>
-        <option value="normal" selected>Normal</option>
-        <option value="hard">Hard</option>
-      </select>
-      
-      <button id="save-settings" style="margin-top:24px;">Save & Close</button>
-    </div>
-  </div>
-</div>
+</body>
 
 <script>
-  // ────────────────────────────────────────────────
-  // Your game logic goes here (PoseNet + Dino game)
-  // Example placeholders:
-  
-  const canvas = document.getElementById('game-canvas');
-  const ctx = canvas.getContext('2d');
-  
-  // Resize canvas responsively
-  function resizeCanvas() {
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = Math.min(window.innerHeight * 0.85, window.innerWidth * 0.5625) * dpr; // ~16:9 feel
-    canvas.style.width = canvas.width / dpr + 'px';
-    canvas.style.height = canvas.height / dpr + 'px';
-    ctx.scale(dpr, dpr);
-  }
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
-  
-  // UI interactions
-  const startBtn = document.getElementById('start-btn');
-  const restartBtn = document.getElementById('restart-btn');
-  const overlay = document.getElementById('overlay');
-  const settingsBtn = document.getElementById('settings-btn');
-  const modal = document.getElementById('settings-modal');
-  const closeSettings = document.getElementById('close-settings');
-  const saveSettings = document.getElementById('save-settings');
-  
-  startBtn.addEventListener('click', () => {
-    overlay.classList.add('hidden');
-    // → start PoseNet + game loop here
-  });
-  
-  restartBtn.addEventListener('click', () => {
-    overlay.classList.add('hidden');
-    // → reset game state
-  });
-  
-  settingsBtn.addEventListener('click', () => {
-    modal.classList.remove('hidden');
-  });
-  
-  closeSettings.addEventListener('click', () => modal.classList.add('hidden'));
-  saveSettings.addEventListener('click', () => {
-    // Save to localStorage or apply live
-    modal.classList.add('hidden');
-  });
-  
-  // Optional: tap anywhere on overlay to start/restart (mobile friendly)
-  overlay.addEventListener('click', (e) => {
-    if (e.target.tagName !== 'BUTTON') {
-      if (!startBtn.classList.contains('hidden')) startBtn.click();
-      else if (!restartBtn.classList.contains('hidden')) restartBtn.click();
-    }
-  });
-  
-  // Update pose status example
-  function updatePoseStatus(text) {
-    document.getElementById('pose-status').textContent = `Pose: ${text}`;
-  }
-  
-  // Your PoseNet code would call updatePoseStatus('Jumping!'), etc.
-  
-  // ────────────────────────────────────────────────
-</script>
-<script>
-
-const canvas3 = document.getElementById("canvas");
-
-function moveCanvas(videoTopPercent, videoBottomPercent) {
-  // Move up/down
-  canvas3.style.top = videoTopPercent + "%";
-
-  // Move left/right
-  canvas3.style.left = videoBottomPercent + "%";
-}
     
     document.onkeydown = function(evt) {
     evt = evt || window.event;
@@ -408,17 +175,7 @@ document.getElementById('remove').onchange = function() {
     document.getElementById('video').style.display = this.checked ? 'block' : 'none';
   };
 
-let videoTopPercent = 25;
-let videoBottomPercent = 75;
-document.getElementById('videoTop').addEventListener('input', (e) => {
-  videoTopPercent = e.target.value;
-  moveCanvas(videoTopPercent, videoBottomPercent);
-  document.getElementById('videoTopValue').textContent = videoTopPercent;
-});
-document.getElementById('videoBottom').addEventListener('input', (e) => {
-  videoBottomPercent = e.target.value;
-  document.getElementById('videoBottomValue').textContent = videoBottomPercent;
-});
+
 let topLinePercent = 25;   // default: 25% down
 let bottomLinePercent = 75; // default: 75% down
 document.getElementById('topLine').addEventListener('input', (e) => {
@@ -756,30 +513,4 @@ requestAnimationFrame(detectPose);
 
 
 </script>
-<script>
-    document.getElementById("start-btn").addEventListener("click", function() {
-      document.getElementById("overlay").style.display = "none";
-      document.getElementById("dogfart").style.display = "none";
-      alert("I have been pressed");
-  });
-</script>
-<script>
-  document.getElementById("settings-btn2").addEventListener("click", function() {
-    alert("I have been pressed")
-   document.getElementById("settings-modal").classList.remove("hidden");
-  });
-</script>
-<script>
-  document.getElementById("close-setting").addEventListener("click", function() {
-    document.getElementById("settings-modal").classList.add("hidden");
-  });
-
-  const canvas1 = document.getElementById("canvas");
-  const range = document.getElementById("zoomRange");
-
-  range.addEventListener("input", function () {
-    canvas1.style.transform = `scale(${this.value})`;
-  });
-</script>
-</body>
 </html>
