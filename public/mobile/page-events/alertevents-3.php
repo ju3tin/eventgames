@@ -653,6 +653,6 @@
 
 
 </div><!-- /page -->
-
+<script type="text/javascript" src="/js/mobile/demo.js"></script>
 </body>
 </html>
