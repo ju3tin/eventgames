@@ -164,6 +164,53 @@
   </style>
 </head>
 <body>
+  <div style="z-index: 1000; position: absolute; left:25%; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.9); padding: 10px; border-radius: 5px;" id="settings-modal" class="hidden">
+    <div class="modal-content">
+      <button class="close-btn" id="close-setting">×</button>
+      <h2>Settings</h2>
+      <input type="range" id="zoomRange" min="0.5" max="2" step="0.1" value="1">
+       <label>Top Line (%):
+          <input type="range" id="topLine" min="0" max="100" value="25">
+          <span id="topLineValue">25</span>
+        </label>
+        <br>
+        <label>Bottom Line (%):
+          <input type="range" id="bottomLine" min="0" max="100" value="75">
+          <span id="bottomLineValue">75</span>
+        </label>
+        <br /><label class="toggle">
+    <input id="remove" class="toggle-checkbox" type="checkbox" checked>
+    <div class="toggle-switch"></div>
+    <span class="toggle-label">Remove Video</span>
+    </label>
+      <label>Jump Sensitivity</label>
+      <input type="range" id="jump-sens" min="0.1" max="0.9" step="0.05" value="0.45">
+      
+      <label>Duck Sensitivity</label>
+      <input type="range" id="duck-sens" min="0.1" max="0.9" step="0.05" value="0.55">
+      
+      <label>
+        <input type="checkbox" id="show-webcam"> Show webcam preview (debug)
+      </label>
+      
+      <label>
+        <input type="checkbox" id="mirror-webcam" checked=""> Mirror webcam
+      </label>
+      
+      <label>Difficulty</label>
+      <select id="difficulty">
+        <option value="easy">Easy</option>
+        <option value="normal" selected="">Normal</option>
+        <option value="hard">Hard</option>
+      </select>
+      
+      <button id="save-settings" style="margin-top:24px;">Save &amp; Close</button>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <button id="settings-btn2">Settings ⚙</button>
+  </div>
+ 
   <video style="display: none;" id="video" playsinline autoplay muted></video>
     <canvas  style="position: absolute; top:0%" id="canvas"></canvas>
   <div id="main-frame-error" class="interstitial-wrapper">
@@ -189,24 +236,9 @@
 
 
 
-<div style="position: absolute;" class="game-wrapper">
+<div id="dogfart" style="position: absolute; top: 0;" class="game-wrapper">
   <!-- Hidden video for PoseNet -->
-   <div id="settings" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 5px;">
-        <label>Top Line (%):
-          <input type="range" id="topLine" min="0" max="100" value="25">
-          <span id="topLineValue">25</span>
-        </label>
-        <br>
-        <label>Bottom Line (%):
-          <input type="range" id="bottomLine" min="0" max="100" value="75">
-          <span id="bottomLineValue">75</span>
-        </label>
-        <br /><label class="toggle">
-	<input id="remove" class="toggle-checkbox" type="checkbox" checked>
-	<div class="toggle-switch"></div>
-	<span class="toggle-label">Remove Video</span>
-</label>
-      </div>
+  
     <div style="display: none;" class="topright">Top Right</div>
   
     <div id="messageBox" class="sendmessage">
@@ -696,6 +728,31 @@ requestAnimationFrame(detectPose);
 }
 
 
+</script>
+<script>
+    document.getElementById("start-btn").addEventListener("click", function() {
+      document.getElementById("overlay").style.display = "none";
+      document.getElementById("dogfart").style.display = "none";
+      alert("I have been pressed");
+  });
+</script>
+<script>
+  document.getElementById("settings-btn2").addEventListener("click", function() {
+    alert("I have been pressed")
+   document.getElementById("settings-modal").classList.remove("hidden");
+  });
+</script>
+<script>
+  document.getElementById("close-setting").addEventListener("click", function() {
+    document.getElementById("settings-modal").classList.add("hidden");
+  });
+
+  const canvas1 = document.getElementById("canvas");
+  const range = document.getElementById("zoomRange");
+
+  range.addEventListener("input", function () {
+    canvas1.style.transform = `scale(${this.value})`;
+  });
 </script>
 </body>
 </html>
