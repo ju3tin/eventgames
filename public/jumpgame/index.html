@@ -157,7 +157,9 @@
       .center-message p { font-size: clamp(16px, 4.5vw, 24px); line-height: 1.5; }
       #game-canvas { max-height: 60dvh; }
     }
-    
+    #video, #canvas {
+  transition: opacity 0.2s ease;
+}
     @media (orientation: landscape) {
       #game-canvas { max-height: 100dvh; }
     }
@@ -168,6 +170,9 @@
     <div class="modal-content">
       <button class="close-btn" id="close-setting">×</button>
       <h2>Settings</h2>
+      <label>Preview Opacity (%):</label>
+      <input type="range" id="previewOpacity" min="0" max="100" value="100" step="5">
+  <span id="previewOpacityValue">100%</span>
       <label>Video UP & DOWN Position (%):</label>
       <input type="range" id="videoTop" min="-100" max="100" value="25">
       <span id="videoTopValue">25</span>
@@ -780,6 +785,27 @@ requestAnimationFrame(detectPose);
   range.addEventListener("input", function () {
     canvas1.style.transform = `scale(${this.value})`;
   });
+  // Add this variable near the top (with your other state variables)
+let previewOpacity = 1.0;  // 100% = fully visible
+
+// Add this listener (put it together with your other quick settings listeners)
+document.getElementById('previewOpacity').addEventListener('input', e => {
+  previewOpacity = +e.target.value / 100;
+  document.getElementById('previewOpacityValue').textContent = e.target.value + '%';
+  
+  // Apply opacity to both video and canvas
+  els.video.style.opacity  = previewOpacity;
+  els.canvas.style.opacity = previewOpacity;
+});
+
+// Optional: also apply it once when page loads (in case you want to start lower)
+window.addEventListener('load', () => {
+  // ... your existing init code ...
+  
+  // Set initial opacity
+  els.video.style.opacity  = previewOpacity;
+  els.canvas.style.opacity = previewOpacity;
+});
 </script>
 </body>
 </html>
