@@ -164,33 +164,9 @@
   </style>
 </head>
 <body>
-
-<div class="game-wrapper">
-  <!-- Hidden video for PoseNet -->
-   <div id="settings" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 5px;">
-        <label>Top Line (%):
-          <input type="range" id="topLine" min="0" max="100" value="25">
-          <span id="topLineValue">25</span>
-        </label>
-        <br>
-        <label>Bottom Line (%):
-          <input type="range" id="bottomLine" min="0" max="100" value="75">
-          <span id="bottomLineValue">75</span>
-        </label>
-        <br /><label class="toggle">
-	<input id="remove" class="toggle-checkbox" type="checkbox" checked>
-	<div class="toggle-switch"></div>
-	<span class="toggle-label">Remove Video</span>
-</label>
-      </div>
-    <div style="display: none;" class="topright">Top Right</div>
-    <video id="video" playsinline autoplay muted></video>
-    <canvas id="canvas"></canvas>
-    <div id="messageBox" class="sendmessage">
-         <h1 style="text-align: center;font-family: 'Open Sans', sans-serif;">Jump to Start</h1>
-         <div class="niokbutton" onclick="okbuttonsend()"></div>
-    </div>
-    <div id="main-frame-error" class="interstitial-wrapper">
+  <video style="display: none;" id="video" playsinline autoplay muted></video>
+    <canvas  style="position: absolute; top:0%" id="canvas"></canvas>
+  <div id="main-frame-error" class="interstitial-wrapper">
         <div id="main-content">
             <div class="icon icon-offline" alt=""></div>
         </div>
@@ -210,6 +186,34 @@
     left: 50%;">
     <img src="/img/6amer.png" width="120px" />
 </div>
+
+
+
+<div style="position: absolute;" class="game-wrapper">
+  <!-- Hidden video for PoseNet -->
+   <div id="settings" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 5px;">
+        <label>Top Line (%):
+          <input type="range" id="topLine" min="0" max="100" value="25">
+          <span id="topLineValue">25</span>
+        </label>
+        <br>
+        <label>Bottom Line (%):
+          <input type="range" id="bottomLine" min="0" max="100" value="75">
+          <span id="bottomLineValue">75</span>
+        </label>
+        <br /><label class="toggle">
+	<input id="remove" class="toggle-checkbox" type="checkbox" checked>
+	<div class="toggle-switch"></div>
+	<span class="toggle-label">Remove Video</span>
+</label>
+      </div>
+    <div style="display: none;" class="topright">Top Right</div>
+  
+    <div id="messageBox" class="sendmessage">
+         <h1 style="text-align: center;font-family: 'Open Sans', sans-serif;">Jump to Start</h1>
+         <div class="niokbutton" onclick="okbuttonsend()"></div>
+    </div>
+  
 <div class="topright">
 <img style="display: none;" src="/img/fitclash.png" width="120px" />
 </div>
