@@ -3,7 +3,7 @@ import MilestoneTimeline from "@/components/MilestoneTimeline";
 
 async function getMilestones() {
   const res = await fetch(
-    `http://localhost:3000/api/milestones`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/milestones`,
     { cache: "no-store" }
   );
 
