@@ -1,10 +1,10 @@
 /* Set the background image sources */
-#newyork { background-image: url("/img/newyork.jpg"); }
-#buenosaires { background-image: url("/img/buenosaires.jpg"); }
-#paris { background-image: url("/img/paris.jpg"); }
-#capetown { background-image: url("/img/capetown.jpg"); }
-#seoul { background-image: url("/img/seoul.jpg"); }
-#sydney { background-image: url("/img/sydney.jpg"); }
+#newyork { background-image: url("../_assets/img/newyork.jpg"); }
+#buenosaires { background-image: url("../_assets/img/buenosaires.jpg"); }
+#paris { background-image: url("../_assets/img/paris.jpg"); }
+#capetown { background-image: url("../_assets/img/capetown.jpg"); }
+#seoul { background-image: url("../_assets/img/seoul.jpg"); }
+#sydney { background-image: url("../_assets/img/sydney.jpg"); }
 /* Background settings */
 .demo-page {
 	background-size: cover;
@@ -12,15 +12,15 @@
 	background-repeat: no-repeat;
 }
 /* Transparent footer */
-.ui-toolbar-footer {
+.demo-page .ui-footer {
 	background: none;
-	border: 0;
+	border: none;
 	bottom: 0;
 }
 /* The footer won't have a height because there are only two absolute positioned elements in it.
-We can use the header button position classes, but have to position the buttons from the bottom. */
-.control.ui-toolbar-header-button-left,
-.trivia-button.ui-toolbar-header-button-right {
+So we position the buttons from the bottom. */
+.control.ui-btn-left,
+.trivia-btn.ui-btn-right {
 	top: auto;
 	bottom: 7px;
 	margin: 0;

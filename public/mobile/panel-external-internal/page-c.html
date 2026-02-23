@@ -5,9 +5,9 @@
 	<title>External and internal panels</title>
 	<link rel="shortcut icon" href="../favicon.ico">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" href="/css/jquery.mobile.css">
-	<script src="/js/jquery.js"></script>
-	<script src="../../js/"></script>
+	<link rel="stylesheet" href="../css/themes/default/jquery.mobile-1.4.5.min.css">
+	<script src="../js/jquery.js"></script>
+	<script src="../js/jquery.mobile-1.4.5.min.js"></script>
 	<script>
 		$( document ).on( "pagecreate", function() {
 			$( "body > [data-role='panel']" ).panel();
@@ -30,7 +30,7 @@
 		</ul>
 	</div>
 
-	<div data-role="toolbar" data-type="header" data-position="fixed" data-theme="a">
+	<div data-role="header" data-position="fixed" data-theme="a">
 		<h1>External header Page C</h1>
 		<a href="#outside" data-icon="bars" data-iconpos="notext">Menu</a>
 		<div data-role="navbar">
@@ -61,16 +61,16 @@
 
 			<p>The left panel and fixed header are outside the page. The right panel and fixed footer are inside the page.</p>
 
-			<a href="#inside-c" class="ui-button ui-shadow ui-corner-all ui-button-inline">Open right panel</a>
+			<a href="#inside-c" class="ui-btn ui-shadow ui-corner-all ui-btn-inline">Open right panel</a>
 
 		</div><!-- /content -->
 
-		<div data-role="toolbar" data-type="footer" data-position="fixed">
+		<div data-role="footer" data-position="fixed">
 			<div data-role="navbar">
 				<ul>
 					<li><a href="index.html">Page A</a></li>
 					<li><a href="page-b.html">Page B</a></li>
-					<li><a href="page-c.html" class="ui-button-active ui-state-persist">Page C</a></li>
+					<li><a href="page-c.html" class="ui-btn-active ui-state-persist">Page C</a></li>
 				</ul>
 			</div>
 		</div><!-- /header -->

@@ -2,7 +2,7 @@
 	//special click handling to make widget work remove after nav changes in 1.4
 	var href,
 		ele = "";
-	$( document ).on( "click", "a", function() {
+	$( document ).on( "click", "a", function( e ) {
 		href = $( this ).attr( "href" );
 		var hash = $.mobile.path.parseUrl( href );
 		if( typeof href !== "undefined" && hash !== "" && href !== href.replace( hash,"" ) && hash.search( "/" ) !== -1 ){
@@ -21,13 +21,13 @@
 
 		try {
 			hashEl = $( hash );
-		} catch( err ) {
+		} catch( e ) {
 			hashEl = $();
 		}
 
 		try {
 			hashElInPage = $( ".ui-page-active " + hash );
-		} catch( err ) {
+		} catch( e ) {
 			hashElInPage = $();
 		}
 
@@ -37,17 +37,17 @@
 			hashEl.length > 0 &&
 			!hashEl.hasClass( "ui-page" ) &&
 			!hashEl.hasClass( "ui-popup" ) &&
-			hashEl.data( "role" ) !== "page" &&
+			hashEl.data('role') !== "page" &&
 			!hashElInPage.hasClass( "ui-panel" ) &&
 			!hashElInPage.hasClass( "ui-popup" ) ) {
 			//scroll to the id
 			var pos = hashEl.offset().top;
 			$.mobile.silentScroll( pos );
-			$.mobile.navigate( hash, "", true );
+			$.mobile.navigate( hash, '', true );
 		} else if( typeof f.toPage !== "object" &&
 			hash !== "" &&
 			$.mobile.path.parseUrl( href ).hash !== "" &&
-			!hashEl.hasClass( "ui-page" ) && hashEl.attr( "data-role" ) !== "page" &&
+			!hashEl.hasClass( "ui-page" ) && hashEl.attr('data-role') !== "page" &&
 			!hashElInPage.hasClass( "ui-panel" ) &&
 			!hashElInPage.hasClass( "ui-popup" ) ) {
 			$( ele ).attr( "href", href );
@@ -58,7 +58,7 @@
 					hashEl.length > 0 &&
 					hashElInPage.length > 0 &&
 					!hashEl.hasClass( "ui-page" ) &&
-					hashEl.data( "role" ) !== "page" &&
+					hashEl.data('role') !== "page" &&
 					!hashElInPage.hasClass( "ui-panel" ) &&
 					!hashElInPage.hasClass( "ui-popup" ) ) {
 					hash = $.mobile.path.parseUrl( href ).hash;
@@ -69,7 +69,7 @@
 		}
 	});
 	$( document ).on( "mobileinit", function(){
-		var hash = window.location.hash;
+		hash = window.location.hash;
 		$.mobile.document.one( "pageshow", function(){
 			var hashEl, hashElInPage;
 
@@ -88,7 +88,7 @@
 			if( hash !== "" &&
 				hashEl.length > 0 &&
 				hashElInPage.length > 0 &&
-				hashEl.attr( "data-role" ) !== "page" &&
+				hashEl.attr('data-role') !== "page" &&
 				!hashEl.hasClass( "ui-page" ) &&
 				!hashElInPage.hasClass( "ui-panel" ) &&
 				!hashElInPage.hasClass( "ui-popup" ) &&
@@ -110,9 +110,9 @@
 			_create:function(){
 				var self = this,
 					bodyid = "ui-page-top",
-					panel = "<div data-role='panel' class='jqm-quicklink-panel' data-position='left' data-display='overlay' data-theme='a'><ul data-role='listview' data-inset='false' data-theme='a' data-divider-theme='a' data-icon='false'><li data-role='list-divider'>Table of Contents</li></ul></div>",
+					panel = "<div data-role='panel' class='jqm-nav-panel jqm-quicklink-panel' data-position='right' data-display='overlay' data-theme='a'><ul data-role='listview' data-inset='false' data-theme='a' data-divider-theme='a' data-icon='false' class='jqm-list'><li data-role='list-divider'>Quick Links</li></ul></div>",
 					first = true,
-					h2dictionary = {};
+					h2dictionary = new Object();
 					if(typeof $("body").attr("id") === "undefined"){
 						$("body").attr("id",bodyid);
 					} else {
@@ -130,27 +130,26 @@
 
 						h2dictionary[id] =  text;
 						if(!first){
-							$(this).before( "<div class='jqm-top-link-container'><span><a href='#" + bodyid + "' class='jqm-top-link ui-nodisc-icon ui-alt-icon'>Top <span class='ui-icon ui-icon-arrow-u'></span></a></span></div>");
+							$(this).before( "<a href='#" + bodyid + "' class='jqm-deeplink ui-icon-carat-u ui-alt-icon'>Top</a>");
 						} else {
-							$(this).before("<a href='#' data-ajax='false' class='jqm-toc-link jqm-open-quicklink-panel ui-nodisc-icon ui-alt-icon'><span class='ui-icon ui-icon-caret-r'></span> Table of Contents</a>");
+							$(this).before("<a href='#' data-ajax='false' class='jqm-deeplink jqm-open-quicklink-panel ui-icon-carat-l ui-alt-icon'>Quick Links</a>");
 						}
 						first = false;
 					});
 					this._on(".jqm-open-quicklink-panel", {
 						"click": function(){
 							$(".ui-page-active .jqm-quicklink-panel").panel("open");
-							$(".ui-page-active").addClass("jqm-demos-quicklink-panel-open");
 							return false;
 						}
 					});
 					this._on( document, {
 						"pagebeforechange": function(){
 							this.element.find(".jqm-quicklink-panel").panel("close");
-							this.element.find(".jqm-quicklink-panel .ui-button-active").removeClass("ui-button-active");
+							this.element.find(".jqm-quicklink-panel .ui-btn-active").removeClass("ui-btn-active");
 						}
 					});
 					if( $(h2dictionary).length > 0 ){
-						this.element.append(panel);
+						this.element.prepend(panel)
 						this.element.find(".jqm-quicklink-panel").panel().find("ul").listview();
 					}
 					$.each(h2dictionary,function(id,text){
@@ -162,6 +161,7 @@
 		});
 	});
 	$( document ).bind( "pagecreate create", function( e ) {
+		var initselector = $.mobile.h2linker.prototype.options.initSelector;
 		if($(e.target).data("quicklinks")){
 			$(e.target).h2linker();
 		}

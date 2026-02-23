@@ -1,18 +1,18 @@
 // Sets the require.js configuration for your application.
 require.config( {
 
-	baseUrl: "../../js",
+	baseUrl: "../js",
 
 	// 3rd party script alias names
 	paths: {
 
 		// Core Libraries
-		"jquery": "../external/jquery/jquery",
-		"jquerymobile": "jquery.mobile",
+		"jquery": "jquery",
+		"jquerymobile": "jquery.mobile-1.4.5",
 		"underscore": "//cdn.jsdelivr.net/lodash/2.4.1/lodash.min",
 		"backbone": "//cdn.jsdelivr.net/backbonejs/1.1.2/backbone-min",
 
-		"backbone-requirejs-demos": "../demos/backbone-requirejs/js"
+		"backbone-requirejs-demos": "../backbone-requirejs/js"
 	},
 
 	// Sets the configuration for your third party scripts that are not AMD compatible
@@ -48,10 +48,8 @@ require([
 	)
 
 	require( [ "jquerymobile" ], function () {
-		$( "body" ).one( "pagecontainerchange", function() {
 
-			// Instantiates a new Backbone.js Mobile Router
-			this.router = new Mobile();
-		} );
+		// Instantiates a new Backbone.js Mobile Router
+		this.router = new Mobile();
 	});
 });

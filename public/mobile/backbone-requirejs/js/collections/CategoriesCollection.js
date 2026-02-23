@@ -83,8 +83,7 @@ define([
                 // Triggers the custom `added` method (which the Category View listens for)
                 self.trigger( "added" );
 
-                // Resolves the deferred object (this triggers the pagecontainer change() method
-                // inside of the Category Router)
+                // Resolves the deferred object (this triggers the changePage method inside of the Category Router)
                 deferred.resolve();
 
             }, 1000);

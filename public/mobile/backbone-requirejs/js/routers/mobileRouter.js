@@ -12,12 +12,9 @@ define([
 
     // Extends Backbone.Router
     var CategoryRouter = Backbone.Router.extend( {
-    	backToHome: false,
 
         // The Router constructor
         initialize: function() {
-
-            this.pagecontainerHandle = $( ".ui-pagecontainer" );
 
             // Instantiates a new Animal Category View
             this.animalsView = new CategoryView( { el: "#animals", collection: new CategoriesCollection( [] , { type: "animals" } ) } );
@@ -28,9 +25,9 @@ define([
             // Instantiates a new Vehicles Category View
             this.vehiclesView = new CategoryView( { el: "#vehicles", collection: new CategoriesCollection( [] , { type: "vehicles" } ) } );
 
-
             // Tells Backbone to start watching for hashchange events
             Backbone.history.start();
+
         },
 
         // Backbone.js Routes
@@ -48,10 +45,8 @@ define([
         home: function() {
 
             // Programatically changes to the categories page
-			this.pagecontainerHandle.pagecontainer( "change", "#categories", {
-				reverse: false,
-				changeUrl: false
-			});
+            $.mobile.changePage( "#categories" , { reverse: false, changeHash: false } );
+
         },
 
         // Category method that passes in the type that is appended to the url hash
@@ -59,10 +54,9 @@ define([
 
             // Stores the current Category View  inside of the currentView variable
             var currentView = this[ type + "View" ];
-            var that = this;
 
             // If there are no collections in the current Category View
-            if( !currentView.collection.length ) {
+            if(!currentView.collection.length) {
 
                 // Show's the jQuery Mobile loading icon
                 $.mobile.loading( "show" );
@@ -71,10 +65,8 @@ define([
                 currentView.collection.fetch().done( function() {
 
                     // Programatically changes to the current categories page
-                    that.pagecontainerHandle.pagecontainer( "change", "#" + type, {
-						reverse: false,
-						changeUrl: false
-					});
+                    $.mobile.changePage( "#" + type, { reverse: false, changeHash: false } );
+    
                 } );
 
             }
@@ -83,10 +75,7 @@ define([
             else {
 
                 // Programatically changes to the current categories page
-                this.pagecontainerHandle.pagecontainer( "change", "#" + type, {
-					reverse: false,
-					changeUrl: false
-				});
+                $.mobile.changePage( "#" + type, { reverse: false, changeHash: false } );
 
             }
 

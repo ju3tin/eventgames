@@ -5,9 +5,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="shortcut icon" href="../favicon.ico">
-  <link rel="stylesheet" href="/css/jquery.mobile.css">
-  <script src="/js/jquery.js"></script>
-  <script src="../../js/"></script>
+  <link rel="stylesheet" href="../css/themes/default/jquery.mobile-1.4.5.min.css">
+  <script src="../js/jquery.js"></script>
+  <script src="../js/jquery.mobile-1.4.5.min.js"></script>
   <script>
     // JS
   </script>
@@ -18,7 +18,7 @@
 <body>
 <div data-role="page" id="page1" data-theme="a">
   
-  <div data-role="toolbar" data-type="header">
+  <div data-role="header">
     <h1>same page transitions</h1>
     <div data-role="navbar" id="navh1">
       <ul>
@@ -33,14 +33,14 @@
 
   <div role="main" class="ui-content">
      <h1>same page transitions</h1>
-     <div>All links within this page navigate to the page itself having the <code>allowSamePageTransition</code> option at the <code>.pagecontainer( "change" )</code> method set to <strong>true</strong>. It seems, just the slide transition raises an issue so the page gets hidden.
+     <div>All links within this page navigate to the page itself having the <code>allowSamePageTransition</code> option at <code>changePage()</code> method set to <strong>true</strong>. It seems, just the slide transition raises an issue so the page gets hidden.
       <label><input type="checkbox" id="cb1" data-theme="b"> reverse transition </label>
       <label><input type="checkbox" id="cb2" data-theme="b"> add ui-page-active on pageshow </label>
     </div>
       <div id="p1"></div>
     </div><!-- /content 1 -->
 
-  <div data-role="toolbar" data-type="footer">
+  <div data-role="footer">
     <div data-role="navbar" id="nav1">
       <ul>
         <li><a href="#page1">slide</a></li>
@@ -59,18 +59,16 @@ $('#page1').on('pagecreate', function() {
     var trans = $(this).text() || 'none',
         rev = !!$('#cb1').attr('checked');
 
-    $( this ).closest( ".ui-pagecontainer" ).pagecontainer( "change", "#page1", {
-		transition: trans,
-		allowSamePageTransition: true,
-		reverse: rev
-	});
+    $.mobile.changePage('#page1', { transition: trans,
+                                    allowSamePageTransition: true,
+                                    reverse: rev } );
     $('#p1').text( 'last transition: ' + trans + ' - reverse: ' + rev );
   });
 });
 
 $('#page1').bind('pagehide', function(e) {
-  $('a.ui-button').removeClass('ui-button-active');
-  if ( !!$('#cb2').attr('checked') && !$(this).hasClass('ui-button-active') ) { 
+  $('a.ui-btn').removeClass('ui-btn-active');
+  if ( !!$('#cb2').attr('checked') && !$(this).hasClass('ui-btn-active') ) { 
     $(this).addClass('ui-page-active');
   }
 });    

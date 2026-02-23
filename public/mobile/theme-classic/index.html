@@ -4,12 +4,12 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Classic theme - jQuery Mobile Demos</title>
-	<link rel="stylesheet" href="../../css/jquery.mobile.icons.css">
+	<link rel="stylesheet" href="../css/themes/default/jquery.mobile.icons.min.css">
 	<link rel="stylesheet" href="theme-classic.css">
-	<link rel="stylesheet" href="../../css/structure/jquery.mobile.structure.css">
+	<link rel="stylesheet" href="../css/themes/default/jquery.mobile.structure-1.4.5.min.css">
 	<link rel="shortcut icon" href="../favicon.ico">
-	<script src="/js/jquery.js"></script>
-	<script src="../../js/"></script>
+	<script src="../js/jquery.js"></script>
+	<script src="../js/jquery.mobile-1.4.5.min.js"></script>
 	<script>
 		$( document ).on( "pagecreate", function() {
 			$( "#theme-selector input" ).on( "change", function( event ) {
@@ -70,7 +70,7 @@
 		.nogradient * {
 			background-image: none !important;
 		}
-		.nohighlight .ui-button:before {
+		.nohighlight .ui-btn:before {
 			display: none !important;
 		}
 		form.ui-mini .ui-field-contain fieldset.ui-controlgroup legend small {
@@ -81,13 +81,13 @@
 <body>
 <div data-role="page" id="testpage">
 
-	<div data-role="toolbar" data-type="header">
+	<div data-role="header">
 		<h1>Classic theme</h1>
-		<a href="#" data-rel="back" class="ui-button ui-corner-all ui-shadow ui-button-icon-only">Back <span class="ui-icon ui-icon-back"></span></a>
-		<a href="#" class="ui-button ui-corner-all ui-shadow">Button <span class="ui-icon ui-icon-gear"></span></a>
+		<a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-icon-back ui-btn-icon-notext">Back</a>
+		<a href="#" class="ui-btn ui-corner-all ui-shadow ui-icon-gear ui-btn-icon-left">Button</a>
 		<div data-role="navbar">
 			<ul>
-				<li><a href="#" class="ui-button-active ui-state-persist">Menu item 1</a></li>
+				<li><a href="#" class="ui-btn-active ui-state-persist">Menu item 1</a></li>
 				<li><a href="#">Menu item 2</a></li>
 				<li><a href="#">Menu item 3</a></li>
 			</ul>
@@ -102,7 +102,7 @@
 
 		<form class="ui-mini">
 			<div class="ui-field-contain" id="theme-selector">
-				<fieldset data-role="controlgroup">
+				<fieldset data-role="controlgroup" data-type="horizontal">
 					<legend>Theme:</legend>
 					<label for="a">A</label>
 					<input type="radio" name="theme" id="a" checked>
@@ -117,7 +117,7 @@
 				</fieldset>
 			</div>
 			<div class="ui-field-contain" id="opt-navbars">
-				<fieldset data-role="controlgroup">
+				<fieldset data-role="controlgroup" data-type="horizontal">
 					<legend>Navbars:</legend>
 					<label for="show">Show</label>
 					<input type="radio" name="navbars" id="show" checked>
@@ -126,7 +126,7 @@
 				</fieldset>
 			</div>
 			<div class="ui-field-contain" id="opt-shadow">
-				<fieldset data-role="controlgroup">
+				<fieldset data-role="controlgroup" data-type="horizontal">
 					<legend>Shadow:<br><small>Off: set the widget option shadow to false (data-shadow="false")</small></legend>
 					<label for="on">On</label>
 					<input type="radio" name="shadow" id="on" checked>
@@ -135,7 +135,7 @@
 				</fieldset>
 			</div>
 			<div class="ui-field-contain" id="opt-iconshadow">
-				<fieldset data-role="controlgroup">
+				<fieldset data-role="controlgroup" data-type="horizontal">
 					<legend>Icon shadow:<br><small>On: add class ui-shadow-icon to the button or its container</small></legend>
 					<label for="on1">On</label>
 					<input type="radio" name="iconshadow" id="on1">
@@ -144,7 +144,7 @@
 				</fieldset>
 			</div>
 			<div class="ui-field-contain" id="opt-gradient">
-				<fieldset data-role="controlgroup">
+				<fieldset data-role="controlgroup" data-type="horizontal">
 					<legend>Gradient:<br><small>Off: remove background-image rules from classic theme CSS</small></legend>
 					<label for="on2">On</label>
 					<input type="radio" name="gradient" id="on2" checked>
@@ -153,8 +153,8 @@
 				</fieldset>
 			</div>
 			<div class="ui-field-contain" id="opt-highlight">
-				<fieldset data-role="controlgroup">
-					<legend>Highlight:<br><small>Off: remove .ui-button:before rule from classic theme CSS</small></legend>
+				<fieldset data-role="controlgroup" data-type="horizontal">
+					<legend>Highlight:<br><small>Off: remove .ui-btn:before rule from classic theme CSS</small></legend>
 					<label for="on3">On</label>
 					<input type="radio" name="highlight" id="on3" checked>
 					<label for="off3">Off</label>
@@ -167,48 +167,48 @@
 		<p>I am a div with classes ui-body, ui-body-<span class="theme">a</span> and ui-corner-all.</p>
 		<p><a href="#">I am a link</a></p>
 			<h4>Panels</h4>
-			<a href="#panel-reveal" class="ui-button ui-corner-all ui-shadow ui-button-inline ui-mini">Reveal</a>
-			<a href="#panel-overlay" class="ui-button ui-corner-all ui-shadow ui-button-inline ui-mini">Overlay</a>
-			<a href="#panel-push" class="ui-button ui-corner-all ui-shadow ui-button-inline ui-mini">Push</a>
+			<a href="#panel-reveal" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-mini">Reveal</a>
+			<a href="#panel-overlay" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-mini">Overlay</a>
+			<a href="#panel-push" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-mini">Push</a>
 		</div>
 
 		<div id="ui-bar-test" class="ui-bar ui-bar-a ui-corner-all" style="margin-bottom:1em;">
 		<p>I am a div with classes ui-bar, ui-bar-<span class="theme">a</span> and ui-corner-all. <a href="#">I am a link</a></p>
 		</div>
 
-		<a href="#" class="ui-button ui-corner-all ui-shadow ui-button-inline">We <span class="ui-icon ui-icon-caret-r"></span></a>
-		<button class="ui-button ui-corner-all ui-shadow ui-button-inline">are <span class="ui-icon ui-icon-caret-r"></span></button>
-		<input type="button" value="buttons" data-inline="true" data-icon="caret-r" data-iconpos="right">
+		<a href="#" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-icon-carat-r ui-btn-icon-right">We</a>
+		<button class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-icon-carat-r ui-btn-icon-right">are</button>
+		<input type="button" value="buttons" data-inline="true" data-icon="carat-r" data-iconpos="right">
 
 		<ul data-role="listview" data-inset="true" data-counttheme="c">
 			<li>I</li>
-			<li data-role="list-divider" data-theme="b">Divider<span class="ui-listview-item-count-bubble">3</span></li>
+			<li data-role="list-divider" data-theme="b">Divider<span class="ui-li-count">3</span></li>
 			<li>am</li>
-			<li>static<span class="ui-listview-item-count-bubble">6</span></li>
+			<li>static<span class="ui-li-count">6</span></li>
 		</ul>
 
 		<ul data-role="listview" data-inset="true" data-counttheme="c">
 			<li><a href="#">We</a></li>
 			<li data-role="list-divider" data-theme="b">Divider</li>
-			<li><a href="#">have<span class="ui-listview-item-count-bubble">4</span></a></li>
+			<li><a href="#">have<span class="ui-li-count">4</span></a></li>
 			<li><a href="#">links</a></li>
 		</ul>
 
 		<ul data-role="listview" data-split-icon="gear" data-inset="true">
 			<li><a href="#">
-				<img src="/img/album-bb.jpg">
+				<img src="../_assets/img/album-bb.jpg">
 			<h2>Broken Bells</h2>
 			<p>Broken Bells</p></a>
 				<a href="#purchase" data-rel="popup" data-position-to="window" data-transition="pop">Purchase album</a>
 			</li>
 			<li><a href="#">
-				<img src="/img/album-hc.jpg">
+				<img src="../_assets/img/album-hc.jpg">
 			<h2>Warning</h2>
 			<p>Hot Chip</p></a>
 				<a href="#purchase" data-rel="popup" data-position-to="window" data-transition="pop">Purchase album</a>
 			</li>
 			<li><a href="#">
-				<img src="/img/album-bb.jpg">
+				<img src="../_assets/img/album-bb.jpg">
 			<h2>Wolfgang Amadeus Phoenix</h2>
 			<p>Phoenix</p></a>
 				<a href="#purchase" data-rel="popup" data-position-to="window" data-transition="pop">Purchase album</a>
@@ -218,7 +218,7 @@
 		<form>
 			<div class="ui-field-contain">
 				<label for="name2">Text Input:</label>
-				<input type="text" name="name2" id="name2" value="" data-clear-button="true">
+				<input type="text" name="name2" id="name2" value="" data-clear-btn="true">
 			</div>
 			<div class="ui-field-contain">
 				<label for="textarea2">Textarea:</label>
@@ -258,11 +258,11 @@
 				</fieldset>
 			</div>
 			<div class="ui-field-contain">
-				<fieldset data-role="controlgroup">
+				<fieldset data-role="controlgroup" data-type="horizontal">
 					<legend>Controlgroup:</legend>
-					<button class="ui-button ui-corner-all ui-shadow">One <span class="ui-icon ui-icon-home"></span></button>
+					<button class="ui-btn ui-corner-all ui-shadow ui-icon-home ui-btn-icon-right">One</button>
 					<input type="button" data-icon="back" data-iconpos="right" value="Two">
-					<a href="#" class="ui-button ui-corner-all ui-shadow">Three <span class="ui-icon ui-icon-grid"></span></a>
+					<a href="#" class="ui-btn ui-corner-all ui-shadow ui-icon-grid ui-btn-icon-right">Three</a>
 				</fieldset>
 			</div>
 			<div class="ui-field-contain">
@@ -280,7 +280,7 @@
 			</div>
 		</form>
 
-		<a href="#" class="ui-button ui-corner-all ui-shadow ui-button-active">Active button <span class="ui-icon ui-icon-gear"></span></a>
+		<a href="#" class="ui-btn ui-corner-all ui-shadow ui-icon-gear ui-btn-icon-left ui-btn-active">Active button</a>
 
 		<p>Form inside static list:</p>
 
@@ -288,7 +288,7 @@
 			<ul data-role="listview" data-inset="true">
 				<li class="ui-field-contain">
 					<label for="name3">Text Input:</label>
-					<input type="text" name="name3" id="name3" value="" data-clear-button="true">
+					<input type="text" name="name3" id="name3" value="" data-clear-btn="true">
 				</li>
 				<li class="ui-field-contain">
 					<label for="flip3">Slider flip switch:</label>
@@ -308,7 +308,7 @@
 		<p>ui-bar-<span class="theme">a</span></p>
 			<div class="ui-field-contain">
 				<label for="name4">Text Input:</label>
-				<input type="text" name="name4" id="name4" value="" data-clear-button="true">
+				<input type="text" name="name4" id="name4" value="" data-clear-btn="true">
 			</div>
 			<div class="ui-field-contain">
 				<label for="flip4">Flip switch:</label>
@@ -345,11 +345,11 @@
 
 	</div><!-- /content -->
 
-	<div data-role="toolbar" data-type="footer" data-position="fixed">
+	<div data-role="footer" data-position="fixed">
 		<div data-role="navbar">
 			<ul>
 				<li><a href="#">Menu item 1</a></li>
-				<li><a href="#" class="ui-button-active ui-state-persist">Menu item 2</a></li>
+				<li><a href="#" class="ui-btn-active ui-state-persist">Menu item 2</a></li>
 				<li><a href="#">Menu item 3</a></li>
 			</ul>
 		</div>
@@ -364,7 +364,7 @@
 			<li><a href="#">List item</a></li>
 		</ul>
 		<br><br>
-		<button class="ui-button ui-corner-all ui-shadow">Button</button>
+		<button class="ui-btn ui-corner-all ui-shadow">Button</button>
 	</div>
 
 	<div data-role="panel" id="panel-overlay" data-display="overlay">
@@ -375,7 +375,7 @@
 			<li><a href="#">List item</a></li>
 		</ul>
 		<br><br>
-		<button class="ui-button ui-corner-all ui-shadow">Button</button>
+		<button class="ui-btn ui-corner-all ui-shadow">Button</button>
 	</div>
 
 	<div data-role="panel" id="panel-push" data-display="push">
@@ -386,7 +386,7 @@
 			<li><a href="#">List item</a></li>
 		</ul>
 		<br><br>
-		<button class="ui-button ui-corner-all ui-shadow">Button</button>
+		<button class="ui-btn ui-corner-all ui-shadow">Button</button>
 	</div>
 
 </div><!-- /page -->

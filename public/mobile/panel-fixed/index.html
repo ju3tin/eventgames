@@ -4,18 +4,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Panel fixed positioning - jQuery Mobile Demos</title>
-    <link rel="stylesheet" href="/css/jquery.mobile.css">
-    <link rel="stylesheet" href="/css/jqm-demos.css">
+    <link rel="stylesheet" href="../css/themes/default/jquery.mobile-1.4.5.min.css">
+    <link rel="stylesheet" href="../_assets/css/jqm-demos.css">
 	<link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,700">
-	<script src="/js/jquery.js"></script>
-    <script src="/js/"></script>
-    <script src="../../js/"></script>
+	<script src="../js/jquery.js"></script>
+    <script src="../_assets/js/index.js"></script>
+    <script src="../js/jquery.mobile-1.4.5.min.js"></script>
 </head>
 <body>
 <div data-role="page" class="jqm-demos" id="panel-fixed-page1" data-title="Panel fixed positioning">
 
-    <div data-role="toolbar" data-type="header" data-position="fixed">
+    <div data-role="header" data-position="fixed">
         <h1>Fixed header</h1>
         <a href="#nav-panel" data-icon="bars" data-iconpos="notext">Menu</a>
         <a href="#add-form" data-icon="gear" data-iconpos="notext">Add</a>
@@ -37,7 +37,7 @@
         <br>
         <br>
 
-        <a href="../" data-rel="back" data-ajax="false" class="ui-button ui-shadow ui-corner-all ui-mini ui-button-inline ui-alt-icon ui-nodisc-icon">Back <span class="ui-icon ui-icon-caret-l"></span></a>
+        <a href="../" data-rel="back" data-ajax="false" class="ui-btn ui-shadow ui-corner-all ui-mini ui-btn-inline ui-icon-carat-l ui-btn-icon-left ui-alt-icon ui-nodisc-icon">Back</a>
 
         <br>
         <br>
@@ -64,7 +64,7 @@
 
 	</div><!-- /content -->
 
-    <div data-role="toolbar" data-type="footer" data-position="fixed">
+    <div data-role="footer" data-position="fixed">
     	<h4>Fixed footer</h4>
     </div><!-- /footer -->
 
@@ -114,14 +114,14 @@
         	<h2>Login</h2>
 
             <label for="name">Username:</label>
-            <input type="text" name="name" id="name" value="" data-clear-button="true" data-mini="true">
+            <input type="text" name="name" id="name" value="" data-clear-btn="true" data-mini="true">
 
             <label for="password">Password:</label>
-            <input type="password" name="password" id="password" value="" data-clear-button="true" autocomplete="off" data-mini="true">
+            <input type="password" name="password" id="password" value="" data-clear-btn="true" autocomplete="off" data-mini="true">
 
             <div class="ui-grid-a">
-                <div class="ui-block-a"><a href="#" data-rel="close" class="ui-button ui-shadow ui-corner-all ui-button-b ui-mini">Cancel</a></div>
-                <div class="ui-block-b"><a href="#" data-rel="close" class="ui-button ui-shadow ui-corner-all ui-button-a ui-mini">Save</a></div>
+                <div class="ui-block-a"><a href="#" data-rel="close" class="ui-btn ui-shadow ui-corner-all ui-btn-b ui-mini">Cancel</a></div>
+                <div class="ui-block-b"><a href="#" data-rel="close" class="ui-btn ui-shadow ui-corner-all ui-btn-a ui-mini">Save</a></div>
 			</div>
         </form>
 
@@ -131,7 +131,7 @@
 
 <div data-role="page" id="panel-fixed-page2">
 
-    <div data-role="toolbar" data-type="header">
+    <div data-role="header">
         <h1>Landing page</h1>
     </div><!-- /header -->
 
@@ -139,7 +139,7 @@
 
         <p>This is just a landing page.</p>
 
-        <a href="#panel-fixed-page1" class="ui-button ui-shadow ui-corner-all ui-button-inline ui-mini">Back <span class="ui-icon ui-icon-back"></span></a>
+        <a href="#panel-fixed-page1" class="ui-btn ui-shadow ui-corner-all ui-btn-inline ui-mini ui-icon-back ui-btn-icon-left">Back</a>
 
     </div><!-- /content -->
 
