@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Street Fighter - Pose Controlled</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #000;
+    font-family: Arial, sans-serif;
+    color: white;
+    touch-action: none;
+  }
+
+  #ui-container {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.8);
+  }
+
+  #ui-container.hidden {
+    display: none;
+  }
+
+  h1 {
+    font-size: 4rem;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 20px #ff0044;
+  }
+
+  .btn {
+    padding: 1rem 2rem;
+    font-size: 1.8rem;
+    margin: 1rem;
+    background: #222;
+    color: white;
+    border: 3px solid #444;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:hover {
+    background: #444;
+    transform: scale(1.05);
+  }
+
+  .char-grid, .bg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+    max-width: 90%;
+    padding: 2rem;
+  }
+
+  .char-card, .bg-card {
+    text-align: center;
+    padding: 1rem;
+    background: #111;
+    border: 2px solid #333;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .char-card:hover, .bg-card:hover {
+    border-color: #ff0044;
+    transform: scale(1.1);
+  }
+
+  .char-card img, .bg-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  #game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+  }
+
+  #gameCanvas {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  #video, #poseCanvas {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 240px;
+    height: 180px;
+    object-fit: cover;
+    z-index: 5;
+    border: 3px solid #444;
+    border-radius: 8px;
+    background: #111;
+  }
+
+  #poseCanvas {
+    opacity: 0.7;
+  }
+
+  #hud {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 40px;
+    pointer-events: none;
+  }
+
+  .health-bar {
+    width: 300px;
+    height: 30px;
+    background: #333;
+    border: 3px solid #fff;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .health-fill {
+    height: 100%;
+    background: linear-gradient(to right, #ff0044, #ff5555);
+    transition: width 0.3s;
+  }
+
+  .p2 .health-fill {
+    background: linear-gradient(to left, #0044ff, #5555ff);
+  }
+
+  #winner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 6rem;
+    background: rgba(0,0,0,0.8);
+    z-index: 20;
+    pointer-events: all;
+  }
+
+  #winner.hidden {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="ui-container">
+  <h1>Street Fighter - Pose Edition</h1>
+
+  <div id="char-select">
+    <h2>Choose Your Fighter</h2>
+    <div class="char-grid">
+      <div class="char-card" data-char="ryu">
+        <img src="https://via.placeholder.com/200x200/880000/ffffff?text=Ryu" alt="Ryu">
+        <h3>Ryu</h3>
+      </div>
+      <div class="char-card" data-char="ken">
+        <img src="https://via.placeholder.com/200x200/FF8800/ffffff?text=Ken" alt="Ken">
+        <h3>Ken</h3>
+      </div>
+      <!-- Add more characters here later -->
+    </div>
+  </div>
+
+  <div id="bg-select" class="hidden">
+    <h2>Choose Stage</h2>
+    <div class="bg-grid">
+      <div class="bg-card" data-bg="dojo">
+        <img src="https://via.placeholder.com/300x200/222/fff?text=Dojo" alt="Dojo">
+        <h3>Dojo</h3>
+      </div>
+      <div class="bg-card" data-bg="street">
+        <img src="https://via.placeholder.com/300x200/444/fff?text=Street" alt="Street">
+        <h3>Street</h3>
+      </div>
+      <div class="bg-card" data-bg="beach">
+        <img src="https://via.placeholder.com/300x200/0066AA/fff?text=Beach" alt="Beach">
+        <h3>Beach</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="game-container">
+  <canvas id="gameCanvas"></canvas>
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="poseCanvas"></canvas>
+
+  <div id="hud">
+    <div class="health-bar">
+      <div id="p1-health" class="health-fill" style="width:100%"></div>
+    </div>
+    <div class="health-bar p2">
+      <div id="p2-health" class="health-fill" style="width:100%"></div>
+    </div>
+  </div>
+
+  <div id="winner" class="hidden">
+    <h1 id="win-text">PLAYER 1 WINS!</h1>
+    <button class="btn" onclick="location.reload()">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ────────────────────────────────────────────────
+// CONFIG
+// ────────────────────────────────────────────────
+const POSE_MODEL = poseDetection.SupportedModels.MoveNet;
+const POSE_TYPE = poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING;
+
+const ATTACK_DISTANCE = 120;
+const PUNCH_DAMAGE = 12;
+const KICK_DAMAGE = 18;
+
+// ────────────────────────────────────────────────
+// DOM
+// ────────────────────────────────────────────────
+const uiContainer = document.getElementById('ui-container');
+const charSelect = document.getElementById('char-select');
+const bgSelect = document.getElementById('bg-select');
+const gameCanvas = document.getElementById('gameCanvas');
+const ctx = gameCanvas.getContext('2d');
+const video = document.getElementById('video');
+const poseCanvas = document.getElementById('poseCanvas');
+const poseCtx = poseCanvas.getContext('2d');
+const p1HealthBar = document.getElementById('p1-health');
+const p2HealthBar = document.getElementById('p2-health');
+const winnerScreen = document.getElementById('winner');
+const winText = document.getElementById('win-text');
+
+// ────────────────────────────────────────────────
+// STATE
+// ────────────────────────────────────────────────
+let detector = null;
+let player1 = null;
+let player2 = null;
+let keys = {};
+let gameRunning = false;
+let animationFrameId = null;
+
+// ────────────────────────────────────────────────
+// CHARACTERS & BACKGROUNDS
+// ────────────────────────────────────────────────
+const characters = {
+  ryu: {
+    name: "Ryu",
+    color: "#880000",
+    sprite: "https://via.placeholder.com/80/880000/fff?text=Ryu"
+  },
+  ken: {
+    name: "Ken",
+    color: "#FF8800",
+    sprite: "https://via.placeholder.com/80/FF8800/fff?text=Ken"
+  }
+};
+
+const backgrounds = {
+  dojo: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200",
+  street: "https://images.unsplash.com/photo-1508186225823-0963cf9a94c0?w=1200",
+  beach: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200"
+};
+
+// ────────────────────────────────────────────────
+// PLAYER CLASS
+// ────────────────────────────────────────────────
+class Fighter {
+  constructor(side, char) {
+    this.side = side; // 'left' or 'right'
+    this.char = char;
+    this.x = side === 'left' ? 200 : gameCanvas.width - 280;
+    this.y = gameCanvas.height - 250;
+    this.width = 80;
+    this.height = 180;
+    this.health = 100;
+    this.state = 'idle';
+    this.direction = side === 'left' ? 1 : -1;
+    this.speed = 5;
+    this.isAttacking = false;
+    this.attackCooldown = 0;
+  }
+
+  draw() {
+    ctx.save();
+    if (this.direction < 0) {
+      ctx.scale(-1, 1);
+      ctx.drawImage(
+        this.charImg || new Image(),
+        -this.x - this.width, this.y,
+        this.width, this.height
+      );
+      ctx.restore();
+    } else {
+      ctx.drawImage(
+        this.charImg || new Image(),
+        this.x, this.y,
+        this.width, this.height
+      );
+    }
+
+    // Health bar above head
+    ctx.fillStyle = "#000";
+    ctx.fillRect(this.x - 10, this.y - 30, this.width + 20, 20);
+    ctx.fillStyle = this.side === 'left' ? "#ff0044" : "#0044ff";
+    ctx.fillRect(this.x - 10, this.y - 30, (this.health / 100) * (this.width + 20), 20);
+  }
+
+  update() {
+    if (this.attackCooldown > 0) this.attackCooldown--;
+
+    if (this.state === 'attacking' && this.attackCooldown <= 0) {
+      this.state = 'idle';
+    }
+  }
+
+  punch() {
+    if (this.attackCooldown <= 0) {
+      this.state = 'attacking';
+      this.attackCooldown = 20;
+      checkAttack(this);
+    }
+  }
+
+  kick() {
+    if (this.attackCooldown <= 0) {
+      this.state = 'attacking';
+      this.attackCooldown = 30;
+      checkAttack(this, true); // true = kick (more damage)
+    }
+  }
+}
+
+// ────────────────────────────────────────────────
+// GAME LOGIC
+// ────────────────────────────────────────────────
+function checkAttack(attacker, isKick = false) {
+  const defender = attacker.side === 'left' ? player2 : player1;
+  const distance = Math.abs(attacker.x - defender.x);
+
+  if (distance < ATTACK_DISTANCE + (isKick ? 40 : 0)) {
+    const damage = isKick ? KICK_DAMAGE : PUNCH_DAMAGE;
+    defender.health = Math.max(0, defender.health - damage);
+
+    if (defender.side === 'left') {
+      p1HealthBar.style.width = defender.health + '%';
+    } else {
+      p2HealthBar.style.width = defender.health + '%';
+    }
+
+    if (defender.health <= 0) {
+      endGame(attacker.side === 'left' ? "Player 1" : "Player 2");
+    }
+  }
+}
+
+function endGame(winner) {
+  gameRunning = false;
+  cancelAnimationFrame(animationFrameId);
+  winText.textContent = `${winner} WINS!`;
+  winnerScreen.classList.remove('hidden');
+}
+
+// ────────────────────────────────────────────────
+// INPUT HANDLING
+// ────────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if (!gameRunning) return;
+
+  if (e.key === 'ArrowLeft')  player2.x -= player2.speed;
+  if (e.key === 'ArrowRight') player2.x += player2.speed;
+  if (e.key === 'ArrowUp')    player2.y -= player2.speed;
+  if (e.key === 'ArrowDown')  player2.y += player2.speed;
+
+  if (e.key === ' ') player2.punch();
+  if (e.key === 'Shift') player2.kick();
+});
+
+window.addEventListener('keyup', e => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+// ────────────────────────────────────────────────
+// POSE DETECTION FOR PLAYER 1
+// ────────────────────────────────────────────────
+let poseDetector;
+
+async function initPoseDetection() {
+  poseDetector = await poseDetection.createDetector(
+    POSE_MODEL,
+    { modelType: POSE_TYPE }
+  );
+}
+
+async function detectPose() {
+  if (!poseDetector || !gameRunning) return;
+
+  const poses = await poseDetector.estimatePoses(video);
+
+  poseCtx.clearRect(0, 0, poseCanvas.width, poseCanvas.height);
+
+  if (poses.length > 0) {
+    const kp = poses[0].keypoints;
+
+    // Mirror keypoints for correct orientation
+    kp.forEach(k => {
+      k.x = video.videoWidth - k.x;
+    });
+
+    // Draw skeleton
+    poseCtx.strokeStyle = '#00ff00';
+    poseCtx.lineWidth = 3;
+    const pairs = [
+      [0,1],[0,2],[1,3],[2,4],[5,6],[5,7],[6,8],[7,9],[8,10],
+      [5,11],[6,12],[11,13],[12,14],[13,15],[14,16]
+    ];
+    pairs.forEach(([a,b]) => {
+      if (kp[a]?.score > 0.4 && kp[b]?.score > 0.4) {
+        poseCtx.beginPath();
+        poseCtx.moveTo(kp[a].x * (poseCanvas.width/video.videoWidth), kp[a].y * (poseCanvas.height/video.videoHeight));
+        poseCtx.lineTo(kp[b].x * (poseCanvas.width/video.videoWidth), kp[b].y * (poseCanvas.height/video.videoHeight));
+        poseCtx.stroke();
+      }
+    });
+
+    // Basic punch/kick detection for Player 1
+    const leftWrist = kp.find(k => k.name === 'left_wrist');
+    const rightWrist = kp.find(k => k.name === 'right_wrist');
+    const nose = kp.find(k => k.name === 'nose');
+
+    if (leftWrist && rightWrist && nose && leftWrist.score > 0.5 && rightWrist.score > 0.5) {
+      if (leftWrist.y < nose.y - 80 || rightWrist.y < nose.y - 80) {
+        player1.punch();
+      }
+    }
+  }
+
+  setTimeout(detectPose, 50); // ~20 fps
+}
+
+// ────────────────────────────────────────────────
+// GAME LOOP
+// ────────────────────────────────────────────────
+function gameLoop() {
+  if (!gameRunning) return;
+
+  ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+  // Draw background
+  if (gameCanvas.bgImg) {
+    ctx.drawImage(gameCanvas.bgImg, 0, 0, gameCanvas.width, gameCanvas.height);
+  }
+
+  player1.update();
+  player2.update();
+
+  player1.draw();
+  player2.draw();
+
+  // Simple collision (keep players from overlapping)
+  if (Math.abs(player1.x - player2.x) < player1.width) {
+    if (player1.x < player2.x) {
+      player1.x = player2.x - player1.width - 10;
+    } else {
+      player2.x = player1.x - player2.width - 10;
+    }
+  }
+
+  animationFrameId = requestAnimationFrame(gameLoop);
+}
+
+// ────────────────────────────────────────────────
+// INIT & CHARACTER/BG SELECTION
+// ────────────────────────────────────────────────
+async function startGame(char1 = 'ryu', bg = 'dojo') {
+  uiContainer.classList.add('hidden');
+
+  player1 = new Fighter('left', characters[char1]);
+  player2 = new Fighter('right', characters.ken); // Player 2 always Ken for now
+
+  // Preload character sprites
+  player1.charImg = new Image();
+  player1.charImg.src = characters[char1].sprite;
+  player2.charImg = new Image();
+  player2.charImg.src = characters.ken.sprite;
+
+  // Load background
+  gameCanvas.bgImg = new Image();
+  gameCanvas.bgImg.src = backgrounds[bg];
+
+  // Start pose detection for Player 1
+  await initPoseDetection();
+  detectPose();
+
+  gameRunning = true;
+  gameLoop();
+}
+
+// Character selection
+document.querySelectorAll('.char-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const char = card.dataset.char;
+    charSelect.classList.add('hidden');
+    bgSelect.classList.remove('hidden');
+    // Store selected char
+    window.selectedChar = char;
+  });
+});
+
+// Background selection
+document.querySelectorAll('.bg-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const bg = card.dataset.bg;
+    startGame(window.selectedChar || 'ryu', bg);
+  });
+});
+
+// Start pose detection early so it's ready
+setupCamera().then(() => {
+  console.log("Camera ready");
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Boxing Game – Fight Box & Action Detection</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+
+<style>
+body {
+  margin:0;
+  overflow:hidden;
+  background:black;
+  font-family:sans-serif;
+}
+
+#video {
+  position:absolute;
+  top:0; left:0;
+  width:100vw;
+  height:100vh;
+  object-fit:cover;
+  visibility:hidden;
+}
+
+#poseCanvas {
+  position:absolute;
+  top:0; left:0;
+  width:100vw;
+  height:100vh;
+}
+
+#recordBtn {
+  position:absolute;
+  bottom:20px;
+  left:20px;
+  z-index:300;
+  padding:15px 25px;
+  font-size:18px;
+  background:red;
+  color:white;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+#countdown {
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:100px;
+  color:white;
+  z-index:400;
+  display:none;
+}
+
+#status {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 36px;
+  font-weight: bold;
+  padding: 12px 30px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.6);
+  z-index: 350;
+  pointer-events: none;
+  min-width: 340px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+#status.idle   { background: rgba(149,165,166,0.7); color: white; }
+#status.jab    { background: rgba(46,204,113,0.8);  color: white; }
+#status.upper  { background: rgba(52,152,219,0.8);  color: white; }
+#status.hook   { background: rgba(155,89,182,0.8);  color: white; }
+#status.block  { background: rgba(243,156,18,0.8);  color: white; }
+#status.duck   { background: rgba(230,126,34,0.8);  color: white; }
+#status.left   { background: rgba(52,152,219,0.8);  color: white; }
+#status.right  { background: rgba(52,152,219,0.8);  color: white; }
+#status.out    { background: rgba(231,76,60,0.8);   color: white; }
+</style>
+</head>
+<body>
+
+<button id="recordBtn">Record Move</button>
+<div id="countdown"></div>
+<div id="status" class="idle">Idle</div>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="poseCanvas"></canvas>
+
+<script src="game1.js"></script>
+</body>
+</html>
