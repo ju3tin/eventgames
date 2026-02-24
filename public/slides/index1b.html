@@ -70,6 +70,40 @@
     <!-- Android -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#333333">
+    <style>
+        html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #000 !important;          /* or your --dark color */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Force WebSlides wrapper to cover everything */
+#webslides {
+  background: #000 !important;
+  min-height: 100vh;
+}
+
+/* Fix bottom nav bar background on iOS */
+.navigation {
+  background: rgba(0,0,0,0.7) !important;   /* semi-transparent black */
+  backdrop-filter: blur(10px);              /* nice modern effect if supported */
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Ensure no white gap below nav */
+body::after {
+  content: "";
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-bottom, 0);
+  background: #000;
+  z-index: 9999;
+}
+    </style>
   </head>
 
   <body>
