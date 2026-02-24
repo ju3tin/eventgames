@@ -1,0 +1,92 @@
+* {
+    box-sizing: border-box;
+    font-family: 'Press Start 2P', cursive;
+}
+
+body {
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #000;
+}
+
+.container {
+    position: relative;
+    display: inline-block;
+}
+
+.healthBarsArea {
+    position: absolute; 
+    display: flex; 
+    width: 100%; 
+    align-items: center;
+    padding: 20px;
+}
+
+.enemyHealtyBar {
+    position: relative;
+    width: 100%;
+    border-top: 4px solid #FFF;
+    border-bottom: 4px solid #FFF;
+    border-right: 4px solid #FFF;
+}
+
+.playerHealtyBar {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    border-top: 4px solid #FFF;
+    border-left: 4px solid #FFF;
+    border-bottom: 4px solid #FFF;
+}
+
+.healthBarWrapper {
+    background-color: #FF0000; 
+    height: 30px; 
+    width: 100%;
+}
+
+#playerHealth {
+    position: absolute;
+    background: #818cf8;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+}
+
+#enemyHealth {
+    position: absolute;
+    background: #818cf8;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+
+.timer {
+    background-color: #000;
+    width: 100px;
+    height: 50px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFF;
+    border: 4px solid #FFF;
+}
+
+#displayText {
+    position: absolute;
+    color: #FFF;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: none;
+}

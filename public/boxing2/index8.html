@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Boxing Arcade – Move Detection</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+
+<style>
+body{
+  margin:0;
+  overflow:hidden;
+  background:black;
+  font-family:sans-serif;
+}
+
+#video{
+  position:absolute;
+  width:100vw;
+  height:100vh;
+  object-fit:cover;
+  visibility:hidden;
+}
+
+#poseCanvas{
+  position:absolute;
+  width:100vw;
+  height:100vh;
+}
+
+#recordBtn{
+  position:absolute;
+  bottom:20px;
+  left:20px;
+  z-index:300;
+  padding:15px 25px;
+  font-size:18px;
+  background:red;
+  color:white;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+#countdown{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:100px;
+  color:white;
+  z-index:400;
+  display:none;
+}
+
+#moveLabel{
+  position:absolute;
+  top:40px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:50px;
+  color:white;
+  font-weight:bold;
+  z-index:500;
+}
+</style>
+</head>
+<body>
+
+<button id="recordBtn">Record Move</button>
+<div id="countdown"></div>
+<div id="moveLabel"></div>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="poseCanvas"></canvas>
+
+<script>
+const video = document.getElementById("video");
+const poseCanvas = document.getElementById("poseCanvas");
+const ctx = poseCanvas.getContext("2d");
+const recordBtn = document.getElementById("recordBtn");
+const countdownEl = document.getElementById("countdown");
+const moveLabel = document.getElementById("moveLabel");
+
+let poseDetector;
+let isRecording=false;
+let recordedFrames=[];
+
+let prevKeypoints=null;
+let lastMoveTime=0;
+const MOVE_COOLDOWN=400;
+
+/* ---------- CANVAS ---------- */
+function resizeCanvas(){
+  poseCanvas.width=window.innerWidth;
+  poseCanvas.height=window.innerHeight;
+}
+window.addEventListener("resize",resizeCanvas);
+
+/* ---------- CAMERA ---------- */
+async function setupCamera(){
+  const stream=await navigator.mediaDevices.getUserMedia({
+    video:{width:640,height:480},
+    audio:false
+  });
+  video.srcObject=stream;
+  return new Promise(resolve=>{
+    video.onloadedmetadata=()=>{
+      video.play();
+      resolve();
+    }
+  });
+}
+
+/* ---------- DRAW ---------- */
+function drawPoint(x,y,color="yellow"){
+  ctx.beginPath();
+  ctx.arc(x,y,6,0,2*Math.PI);
+  ctx.fillStyle=color;
+  ctx.fill();
+}
+
+function drawLine(x1,y1,x2,y2){
+  ctx.strokeStyle="yellow";
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
+}
+
+const skeletonPairs=[
+[5,7],[7,9],[6,8],[8,10],
+[5,6],[5,11],[6,12],[11,12],
+[11,13],[13,15],[12,14],[14,16]
+];
+
+/* ---------- COUNTDOWN ---------- */
+async function startCountdown(seconds=3){
+  countdownEl.style.display="block";
+  for(let i=seconds;i>0;i--){
+    countdownEl.innerText=i;
+    await new Promise(r=>setTimeout(r,1000));
+  }
+  countdownEl.innerText="GO!";
+  await new Promise(r=>setTimeout(r,700));
+  countdownEl.style.display="none";
+}
+
+/* ---------- RECORD ---------- */
+recordBtn.onclick=async()=>{
+  if(isRecording) return;
+
+  recordedFrames=[];
+  await startCountdown();
+  isRecording=true;
+
+  setTimeout(()=>{
+    isRecording=false;
+    const blob=new Blob([JSON.stringify(recordedFrames)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download="moveData.json";
+    a.click();
+  },3000);
+};
+
+/* ---------- MOVE DETECTION ---------- */
+function triggerMove(name){
+  lastMoveTime=Date.now();
+  moveLabel.innerText=name;
+  setTimeout(()=>{moveLabel.innerText="";},300);
+}
+
+function detectMoves(kp){
+
+  const now=Date.now();
+  if(now-lastMoveTime<MOVE_COOLDOWN) return;
+
+  const get=name=>kp.find(k=>k.name===name && k.score>0.5);
+
+  const leftWrist=get("left_wrist");
+  const rightWrist=get("right_wrist");
+  const leftElbow=get("left_elbow");
+  const rightElbow=get("right_elbow");
+  const leftShoulder=get("left_shoulder");
+  const rightShoulder=get("right_shoulder");
+  const nose=get("nose");
+  const leftHip=get("left_hip");
+  const rightHip=get("right_hip");
+
+  if(!leftWrist||!rightWrist||!nose||!leftHip||!rightHip) return;
+
+  const hipCenterY=(leftHip.y+rightHip.y)/2;
+
+  /* DUCK */
+  if(nose.y>hipCenterY-40){
+    triggerMove("DUCK");
+    return;
+  }
+
+  /* BLOCK */
+  if(
+    leftWrist.y<nose.y+40 &&
+    rightWrist.y<nose.y+40 &&
+    Math.abs(leftWrist.x-rightWrist.x)<150
+  ){
+    triggerMove("BLOCK");
+    return;
+  }
+
+  if(!prevKeypoints){
+    prevKeypoints=kp;
+    return;
+  }
+
+  const prev=name=>prevKeypoints.find(k=>k.name===name);
+
+  const leftPrev=prev("left_wrist");
+  const rightPrev=prev("right_wrist");
+
+  /* LEFT JAB */
+  if(leftPrev){
+    const speedX=leftWrist.x-leftPrev.x;
+    if(speedX>25 && leftWrist.y<leftShoulder.y+40){
+      triggerMove("LEFT JAB");
+      return;
+    }
+  }
+
+  /* RIGHT JAB */
+  if(rightPrev){
+    const speedX=rightPrev.x-rightWrist.x;
+    if(speedX>25 && rightWrist.y<rightShoulder.y+40){
+      triggerMove("RIGHT JAB");
+      return;
+    }
+  }
+
+  /* LEFT UPPERCUT */
+  if(leftPrev){
+    const speedY=leftPrev.y-leftWrist.y;
+    if(speedY>25 && leftWrist.y<leftElbow.y){
+      triggerMove("LEFT UPPERCUT");
+      return;
+    }
+  }
+
+  /* RIGHT UPPERCUT */
+  if(rightPrev){
+    const speedY=rightPrev.y-rightWrist.y;
+    if(speedY>25 && rightWrist.y<rightElbow.y){
+      triggerMove("RIGHT UPPERCUT");
+      return;
+    }
+  }
+
+  prevKeypoints=kp;
+}
+
+/* ---------- DETECT LOOP ---------- */
+async function detect(){
+
+  ctx.clearRect(0,0,poseCanvas.width,poseCanvas.height);
+
+  ctx.save();
+  ctx.scale(-1,1);
+  ctx.drawImage(video,-poseCanvas.width,0,poseCanvas.width,poseCanvas.height);
+  ctx.restore();
+
+  const scaleX=poseCanvas.width/video.videoWidth;
+  const scaleY=poseCanvas.height/video.videoHeight;
+  const toCanvas=(x,y)=>({
+    x:poseCanvas.width-x*scaleX,
+    y:y*scaleY
+  });
+
+  const poses=await poseDetector.estimatePoses(video);
+
+  if(poses.length>0){
+
+    const keypoints=poses[0].keypoints.map(k=>{
+      const p=toCanvas(k.x,k.y);
+      return {...p,score:k.score,name:k.name};
+    });
+
+    detectMoves(keypoints);
+
+    skeletonPairs.forEach(([i,j])=>{
+      if(keypoints[i].score>0.5 && keypoints[j].score>0.5)
+        drawLine(keypoints[i].x,keypoints[i].y,keypoints[j].x,keypoints[j].y);
+    });
+
+    keypoints.forEach(k=>{
+      if(k.score>0.5) drawPoint(k.x,k.y);
+    });
+
+    if(isRecording){
+      recordedFrames.push({
+        timestamp:Date.now(),
+        pose:poses[0].keypoints
+      });
+    }
+  }
+
+  requestAnimationFrame(detect);
+}
+
+/* ---------- MAIN ---------- */
+async function main(){
+  await tf.setBackend("webgl");
+  await tf.ready();
+  resizeCanvas();
+  await setupCamera();
+
+  poseDetector=await poseDetection.createDetector(
+    poseDetection.SupportedModels.MoveNet,
+    {modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING}
+  );
+
+  detect();
+}
+
+main();
+</script>
+</body>
+</html>

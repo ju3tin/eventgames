@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MoveNet + MediaPipe Hands Mirror + Fixed Wrists</title>
+
+<!-- TensorFlow.js -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+
+<!-- Pose Detection -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+
+<!-- Hand Pose Detection -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+
+<style>
+  body { margin: 0; overflow: hidden; background: black; }
+  #gameContainer { position: relative; z-index: 1; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #gameCanvas { width: 100%; height: 100%; display: block; object-fit: contain; }
+  #video { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 100; visibility: hidden; }
+  #poseCanvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 100; }
+  #sliderContainer { position: absolute; top: 10px; left: 10px; z-index: 200; color: white; font-family: sans-serif; }
+</style>
+</head>
+<body>
+
+<div id="sliderContainer">
+  <input type="range" min="1" max="100" value="100" class="slider" id="poseScaleSlider">
+  <p>Value: <span id="sliderValue">100</span></p>
+</div>
+
+<div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+</div>
+<div class="container">
+  <div class="healthBarsArea">
+      <div class="playerHealtyBar" >
+          <div class="healthBarWrapper"></div>
+          <div id="playerHealth"></div>
+      </div>
+      <div id="timer" class="timer">10</div>
+      <div class="enemyHealtyBar">
+          <div class="healthBarWrapper"></div>
+          <div id="enemyHealth"></div>
+      </div>
+  </div>
+  <div id="displayText">Tie</div>
+  <canvas></canvas>
+</div>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="poseCanvas"></canvas>
+<script src="index1.js"></script>
+<script>
+const video = document.getElementById("video");
+const poseCanvas = document.getElementById("poseCanvas");
+const ctx = poseCanvas.getContext("2d");
+let poseDetector, handDetector;
+
+// Slider logic
+const slider = document.getElementById("poseScaleSlider");
+const sliderOutput = document.getElementById("sliderValue");
+sliderOutput.innerHTML = slider.value;
+
+slider.oninput = function() {
+  sliderOutput.innerHTML = this.value;
+  
+  const scale = this.value / 100;
+
+  // Scale the canvas from top-left corner
+  poseCanvas.style.transform = `scale(${scale})`;
+  poseCanvas.style.transformOrigin = "top left";
+
+  // Optional: if you also want the video to scale with the canvas
+  // video.style.transform = `scale(${scale})`;
+  // video.style.transformOrigin = "top left";
+} 
+
+// Setup camera
+async function setupCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { width: 640, height: 480 },
+    audio: false
+  });
+  video.srcObject = stream;
+  return new Promise(resolve => {
+    video.onloadedmetadata = () => {
+      video.play();
+      resolve();
+    };
+  });
+}
+
+// Draw point and line
+function drawPoint(x, y, color="red"){ ctx.beginPath(); ctx.arc(x,y,6,0,2*Math.PI); ctx.fillStyle=color; ctx.fill(); }
+function drawLine(x1,y1,x2,y2,color="yellow"){ ctx.strokeStyle=color; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+
+const skeletonPairs = [
+  [0,1],[1,3],[0,2],[2,4],
+  [5,7],[7,9],[6,8],[8,10],
+  [5,6],[11,12],[5,11],[6,12],
+  [11,13],[13,15],[12,14],[14,16]
+];
+
+async function detect() {
+  ctx.clearRect(0,0,poseCanvas.width,poseCanvas.height);
+
+  ctx.save();
+  ctx.scale(-1,1);
+  ctx.drawImage(video, -poseCanvas.width, 0, poseCanvas.width, poseCanvas.height);
+  ctx.restore();
+
+  const scaleX = poseCanvas.width / video.videoWidth;
+  const scaleY = poseCanvas.height / video.videoHeight;
+  const toCanvas = (kx,ky) => ({x: poseCanvas.width - kx*scaleX, y: ky*scaleY});
+
+  const poses = await poseDetector.estimatePoses(video);
+  let leftWrist=null, rightWrist=null;
+  if(poses.length>0){
+    const keypoints = poses[0].keypoints.map(k=>{
+      const p = toCanvas(k.x,k.y);
+      return {...p, score:k.score, name:k.name||k.part};
+    });
+    skeletonPairs.forEach(([i,j])=>{
+      if(keypoints[i].score>0.5 && keypoints[j].score>0.5)
+        drawLine(keypoints[i].x,keypoints[i].y,keypoints[j].x,keypoints[j].y,"yellow");
+    });
+    keypoints.forEach(k=>{ if(k.score>0.5) drawPoint(k.x,k.y,"yellow"); });
+    leftWrist = keypoints.find(k=>k.name==="left_wrist");
+    rightWrist = keypoints.find(k=>k.name==="right_wrist");
+  }
+
+  const hands = await handDetector.estimateHands(video,{flipHorizontal:false});
+  hands.forEach(hand=>{
+    const color = hand.handedness==="Right"?"lime":"cyan";
+    const wristPoint = toCanvas(hand.keypoints[0].x, hand.keypoints[0].y);
+
+    let closestBodyWrist=null;
+    if(leftWrist||rightWrist){
+      const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+      if(leftWrist && rightWrist) closestBodyWrist = dist(wristPoint,leftWrist)<dist(wristPoint,rightWrist)?leftWrist:rightWrist;
+      else closestBodyWrist = leftWrist||rightWrist;
+    }
+    if(closestBodyWrist) drawLine(closestBodyWrist.x,closestBodyWrist.y,wristPoint.x,wristPoint.y,"white");
+
+    hand.keypoints.forEach(k=>{ const p = toCanvas(k.x,k.y); drawPoint(p.x,p.y,color); });
+
+    const fingers=[[0,1,2,3,4],[0,5,6,7,8],[0,9,10,11,12],[0,13,14,15,16],[0,17,18,19,20]];
+    fingers.forEach(f=>{
+      for(let i=0;i<f.length-1;i++){
+        const p1=toCanvas(hand.keypoints[f[i]].x,hand.keypoints[f[i]].y);
+        const p2=toCanvas(hand.keypoints[f[i+1]].x,hand.keypoints[f[i+1]].y);
+        drawLine(p1.x,p1.y,p2.x,p2.y,color);
+      }
+    });
+  });
+
+  requestAnimationFrame(detect);
+}
+
+async function main(){
+  await tf.setBackend("webgl"); await tf.ready(); await setupCamera();
+  poseCanvas.width = window.innerWidth;
+  poseCanvas.height = window.innerHeight;
+
+  poseDetector = await poseDetection.createDetector(
+    poseDetection.SupportedModels.MoveNet,
+    { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+  );
+  handDetector = await handPoseDetection.createDetector(
+    handPoseDetection.SupportedModels.MediaPipeHands,
+    { runtime:"mediapipe", modelType:"full", solutionPath:"https://cdn.jsdelivr.net/npm/@mediapipe/hands" }
+  );
+
+  detect();
+}
+main();
+</script>
+
+</body>
+</html>

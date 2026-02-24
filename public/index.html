@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>DEBUG PoseNet + HandPose</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose"></script>
+
+<style>
+  body { margin: 0; overflow: hidden; background: black; color: white; font-family: monospace;}
+  video, canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  #debug {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.6);
+    padding: 10px;
+  }
+</style>
+</head>
+<body>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas"></canvas>
+<div id="debug">Loading...</div>
+
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const debugDiv = document.getElementById('debug');
+
+let poseNet;
+let handNet;
+
+async function setupCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { width: 640, height: 480 },
+    audio: false
+  });
+
+  video.srcObject = stream;
+
+  return new Promise(resolve => {
+    video.onloadedmetadata = () => {
+      video.play();
+      resolve(video);
+    };
+  });
+}
+
+function drawDot(x, y, color="red") {
+  ctx.beginPath();
+  ctx.arc(x, y, 6, 0, 2 * Math.PI);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+async function detect() {
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(video, 0, 0);
+
+  const pose = await poseNet.estimateSinglePose(video, {
+    flipHorizontal: true
+  });
+
+  const hands = await handNet.estimateHands(video, true);
+
+  console.log("POSE KEYPOINTS:", pose.keypoints);
+  console.log("HANDS:", hands);
+
+  // Draw pose points
+  pose.keypoints.forEach(k => {
+    if (k.score > 0.5) {
+      drawDot(k.position.x, k.position.y, "yellow");
+    }
+  });
+
+  // Draw hand landmarks
+  hands.forEach(hand => {
+    hand.landmarks.forEach(point => {
+      drawDot(point[0], point[1], "cyan");
+    });
+  });
+
+  debugDiv.innerHTML =
+    "Pose points: " + pose.keypoints.length +
+    "<br>Hands detected: " + hands.length;
+
+  requestAnimationFrame(detect);
+}
+
+async function main() {
+
+  await tf.setBackend('webgl');
+  await tf.ready();
+
+  await setupCamera();
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  poseNet = await posenet.load();
+  handNet = await handpose.load();
+
+  console.log("Models loaded");
+
+  detect();
+}
+
+main();
+</script>
+
+</body>
+</html>

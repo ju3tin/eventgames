@@ -1,0 +1,51 @@
+
+<head>
+    <!-- TensorFlow.js -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+
+<!-- Pose Detection -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+
+<!-- Hand Pose Detection -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+        rel="stylesheet"
+    />
+    <link rel="stylesheet" type="text/css" href="styles.css"
+</head>
+<style>
+    
+  #poseCanvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 100; }
+  #sliderContainer { position: absolute; top: 10px; left: 10px; z-index: 200; color: white; font-family: sans-serif; }
+</style>
+<body>
+    
+    <div id="sliderContainer">
+        <input type="range" min="1" max="100" value="100" class="slider" id="poseScaleSlider">
+        <p>Value: <span id="sliderValue">100</span></p>
+      </div>
+    <div style="position: absolute ; z-index: 1;" class="container">
+        <div class="healthBarsArea">
+            <div class="playerHealtyBar" >
+                <div class="healthBarWrapper"></div>
+                <div id="playerHealth"></div>
+            </div>
+            <div id="timer" class="timer">10</div>
+            <div class="enemyHealtyBar">
+                <div class="healthBarWrapper"></div>
+                <div id="enemyHealth"></div>
+            </div>
+        </div>
+        <div id="displayText">Tie</div>
+        <canvas></canvas>
+    </div>
+    <script src="js/utils.js"></script>
+    <script src="js/classes.js"></script>
+    <script src="index3.js"></script>
+</body>
