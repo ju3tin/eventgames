@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Boxing Game – Fight Box Enabled</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+
+<style>
+body{
+  margin:0;
+  overflow:hidden;
+  background:black;
+  font-family:sans-serif;
+}
+
+#video{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
+  object-fit:cover;
+  visibility:hidden;
+}
+
+#poseCanvas{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
+}
+
+#recordBtn{
+  position:absolute;
+  bottom:20px;
+  left:20px;
+  z-index:300;
+  padding:15px 25px;
+  font-size:18px;
+  background:red;
+  color:white;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+#countdown{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:100px;
+  color:white;
+  z-index:400;
+  display:none;
+}
+</style>
+</head>
+<body>
+
+<button id="recordBtn">Record Move</button>
+<div id="countdown"></div>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="poseCanvas"></canvas>
+
+<script>
+const video = document.getElementById("video");
+const poseCanvas = document.getElementById("poseCanvas");
+const ctx = poseCanvas.getContext("2d");
+const recordBtn = document.getElementById("recordBtn");
+const countdownEl = document.getElementById("countdown");
+
+let poseDetector, handDetector;
+let isRecording = false;
+
+/* ==============================
+   ✅ ADDED: Move Recording Memory
+   ============================== */
+let previousPose = null;
+let recordedMoves = [];
+let moveCooldown = 0;
+
+/* ==============================
+   ✅ ADDED: Move Detection Logic
+   ============================== */
+function detectBoxingMove(currentPose){
+
+  if(!previousPose){
+    previousPose = currentPose;
+    return null;
+  }
+
+  const get = (name, pose) =>
+    pose.keypoints.find(k => k.name === name);
+
+  const currRW = get("right_wrist", currentPose);
+  const prevRW = get("right_wrist", previousPose);
+  const currLW = get("left_wrist", currentPose);
+  const prevLW = get("left_wrist", previousPose);
+  const nose   = get("nose", currentPose);
+
+  if(!currRW || !prevRW || !currLW || !prevLW){
+    previousPose = currentPose;
+    return null;
+  }
+
+  const calc = (c,p)=>{
+    const dx = c.x - p.x;
+    const dy = c.y - p.y;
+    const speed = Math.sqrt(dx*dx + dy*dy);
+    return {dx,dy,speed};
+  };
+
+  const right = calc(currRW,prevRW);
+  const left  = calc(currLW,prevLW);
+
+  let move = null;
+
+  // JABS
+  if(right.speed > 20 && right.dx < -15) move="RIGHT_JAB";
+  if(left.speed > 20 && left.dx > 15) move="LEFT_JAB";
+
+  // UPPERCUTS
+  if(right.speed > 20 && right.dy < -15) move="RIGHT_UPPERCUT";
+  if(left.speed > 20 && left.dy < -15) move="LEFT_UPPERCUT";
+
+  // BLOCKS
+  const distR = Math.hypot(currRW.x - nose.x, currRW.y - nose.y);
+  const distL = Math.hypot(currLW.x - nose.x, currLW.y - nose.y);
+
+  if(distR < 70) move="RIGHT_BLOCK";
+  if(distL < 70) move="LEFT_BLOCK";
+
+  previousPose = currentPose;
+
+  const now = Date.now();
+  if(move && now - moveCooldown > 500){
+    moveCooldown = now;
+    return move;
+  }
+
+  return null;
+}
+
+/* ==============================
+   CANVAS RESIZE
+   ============================== */
+function resizeCanvas(){
+  poseCanvas.width = window.innerWidth;
+  poseCanvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+window.addEventListener("orientationchange", resizeCanvas);
+
+/* CAMERA */
+async function setupCamera(){
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video:{width:640,height:480},
+    audio:false
+  });
+  video.srcObject = stream;
+  return new Promise(resolve=>{
+    video.onloadedmetadata=()=>{
+      video.play();
+      resolve();
+    }
+  });
+}
+
+/* COUNTDOWN */
+async function startCountdown(seconds=3){
+  countdownEl.style.display="block";
+  for(let i=seconds;i>0;i--){
+    countdownEl.innerText=i;
+    await new Promise(r=>setTimeout(r,1000));
+  }
+  countdownEl.innerText="FIGHT!";
+  await new Promise(r=>setTimeout(r,700));
+  countdownEl.style.display="none";
+}
+
+/* ==============================
+   RECORD BUTTON
+   ============================== */
+recordBtn.onclick = async ()=>{
+  if(isRecording) return;
+
+  recordedMoves=[];
+  await startCountdown(3);
+  isRecording=true;
+
+  setTimeout(()=>{
+    isRecording=false;
+
+    const blob=new Blob(
+      [JSON.stringify(recordedMoves,null,2)],
+      {type:"application/json"}
+    );
+
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download="boxingMoves.json";
+    a.click();
+
+  },3000);
+};
+
+/* ==============================
+   DETECT LOOP
+   ============================== */
+async function detect(){
+
+  ctx.clearRect(0,0,poseCanvas.width,poseCanvas.height);
+
+  ctx.save();
+  ctx.scale(-1,1);
+  ctx.drawImage(video,-poseCanvas.width,0,poseCanvas.width,poseCanvas.height);
+  ctx.restore();
+
+  const poses=await poseDetector.estimatePoses(video);
+
+  if(poses.length>0){
+
+    /* ✅ ADDED: Move Detection */
+    if(isRecording){
+      const move = detectBoxingMove(poses[0]);
+      if(move){
+        recordedMoves.push({
+          move:move,
+          timestamp:Date.now()
+        });
+        console.log("Detected:",move);
+      }
+    }
+  }
+
+  requestAnimationFrame(detect);
+}
+
+/* MAIN */
+async function main(){
+  await tf.setBackend("webgl");
+  await tf.ready();
+  resizeCanvas();
+  await setupCamera();
+
+  poseDetector=await poseDetection.createDetector(
+    poseDetection.SupportedModels.MoveNet,
+    {modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING}
+  );
+
+  detect();
+}
+
+main();
+</script>
+
+</body>
+</html>

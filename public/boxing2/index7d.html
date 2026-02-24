@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Boxing Game – Fight Box & Punch Detection</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+
+<style>
+body {
+  margin:0;
+  overflow:hidden;
+  background:black;
+  font-family:sans-serif;
+}
+
+#video {
+  position:absolute;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
+  object-fit:cover;
+  visibility:hidden;
+}
+
+#poseCanvas {
+  position:absolute;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
+}
+
+#recordBtn {
+  position:absolute;
+  bottom:20px;
+  left:20px;
+  z-index:300;
+  padding:15px 25px;
+  font-size:18px;
+  background:red;
+  color:white;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+#countdown {
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:100px;
+  color:white;
+  z-index:400;
+  display:none;
+}
+
+#status {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 36px;
+  font-weight: bold;
+  padding: 12px 30px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.6);
+  z-index: 350;
+  pointer-events: none;
+  min-width: 340px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+#status.idle   { background: rgba(149,165,166,0.7); color: white; }
+#status.jab    { background: rgba(46,204,113,0.8); color: white; }
+#status.upper  { background: rgba(52,152,219,0.8); color: white; }
+#status.hook   { background: rgba(155,89,182,0.8); color: white; }
+#status.block  { background: rgba(243,156,18,0.8); color: white; }
+#status.duck   { background: rgba(230,126,34,0.8); color: white; }
+#status.out    { background: rgba(231,76,60,0.8); color: white; }
+</style>
+</head>
+<body>
+
+<button id="recordBtn">Record Move</button>
+<div id="countdown"></div>
+<div id="status" class="idle">Idle</div>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="poseCanvas"></canvas>
+
+<script>
+const video = document.getElementById("video");
+const poseCanvas = document.getElementById("poseCanvas");
+const ctx = poseCanvas.getContext("2d");
+const recordBtn = document.getElementById("recordBtn");
+const countdownEl = document.getElementById("countdown");
+const statusEl = document.getElementById("status");
+
+let poseDetector, handDetector;
+let isRecording = false;
+let recordedFrames = [];
+
+// ── Canvas resize ────────────────────────────────────────
+function resizeCanvas(){
+  poseCanvas.width = window.innerWidth;
+  poseCanvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+window.addEventListener("orientationchange", resizeCanvas);
+
+// ── Camera setup ─────────────────────────────────────────
+async function setupCamera(){
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: {width:640, height:480},
+    audio: false
+  });
+  video.srcObject = stream;
+  return new Promise(resolve=>{
+    video.onloadedmetadata=()=>{
+      video.play();
+      resolve();
+    }
+  });
+}
+
+// ── Draw helpers ─────────────────────────────────────────
+function drawPoint(x,y,color="red"){
+  ctx.beginPath();
+  ctx.arc(x,y,6,0,2*Math.PI);
+  ctx.fillStyle=color;
+  ctx.fill();
+}
+
+function drawLine(x1,y1,x2,y2,color="yellow"){
+  ctx.strokeStyle=color;
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
+}
+
+const skeletonPairs=[
+  [0,1],[1,3],[0,2],[2,4],
+  [5,7],[7,9],[6,8],[8,10],
+  [5,6],[11,12],[5,11],[6,12],
+  [11,13],[13,15],[12,14],[14,16]
+];
+
+// ── Countdown ────────────────────────────────────────────
+async function startCountdown(seconds=3){
+  countdownEl.style.display="block";
+  for(let i=seconds;i>0;i--){
+    countdownEl.innerText=i;
+    await new Promise(r=>setTimeout(r,1000));
+  }
+  countdownEl.innerText="GO!";
+  await new Promise(r=>setTimeout(r,700));
+  countdownEl.style.display="none";
+}
+
+// ── Record button ────────────────────────────────────────
+recordBtn.onclick = async ()=>{
+  if(isRecording) return;
+
+  recordedFrames=[];
+  await startCountdown(3);
+  isRecording=true;
+
+  setTimeout(()=>{
+    isRecording=false;
+
+    const blob=new Blob([JSON.stringify(recordedFrames)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download="moveData.json";
+    a.click();
+
+  },3000);
+};
+
+// ── Punch / Block / Duck detection ───────────────────────
+function detectAction(keypoints, hands) {
+  if (!keypoints || keypoints.length < 17) return "Idle";
+
+  const leftWrist   = keypoints.find(k => k.name === "left_wrist");
+  const rightWrist  = keypoints.find(k => k.name === "right_wrist");
+  const leftShoulder= keypoints.find(k => k.name === "left_shoulder");
+  const rightShoulder= keypoints.find(k => k.name === "right_shoulder");
+  const nose        = keypoints.find(k => k.name === "nose");
+  const leftHip     = keypoints.find(k => k.name === "left_hip");
+  const rightHip    = keypoints.find(k => k.name === "right_hip");
+
+  if (!leftWrist || !rightWrist || !nose || !leftHip || !rightHip) return "Idle";
+
+  const lwY = leftWrist.y;
+  const rwY = rightWrist.y;
+  const noseY = nose.y;
+  const avgHipY = (leftHip.y + rightHip.y) / 2;
+
+  // Block: both fists up near face/shoulders
+  if (lwY < leftShoulder.y && rwY < rightShoulder.y &&
+      Math.abs(lwY - rwY) < 80 && Math.abs(leftWrist.x - rightWrist.x) < 120) {
+    return "Block";
+  }
+
+  // Duck: hips significantly lower than normal standing
+  if (avgHipY > noseY + 150) {
+    return "Duck";
+  }
+
+  // Jab: quick forward left hand, right hand back
+  if (lwY < noseY - 20 && leftWrist.x < nose.x - 80 &&
+      rwY > noseY - 50) {
+    return "Jab";
+  }
+
+  // Uppercut: fist coming up high from below
+  if ((lwY < noseY - 100 || rwY < noseY - 100) &&
+      (Math.abs(leftWrist.x - nose.x) < 80 || Math.abs(rightWrist.x - nose.x) < 80)) {
+    return "Uppercut";
+  }
+
+  // Hook: side swing, fist high and wide
+  if ((lwY < noseY - 60 || rwY < noseY - 60) &&
+      (leftWrist.x < nose.x - 120 || rightWrist.x > nose.x + 120)) {
+    return "Hook";
+  }
+
+  return "Idle";
+}
+
+// ── Main detection loop ──────────────────────────────────
+async function detect(){
+  ctx.clearRect(0,0,poseCanvas.width,poseCanvas.height);
+
+  // Mirror video
+  ctx.save();
+  ctx.scale(-1,1);
+  ctx.drawImage(video,-poseCanvas.width,0,poseCanvas.width,poseCanvas.height);
+  ctx.restore();
+
+  const scaleX = poseCanvas.width / video.videoWidth;
+  const scaleY = poseCanvas.height / video.videoHeight;
+
+  const toCanvas = (x,y) => ({
+    x: poseCanvas.width - x * scaleX,
+    y: y * scaleY
+  });
+
+  // ── RED FIGHT BOX ────────────────────────────────────────
+  const isPortrait = poseCanvas.height > poseCanvas.width;
+
+  let boxWidth  = isPortrait ? poseCanvas.width * 0.75 : poseCanvas.width * 0.45;
+  let boxHeight = isPortrait ? poseCanvas.height * 0.55 : poseCanvas.height * 0.75;
+
+  const boxX = (poseCanvas.width  - boxWidth)  / 2;
+  const boxY = (poseCanvas.height - boxHeight) / 2;
+
+  ctx.strokeStyle = "#ff4444";
+  ctx.lineWidth = 8;
+  ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+  ctx.fillStyle = "rgba(255, 68, 68, 0.15)";
+  ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+  const poses = await poseDetector.estimatePoses(video);
+  const hands = await handDetector.estimateHands(video, {flipHorizontal:false});
+
+  let statusText = "In Position";
+  let statusClass = "good";
+
+  if(poses.length > 0){
+    const keypoints = poses[0].keypoints.map(k => {
+      const p = toCanvas(k.x, k.y);
+      return {...p, score: k.score, name: k.name || k.part};
+    });
+
+    // ── Hip & position check ───────────────────────────────
+    const leftHip  = keypoints.find(k => k.name === "left_hip");
+    const rightHip = keypoints.find(k => k.name === "right_hip");
+
+    if(leftHip && rightHip && leftHip.score > 0.45 && rightHip.score > 0.45){
+      const avgHipX = (leftHip.x + rightHip.x) / 2;
+      const avgHipY = (leftHip.y + rightHip.y) / 2;
+
+      const inBoxHoriz = avgHipX >= boxX && avgHipX <= boxX + boxWidth;
+      const inBoxVert  = avgHipY >= boxY && avgHipY <= boxY + boxHeight;
+
+      if(!inBoxHoriz || !inBoxVert){
+        ctx.fillStyle = "rgba(255,0,0,0.4)";
+        ctx.fillRect(0,0,poseCanvas.width,poseCanvas.height);
+        statusText = "Get back in the red box!";
+        statusClass = "out";
+      }
+      else if(avgHipY > boxY + boxHeight * 0.78){
+        statusText = "Hips too low! Stand taller";
+        statusClass = "warn";
+      }
+    }
+
+    // ── Detect current action (punch/block/duck) ───────────
+    const currentAction = detectAction(keypoints, hands);
+    statusText = currentAction;
+    statusClass = currentAction.toLowerCase() === "idle" ? "idle" :
+                  currentAction === "Jab" ? "jab" :
+                  currentAction === "Uppercut" ? "upper" :
+                  currentAction === "Hook" ? "hook" :
+                  currentAction === "Block" ? "block" :
+                  currentAction === "Duck" ? "duck" : "good";
+
+    // Draw skeleton & points
+    skeletonPairs.forEach(([i,j])=>{
+      if(keypoints[i]?.score > 0.5 && keypoints[j]?.score > 0.5)
+        drawLine(keypoints[i].x, keypoints[i].y, keypoints[j].x, keypoints[j].y, "yellow");
+    });
+
+    keypoints.forEach(k=>{
+      if(k.score > 0.5) drawPoint(k.x, k.y, "yellow");
+    });
+  }
+
+  // Update UI status
+  statusEl.innerText = statusText;
+  statusEl.className = statusClass;
+
+  // Draw hands
+  hands.forEach(hand=>{
+    const color = hand.handedness==="Right" ? "lime" : "cyan";
+    hand.keypoints.forEach(k=>{
+      const p = toCanvas(k.x,k.y);
+      drawPoint(p.x,p.y,color);
+    });
+  });
+
+  // Recording
+  if(isRecording){
+    recordedFrames.push({
+      timestamp:Date.now(),
+      pose:poses.length>0?poses[0].keypoints:null,
+      hands:hands
+    });
+  }
+
+  requestAnimationFrame(detect);
+}
+
+// ── Start ────────────────────────────────────────────────
+async function main(){
+  await tf.setBackend("webgl");
+  await tf.ready();
+  resizeCanvas();
+  await setupCamera();
+
+  poseDetector=await poseDetection.createDetector(
+    poseDetection.SupportedModels.MoveNet,
+    {modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING}
+  );
+
+  handDetector=await handPoseDetection.createDetector(
+    handPoseDetection.SupportedModels.MediaPipeHands,
+    {
+      runtime:"mediapipe",
+      modelType:"full",
+      solutionPath:"https://cdn.jsdelivr.net/npm/@mediapipe/hands"
+    }
+  );
+
+  detect();
+}
+
+main();
+</script>
+
+</body>
+</html>
