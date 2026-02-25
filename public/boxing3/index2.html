@@ -14,6 +14,11 @@
   
   <link rel="stylesheet" href="css/style.css">
 </head>
+<style>
+  .hidden{
+    display: none;
+  }
+</style>
 <body>
 
 <!-- Loading overlay – shown until webcam is ready -->
@@ -25,12 +30,31 @@
   <p>Use your body (webcam) to fight!</p>
 
   <button class="btn" onclick="ui.start('ai')">1 Player vs AI</button>
-  <button class="btn" onclick="ui.start('host')">Host 2-Player Game</button>
-  <button class="btn secondary" onclick="ui.showJoin()">Join 2-Player Game</button>
 
-  <div id="join-input" class="hidden">
-    <input id="room-code" type="text" placeholder="Enter room code" />
-    <button class="btn" onclick="ui.join()">Join</button>
+  <button class="btn" onclick="ui.showHostOptions()">Host 2-Player Game</button>
+
+  <button class="btn secondary" onclick="ui.showJoinOptions()">Join 2-Player Game</button>
+
+  <!-- Host options (hidden until clicked) -->
+ 
+  <div id="host-options" class="hidden" style="margin-top:2rem; text-align:center;">
+    <p>Your room link (share with friend):</p>
+    <div id="host-link-box" style="background:#222; padding:1rem; border-radius:12px; word-break:break-all; font-family:monospace; font-size:1.3rem; margin:1rem auto; max-width:90%;"></div>
+    <button class="btn" onclick="ui.startGameAfterHost()">Start Game</button>
+  </div>
+ 
+  <div id="host-options" class="hidden" style="margin-top:2rem; text-align:center;">
+    <p>Your room link (share with friend):</p>
+    <div id="host-link-box" style="background:#222; padding:1rem; border-radius:12px; word-break:break-all; font-family:monospace; font-size:1.3rem; margin:1rem auto; max-width:90%;"></div>
+    <button class="btn secondary" onclick="ui.copyHostLink()">Copy Link</button>
+    <button class="btn" onclick="ui.startGameAfterHost()">Start Game</button>
+  </div>
+
+  <!-- Join options (hidden until clicked) -->
+  <div id="join-options" class="hidden" style="margin-top:2rem;">
+    <p>Paste the room link here:</p>
+    <input id="join-link-input" type="text" placeholder="Paste link or code" style="padding:1rem; font-size:1.4rem; width:90%; max-width:400px; border-radius:8px; border:none; margin:1rem 0;" />
+    <button class="btn" onclick="ui.joinFromLink()">Join Game</button>
   </div>
 </div>
 
