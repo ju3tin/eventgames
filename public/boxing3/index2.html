@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pose Boxing – Choose Mode, Arena & Character</title>
+
+  <!-- TensorFlow + Pose Detection -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+  
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Loading overlay – shown until webcam is ready -->
+
+
+<!-- UI Screens -->
+<div id="start-screen" class="screen">
+  <h1>Pose Boxing</h1>
+  <p>Use your body (webcam) to fight!</p>
+
+  <button class="btn" onclick="ui.start('ai')">1 Player vs AI</button>
+  <button class="btn" onclick="ui.start('host')">Host 2-Player Game</button>
+  <button class="btn secondary" onclick="ui.showJoin()">Join 2-Player Game</button>
+
+  <div id="join-input" class="hidden">
+    <input id="room-code" type="text" placeholder="Enter room code" />
+    <button class="btn" onclick="ui.join()">Join</button>
+  </div>
+</div>
+
+<div id="arena-screen" class="screen hidden">
+  <h1>Choose Your Arena</h1>
+  <div class="arena-grid">
+    <button class="arena-btn" data-arena="1" onclick="ui.selectArena(1)">
+      <img src="assets/arenas/1arena.jpg" alt="Arena 1" onerror="this.src='https://via.placeholder.com/300x180/1a0033/fff?text=Arena+1'" />
+      <span>Arena 1</span>
+    </button>
+    <button class="arena-btn" data-arena="2" onclick="ui.selectArena(2)">
+      <img src="assets/arenas/2arena.jpg" alt="Arena 2" onerror="this.src='https://via.placeholder.com/300x180/2a004d/fff?text=Arena+2'" />
+      <span>Arena 2</span>
+    </button>
+    <button class="arena-btn" data-arena="3" onclick="ui.selectArena(3)">
+      <img src="assets/arenas/3arena.jpg" alt="Arena 3" onerror="this.src='https://via.placeholder.com/300x180/003366/fff?text=Arena+3'" />
+      <span>Arena 3</span>
+    </button>
+  </div>
+</div>
+
+<div id="character-screen" class="screen hidden">
+  <h1>Choose Your Fighter</h1>
+  <div class="char-grid">
+    <button class="char-btn" data-char="1" onclick="ui.selectCharacter(1)">
+      <div class="char-preview">
+        <img src="assets/characters/char1.png" alt="Fighter 1" 
+             onerror="this.src='/boxing3/assets/spritesheet/spirtesheet1.png'" />
+      </div>
+      <span>Red Warrior</span>
+    </button>
+    <button class="char-btn" data-char="2" onclick="ui.selectCharacter(2)">
+      <div class="char-preview">
+        <img src="assets/characters/char2.png" alt="Fighter 2" 
+             onerror="this.src='/boxing3/assets/spritesheet/spirtesheet2.png'" />
+      </div>
+      <span>Blue Striker</span>
+    </button>
+    <button class="char-btn" data-char="3" onclick="ui.selectCharacter(3)">
+      <div class="char-preview">
+        <img src="assets/characters/char3.png" alt="Fighter 3" 
+             onerror="this.src='/boxing3/assets/spritesheet/spirtesheet3.png'" />
+      </div>
+      <span>Green Assassin</span>
+    </button>
+  </div>
+</div>
+
+<div id="game-container" class="hidden">
+  <canvas id="c"></canvas>
+  <div id="hud">
+    <div class="health-bar" id="p1-health"><div class="health-fill" style="width:100%"></div></div>
+    <div class="health-bar" id="p2-health"><div class="health-fill" style="width:100%"></div></div>
+  </div>
+  <div id="status"></div>
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="poseCanvas"></canvas>
+  <button id="recordBtn">Record Move</button>
+</div>
+
+<script src="js/main1.js"></script>
+
+<script src="js/canvas-setup1.js"></script>
+<script>
+  // Make startGame global and define it here (top-level)
+  window.startGame = async function() {
+    // Hide all UI screens
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById('game-container').classList.remove('hidden');
+
+    // Start pose detection if not already running
+    if (!detector) {
+      await initPose();
+    }
+
+    // Reset game state if needed
+    game.me.health = 100;
+    game.opponent.health = 100;
+    updateHealth();
+
+    // Start main game loop
+    gameLoop();
+  };
+
+  // Optional: add a very basic game loop placeholder
+  function gameLoop() {
+    // Clear canvas
+    ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+    // Draw placeholder background
+    ctx.fillStyle = '#1a0033';
+    ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+    // Update and draw pose
+    updatePose();
+
+    // Update AI if in single-player mode
+    updateAI();
+
+    // Draw fighters
+    drawFighter(game.me, true);
+    drawFighter(game.opponent, false);
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  // Make sure ui-manager can see startGame (already global now)
+</script>
+<!-- Scripts – load in order 
+<script src="js/canvas-setup.js"></script>
+<script src="js/game-state.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/posenet.js"></script>
+<script src="js/ai-opponent.js"></script>
+<script src="js/main.js"></script>
+-->
+</body>
+</html>

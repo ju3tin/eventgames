@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pose Boxing – Choose Mode, Arena & Character</title>
 
-  <!-- PubNub & TensorFlow -->
-  <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.8.3.0.min.js"></script>
+  <!-- TensorFlow + Pose Detection -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 
@@ -14,10 +13,19 @@
 </head>
 <body>
 
+<!-- Loading overlay – shown until webcam is ready -->
+<div id="loading-webcam">
+  <h2>Starting Webcam...</h2>
+  <p>Please allow camera access when prompted.</p>
+  <button onclick="location.reload()" style="margin-top:1rem; padding:0.8rem 1.5rem; background:#ff0044; color:white; border:none; border-radius:8px; cursor:pointer;">
+    Retry if stuck
+  </button>
+</div>
+
 <!-- UI Screens -->
-<div id="start-screen" class="screen active">
+<div id="start-screen" class="screen hidden">
   <h1>Pose Boxing</h1>
-  <p>Control your fighter with body movements!</p>
+  <p>Use your body (webcam) to fight!</p>
 
   <button class="btn" onclick="ui.start('ai')">1 Player vs AI</button>
   <button class="btn" onclick="ui.start('host')">Host 2-Player Game</button>
@@ -27,27 +35,21 @@
     <input id="room-code" type="text" placeholder="Enter room code" />
     <button class="btn" onclick="ui.join()">Join</button>
   </div>
-
-  <div id="share-section" class="hidden">
-    <p>Share this code with your opponent:</p>
-    <div id="room-code-display"></div>
-    <button class="btn secondary" onclick="ui.copyRoomCode()">Copy Code</button>
-  </div>
 </div>
 
 <div id="arena-screen" class="screen hidden">
-  <h1>Choose Arena</h1>
+  <h1>Choose Your Arena</h1>
   <div class="arena-grid">
     <button class="arena-btn" data-arena="1" onclick="ui.selectArena(1)">
-      <img src="assets/arenas/1arena.jpg" alt="Arena 1" />
+      <img src="assets/arenas/1arena.jpg" alt="Arena 1" onerror="this.src='https://via.placeholder.com/300x180/1a0033/fff?text=Arena+1'" />
       <span>Arena 1</span>
     </button>
     <button class="arena-btn" data-arena="2" onclick="ui.selectArena(2)">
-      <img src="assets/arenas/2arena.jpg" alt="Arena 2" />
+      <img src="assets/arenas/2arena.jpg" alt="Arena 2" onerror="this.src='https://via.placeholder.com/300x180/2a004d/fff?text=Arena+2'" />
       <span>Arena 2</span>
     </button>
     <button class="arena-btn" data-arena="3" onclick="ui.selectArena(3)">
-      <img src="assets/arenas/3arena.jpg" alt="Arena 3" />
+      <img src="assets/arenas/3arena.jpg" alt="Arena 3" onerror="this.src='https://via.placeholder.com/300x180/003366/fff?text=Arena+3'" />
       <span>Arena 3</span>
     </button>
   </div>
@@ -55,50 +57,29 @@
 
 <div id="character-screen" class="screen hidden">
   <h1>Choose Your Fighter</h1>
-  <p>Select your character to battle!</p>
-
   <div class="char-grid">
-    <!-- Character 1 -->
     <button class="char-btn" data-char="1" onclick="ui.selectCharacter(1)">
       <div class="char-preview">
-        <img 
-          src="/boxing3/assets/spritesheet/spirtesheet1.png" 
-          alt="Fighter 1" 
-          class="char-sprite"
-          onerror="this.src='assets/sspritesheet/spirtesheet1.png'" 
-        />
+        <img src="assets/spritesheet/spritesheet1.png" alt="Fighter 1" 
+             onerror="this.src='https://via.placeholder.com/180x240/ff0044/fff?text=Fighter+1'" />
       </div>
-      <span>Warrior (896×1280)</span>
+      <span>Red Warrior</span>
     </button>
-
-    <!-- Character 2 -->
     <button class="char-btn" data-char="2" onclick="ui.selectCharacter(2)">
       <div class="char-preview">
-        <img 
-          src="assets/spritesheet/spirtesheet2.png"
-          alt="Fighter 2" 
-          class="char-sprite"
-          onerror="this.src='assets/spritesheet/spritesheet2.png'" 
-        />
+        <img src="assets/spritesheet/spritesheet2.png" alt="Fighter 2" 
+             onerror="this.src='https://via.placeholder.com/180x240/0044ff/fff?text=Fighter+2'" />
       </div>
-      <span>Striker (441×471)</span>
+      <span>Blue Striker</span>
     </button>
-
-    <!-- Character 3 -->
     <button class="char-btn" data-char="3" onclick="ui.selectCharacter(3)">
       <div class="char-preview">
-        <img 
-          src="assets/spritesheet/spirtesheet3.png" 
-          alt="Fighter 3" 
-          class="char-sprite"
-          onerror="this.src='assets/spritesheet/spritesheet3.png'" 
-        />
+        <img src="assets/spritesheet/spritesheet3.png" alt="Fighter 3" 
+             onerror="this.src='https://via.placeholder.com/180x240/44ff00/fff?text=Fighter+3'" />
       </div>
-      <span>Assassin (384×212)</span>
+      <span>Green Assassin</span>
     </button>
   </div>
-
-  <button class="btn secondary" onclick="ui.showArenaSelect()">Back to Arenas</button>
 </div>
 
 <div id="game-container" class="hidden">
@@ -112,18 +93,14 @@
   <canvas id="pose"></canvas>
 </div>
 
-<!-- JavaScript files -->
+<!-- Scripts – load in order -->
 <script src="js/canvas-setup.js"></script>
 <script src="js/game-state.js"></script>
 <script src="js/controls.js"></script>
-<script src="js/pose-detection.js"></script>
-<script src="js/pubnub-sync.js"></script>
+<script src="js/posenet.js"></script>
 <script src="js/ai-opponent.js"></script>
 <script src="js/ui-manager.js"></script>
-<script type="module">
-    // Import everything from main.js (it will pull in others)
-    import 'js/main.js';
-  </script>
+<script src="js/main.js"></script>
 
 </body>
 </html>

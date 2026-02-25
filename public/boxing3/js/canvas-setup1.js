@@ -1,15 +1,13 @@
 // js/canvas-setup.js – run this FIRST
 
-const video = document.getElementById('video');
-const poseCanvas = document.getElementById('pose');
 const gameCanvas = document.getElementById('c');
 
 let poseCtx = null;
-let ctx = null;
+//let ctx = null;
 
 if (poseCanvas && gameCanvas) {
   poseCtx = poseCanvas.getContext('2d');
-  ctx = gameCanvas.getContext('2d');
+ // ctx = gameCanvas.getContext('2d');
 
   if (!poseCtx || !ctx) {
     console.error("Failed to get 2D context from canvas");
