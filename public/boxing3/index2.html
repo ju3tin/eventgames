@@ -15,6 +15,23 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <style>
+
+
+.char-container {
+      display: inline-block;
+      margin: 1rem;
+      background: #1a1a1a;
+      padding: 1rem;
+      border-radius: 12px;
+      border: 2px solid #444;
+      transition: all 0.3s;
+    }
+    .char-container:hover { border-color: #ff0044; transform: scale(1.05); }
+    canvas {
+      background: #0f0f0f;
+      border-radius: 8px;
+      image-rendering: pixelated; /* Keeps pixel art crisp */
+    }
   .hidden{
     display: none;
   }
@@ -27,31 +44,29 @@
 <!-- UI Screens -->
 <div id="start-screen" class="screen">
   <h1>Pose Boxing</h1>
-  <p>Use your body (webcam) to fight!</p>
+  <p class="hidden">Use your body (webcam) to fight!</p>
 
-  <button class="btn" onclick="ui.start('ai')">1 Player vs AI</button>
+  <button class="btn" onclick="startthis()">1 Player vs AI</button>
 
-  <button class="btn" onclick="ui.showHostOptions()">Host 2-Player Game</button>
+  <button class="btn" onclick="startthis1()">Host 2-Player Game</button>
 
-  <button class="btn secondary" onclick="ui.showJoinOptions()">Join 2-Player Game</button>
+  <button class="btn" onclick="startthis2()">Join 2-Player Game</button>
 
   <!-- Host options (hidden until clicked) -->
  
-  <div id="startai" class="hidden" style="margin-top:2rem; text-align:center;">
-    <p>Your room link (share with friend):</p>
-    <div id="host-link-box" style="background:#222; padding:1rem; border-radius:12px; word-break:break-all; font-family:monospace; font-size:1.3rem; margin:1rem auto; max-width:90%;"></div>
-    <button class="btn" onclick="ui.start('ai')">Start Game</button>
+  <div id="startai" class="hidden" style="margin-top:0rem; text-align:center;">
+  <button class="btn" onclick="ui.start('ai')">Start Game</button>
   </div>
  
-  <div id="host-options" class="hidden" style="margin-top:2rem; text-align:center;">
+  <div id="host-options" class="hidden" style="margin-top:0rem; text-align:center;">
     <p>Your room link (share with friend):</p>
-    <div id="host-link-box" style="background:#222; padding:1rem; border-radius:12px; word-break:break-all; font-family:monospace; font-size:1.3rem; margin:1rem auto; max-width:90%;"></div>
+    <div id="host-link-box" style="background:#222; padding:0rem; border-radius:12px; word-break:break-all; font-family:monospace; font-size:1.3rem; margin:1rem auto; max-width:90%;"></div>
     <button class="btn secondary" onclick="ui.copyHostLink()">Copy Link</button>
     <button class="btn" onclick="ui.startGameAfterHost()">Start Game</button>
   </div>
 
   <!-- Join options (hidden until clicked) -->
-  <div id="join-options" class="hidden" style="margin-top:2rem;">
+  <div id="join-options" class="hidden" style="margin-top:0rem;">
     <p>Paste the room link here:</p>
     <input id="join-link-input" type="text" placeholder="Paste link or code" style="padding:1rem; font-size:1.4rem; width:90%; max-width:400px; border-radius:8px; border:none; margin:1rem 0;" />
     <button class="btn" onclick="ui.joinFromLink()">Join Game</button>
@@ -78,29 +93,21 @@
 
 <div id="character-screen" class="screen hidden">
   <h1>Choose Your Fighter</h1>
-  <div class="char-grid">
-    <button class="char-btn" data-char="1" onclick="ui.selectCharacter(1)">
-      <div class="char-preview">
-        <img src="assets/characters/char1.png" alt="Fighter 1" 
-             onerror="this.src='/boxing3/assets/spritesheet/spirtesheet1.png'" />
-      </div>
-      <span>Red Warrior</span>
-    </button>
-    <button class="char-btn" data-char="2" onclick="ui.selectCharacter(2)">
-      <div class="char-preview">
-        <img src="assets/characters/char2.png" alt="Fighter 2" 
-             onerror="this.src='/boxing3/assets/spritesheet/spirtesheet2.png'" />
-      </div>
-      <span>Blue Striker</span>
-    </button>
-    <button class="char-btn" data-char="3" onclick="ui.selectCharacter(3)">
-      <div class="char-preview">
-        <img src="assets/characters/char3.png" alt="Fighter 3" 
-             onerror="this.src='/boxing3/assets/spritesheet/spirtesheet3.png'" />
-      </div>
-      <span>Green Assassin</span>
-    </button>
-  </div>
+  <button class="char-btn" data-char="1" onclick="ui.selectCharacter(1)">
+    <div class="char-container">
+    <canvas id="char1-canvas" width="200" height="280"></canvas>
+    <p>Character 1 (896x1280) – Idle</p>
+  </div></button>
+  <button class="char-btn" data-char="1" onclick="ui.selectCharacter(1)">
+  <div class="char-container">
+    <canvas id="char2-canvas" width="200" height="280"></canvas>
+    <p>Character 2 (441x471) – Idle</p>
+  </div></button>
+  <button class="char-btn" data-char="1" onclick="ui.selectCharacter(1)">
+  <div class="char-container">
+    <canvas id="char3-canvas" width="200" height="280"></canvas>
+    <p>Character 3 (384x212) – Idle</p>
+  </div></button>
 </div>
 
 <div id="game-container" class="hidden">
@@ -119,6 +126,181 @@
 
 <script src="js/canvas-setup1.js"></script>
 <script>
+
+// ────────────────────────────────────────────────
+// CONFIG – Sprite Sheet Details (adjust as needed)
+// ────────────────────────────────────────────────
+const characters = [
+  {
+    name: 'Character 1',
+    src: 'assets/characters/char1.png', // 896x1280
+    originalWidth: 896,
+    originalHeight: 1280,
+    frameWidth: 224,  // example: assume 4 columns
+    frameHeight: 320, // example: assume 4 rows
+    idleFrames: 4,    // number of frames in idle animation
+    idleSpeed: 200    // ms per frame
+  },
+  {
+    name: 'Character 2',
+    src: 'assets/characters/char2.png', // 441x471
+    originalWidth: 441,
+    originalHeight: 471,
+    frameWidth: 147,  // example: assume 3 columns
+    frameHeight: 157, // example: assume 3 rows
+    idleFrames: 3,    // number of frames in idle animation
+    idleSpeed: 250    // ms per frame
+  },
+  {
+    name: 'Character 3',
+    src: 'assets/characters/char3.png', // 384x212
+    originalWidth: 384,
+    originalHeight: 212,
+    frameWidth: 96,   // example: assume 4 columns
+    frameHeight: 106, // example: assume 2 rows
+    idleFrames: 4,    // number of frames in idle animation
+    idleSpeed: 180    // ms per frame
+  }
+];
+
+// ────────────────────────────────────────────────
+// ANIMATION FUNCTION
+// ────────────────────────────────────────────────
+function animateCharacter(canvasId, char) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.src = char.src;
+
+  let frame = 0;
+  let lastTime = 0;
+
+  function drawFrame(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    if (timestamp - lastTime >= char.idleSpeed) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Calculate frame position
+      const col = frame % (char.originalWidth / char.frameWidth);
+      const row = Math.floor(frame / (char.originalWidth / char.frameWidth));
+      const sx = col * char.frameWidth;
+      const sy = row * char.frameHeight;
+
+      // Scale to fit canvas (this is where you resize)
+      const scaleX = canvas.width / char.frameWidth;
+      const scaleY = canvas.height / char.frameHeight;
+      const drawWidth = char.frameWidth * scaleX;
+      const drawHeight = char.frameHeight * scaleY;
+
+      // Center if needed
+      const dx = (canvas.width - drawWidth) / 2;
+      const dy = (canvas.height - drawHeight) / 2;
+
+      ctx.drawImage(img, sx, sy, char.frameWidth, char.frameHeight, dx, dy, drawWidth, drawHeight);
+
+      frame = (frame + 1) % char.idleFrames;
+      lastTime = timestamp;
+    }
+
+    requestAnimationFrame(drawFrame);
+  }
+
+  img.onload = () => {
+    drawFrame(0);
+  };
+}
+
+// ────────────────────────────────────────────────
+// INIT – ANIMATE ALL CHARACTERS
+// ────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  characters.forEach((char, index) => {
+    animateCharacter(`char${index+1}-canvas`, char);
+  });
+});
+
+
+function startthis() {
+  var element = document.getElementById("startai");
+  var element1 = document.getElementById('host-options');
+  var element2 = document.getElementById('join-options');
+  element.classList.remove("hidden");
+  if (element.classList.contains('hidden')) {
+    element.classList.remove('hidden');
+
+} 
+  
+  //document.getElementById("demo").innerHTML = "Hello World";
+  if (element1.classList.contains('hidden')) {
+ 
+} else {
+  element1.classList.add('hidden');
+  //el.textContent = 'Open';
+}
+
+if (element2.classList.contains('hidden')) {
+ 
+} else {
+  element2.classList.add('hidden');
+  //el.textContent = 'Open';
+}
+
+}
+
+function startthis1(){
+
+  var element1 = document.getElementById("startai");
+  var element = document.getElementById('host-options');
+  var element2 = document.getElementById('join-options');
+  element.classList.remove("hidden");
+  if (element.classList.contains('hidden')) {
+    element.classList.remove('hidden');
+
+} 
+  
+  //document.getElementById("demo").innerHTML = "Hello World";
+  if (element1.classList.contains('hidden')) {
+ 
+} else {
+  element1.classList.add('hidden');
+  //el.textContent = 'Open';
+}
+
+if (element2.classList.contains('hidden')) {
+ 
+} else {
+  element2.classList.add('hidden');
+  //el.textContent = 'Open';
+}
+
+}
+
+function startthis2(){
+  var element2 = document.getElementById("startai");
+  var element1 = document.getElementById('host-options');
+  var element = document.getElementById('join-options');
+  element.classList.remove("hidden");
+  if (element.classList.contains('hidden')) {
+    element.classList.remove('hidden');
+
+} 
+  
+  //document.getElementById("demo").innerHTML = "Hello World";
+  if (element1.classList.contains('hidden')) {
+ 
+} else {
+  element1.classList.add('hidden');
+  //el.textContent = 'Open';
+}
+
+if (element2.classList.contains('hidden')) {
+ 
+} else {
+  element2.classList.add('hidden');
+  //el.textContent = 'Open';
+}
+}
+
   // Make startGame global and define it here (top-level)
   window.startGame = async function() {
     // Hide all UI screens
@@ -126,10 +308,10 @@
     document.getElementById('game-container').classList.remove('hidden');
 
     // Start pose detection if not already running
-    if (!detector) {
+  /*  if (!detector) {
       await initPose();
     }
-
+*/
     // Reset game state if needed
     game.me.health = 100;
     game.opponent.health = 100;
@@ -138,6 +320,10 @@
     // Start main game loop
     gameLoop();
   };
+  function updateHealth() {
+  document.getElementById('p1-health').querySelector('.health-fill').style.width = game.me.health + '%';
+  document.getElementById('p2-health').querySelector('.health-fill').style.width = game.opponent.health + '%';
+}
 
   // Optional: add a very basic game loop placeholder
   function gameLoop() {
@@ -149,7 +335,7 @@
     ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
 
     // Update and draw pose
-    updatePose();
+   // updatePose();
 
     // Update AI if in single-player mode
     updateAI();
@@ -159,6 +345,19 @@
     drawFighter(game.opponent, false);
 
     requestAnimationFrame(gameLoop);
+  }
+
+  function updateAI() {
+    if (game.mode !== 'ai') return;
+  
+    const dx = game.me.x - game.opponent.x;
+    game.opponent.x += dx > 0 ? 4 : -4;
+  
+    if (Math.abs(dx) < 150 && Math.random() < 0.04) {
+      game.opponent.attacking = true;
+      checkHit();
+      setTimeout(() => game.opponent.attacking = false, 400);
+    }
   }
 
   // Make sure ui-manager can see startGame (already global now)
