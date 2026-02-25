@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pose Boxing – Real-Time Multiplayer</title>
+
+  <!-- PubNub -->
+  <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.8.3.0.min.js"></script>
+
+  <!-- TensorFlow.js + Pose Detection -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background:#000; color:#fff; font-family:Arial, sans-serif; overflow:hidden;
+      height:100vh; touch-action:none;
+    }
+    #ui {
+      position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:100;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      text-align:center; padding:20px;
+    }
+    #ui.hidden { display:none; }
+    h1 { font-size:clamp(2.8rem, 8vw, 5rem); margin-bottom:1.5rem; text-shadow:0 0 30px #ff0044; }
+    p { font-size:clamp(1.2rem, 4vw, 1.8rem); margin:1rem 0 2rem; max-width:90%; }
+    .btn {
+      padding:1rem 2.5rem; font-size:clamp(1.3rem, 5vw, 1.8rem); margin:1rem;
+      background:#ff0044; color:white; border:none; border-radius:12px; cursor:pointer;
+      transition:0.3s; min-width:220px;
+    }
+    .btn:hover { background:#cc0037; transform:scale(1.05); }
+    .btn-secondary { background:#444; }
+    .btn-secondary:hover { background:#666; }
+    #room-input { margin:2rem 0; }
+    #room-code {
+      padding:1rem; font-size:1.6rem; width:280px; max-width:90%; border-radius:8px;
+      border:none; margin:1rem 0; text-align:center;
+    }
+    #share-section { margin:2rem 0; text-align:center; }
+    #link-box {
+      margin:1.5rem auto; padding:1rem; background:#222; border-radius:12px;
+      font-family:monospace; word-break:break-all; font-size:1.3rem; max-width:90%;
+    }
+    #game-container {
+      position:relative; width:100vw; height:100vh;
+    }
+    canvas { position:absolute; inset:0; background:#111; }
+    #hud {
+      position:absolute; top:10px; left:0; right:0; z-index:10;
+      display:flex; justify-content:space-between; padding:0 5%; pointer-events:none;
+    }
+    .health-bar {
+      width:35vw; max-width:400px; height:30px; background:#222; border:3px solid #fff;
+      border-radius:10px; overflow:hidden;
+    }
+    .health-fill { height:100%; transition:width 0.4s ease; }
+    #p1-health .health-fill { background:#ff0044; }
+    #p2-health .health-fill { background:#0044ff; }
+    #status {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      font-size:clamp(3rem, 10vw, 6rem); font-weight:bold; text-shadow:0 0 40px #000;
+      z-index:20; pointer-events:none; display:none; text-align:center;
+    }
+    #video, #pose {
+      position:absolute; top:10px; right:10px; width:220px; height:165px;
+      object-fit:cover; border:3px solid #444; border-radius:8px; z-index:5;
+    }
+    #pose { opacity:0.75; }
+  </style>
+</head>
+<body>
+
+<div id="ui">
+  <h1>Pose Boxing</h1>
+  <p>Control your fighter with body movements using your webcam!</p>
+
+  <button class="btn" onclick="startGame('ai')">1 Player vs AI</button>
+  <button class="btn" onclick="startGame('host')">Host 2-Player Game</button>
+  <button class="btn btn-secondary" onclick="document.getElementById('room-input').classList.remove('hidden')">Join 2-Player Game</button>
+
+  <div id="room-input" class="hidden">
+    <input id="room-code" type="text" placeholder="Enter room code" />
+    <button class="btn" onclick="joinRoom()">Join</button>
+  </div>
+
+  <div id="share-section" class="hidden">
+    <p>Share this code or link with your opponent:</p>
+    <div id="link-box"></div>
+    <button id="copy-btn" class="btn btn-secondary">Copy Link</button>
+  </div>
+</div>
+
+<div id="game-container" class="hidden">
+  <canvas id="c"></canvas>
+  <div id="hud">
+    <div class="health-bar" id="p1-health"><div class="health-fill" style="width:100%"></div></div>
+    <div class="health-bar" id="p2-health"><div class="health-fill" style="width:100%"></div></div>
+  </div>
+  <div id="status"></div>
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="pose"></canvas>
+</div>
+
+<script>
+// ────────────────────────────────────────────────
+// CONFIG – REPLACE WITH YOUR KEYS
+// ────────────────────────────────────────────────
+const pubnub = new PubNub({
+  publishKey:   "pub-c-xxxxxxxxxxxxxxxxxxxxxxxx", // ← YOUR PUBLISH KEY
+  subscribeKey: "sub-c-xxxxxxxxxxxxxxxxxxxxxxxx", // ← YOUR SUBSCRIBE KEY
+  userId: "player-" + Math.random().toString(36).slice(2, 10)
+});
+
+// ────────────────────────────────────────────────
+// STATE
+// ────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const video = document.getElementById('video');
+const poseCanvas = document.getElementById('pose');
+const poseCtx = poseCanvas.getContext('2d');
+const statusEl = document.getElementById('status');
+
+let detector = null;
+let channel = null;
+let isHost = false;
+
+let me = {
+  x: 200,
+  y: 400,
+  health: 100,
+  side: 'left',
+  attacking: false,
+  ducking: false
+};
+
+let opponent = {
+  x: 0, // will be set after resize
+  y: 400,
+  health: 100,
+  side: 'right',
+  attacking: false,
+  ducking: false
+};
+
+let lastPunch = 0;
+
+// ────────────────────────────────────────────────
+// START GAME
+// ────────────────────────────────────────────────
+async function startGame(mode) {
+  document.getElementById('ui').classList.add('hidden');
+  document.getElementById('game-container').classList.remove('hidden');
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  opponent.x = canvas.width - 280;
+
+  // Camera
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    video.srcObject = stream;
+  } catch (err) {
+    alert("Cannot access webcam. Please allow camera permission.");
+    return;
+  }
+
+  detector = await poseDetection.createDetector(
+    poseDetection.SupportedModels.MoveNet,
+    { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+  );
+
+  if (mode === 'ai') {
+    // AI mode – no PubNub needed
+    video.onloadeddata = () => gameLoop();
+    return;
+  }
+
+  // Multiplayer mode
+  if (mode === 'host') {
+    channel = 'box-' + Math.random().toString(36).slice(2, 10);
+    const link = `${location.origin}${location.pathname}?room=${channel}`;
+    document.getElementById('link-box').textContent = link;
+    document.getElementById('share-section').classList.remove('hidden');
+
+    document.getElementById('copy-btn').onclick = () => {
+      navigator.clipboard.writeText(link).then(() => alert('Link copied!'));
+    };
+  } else {
+    // join mode – code already entered
+  }
+
+  pubnub.subscribe({ channels: [channel] });
+
+  pubnub.addListener({
+    message: (m) => {
+      if (m.publisher !== pubnub.getUserId()) {
+        opponent.x = m.message.x;
+        opponent.y = m.message.y;
+        opponent.attacking = m.message.attacking;
+        opponent.ducking = m.message.ducking;
+        opponent.health = m.message.health;
+        updateHealth();
+        checkHit();
+      }
+    }
+  });
+
+  video.onloadeddata = () => gameLoop();
+}
+
+async function joinRoom() {
+  channel = document.getElementById('room-code').value.trim();
+  if (!channel) return alert("Please enter a room code");
+  await startGame('join');
+}
+
+// ────────────────────────────────────────────────
+// GAME LOOP
+// ────────────────────────────────────────────────
+async function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Background
+  ctx.fillStyle = '#1a0033';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Pose detection for me
+  const poses = await detector.estimatePoses(video);
+  poseCtx.clearRect(0, 0, poseCanvas.width, poseCanvas.height);
+
+  if (poses.length > 0) {
+    const kp = poses[0].keypoints;
+    const leftWrist = kp.find(k => k.name === 'left_wrist');
+    const rightWrist = kp.find(k => k.name === 'right_wrist');
+    const nose = kp.find(k => k.name === 'nose');
+    const leftHip = kp.find(k => k.name === 'left_hip');
+    const rightHip = kp.find(k => k.name === 'right_hip');
+
+    if (leftWrist && rightWrist && nose && leftHip && rightHip) {
+      const avgHipY = (leftHip.y + rightHip.y) / 2;
+      const noseY = nose.y;
+
+      me.ducking = avgHipY > noseY + 120;
+
+      if ((leftWrist.y < noseY - 60 || rightWrist.y < noseY - 60) && Date.now() - lastPunch > 700) {
+        me.attacking = true;
+        lastPunch = Date.now();
+        checkHit();
+        setTimeout(() => me.attacking = false, 400);
+      }
+    }
+  }
+
+  drawFighter(me, true);
+  drawFighter(opponent, false);
+
+  // Sync if multiplayer
+  if (channel) {
+    pubnub.publish({
+      channel,
+      message: {
+        x: me.x,
+        y: me.y,
+        attacking: me.attacking,
+        ducking: me.ducking,
+        health: me.health
+      }
+    });
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+function drawFighter(p, isMe) {
+  ctx.save();
+  if (p.side === 'right') {
+    ctx.translate(p.x + 80, 0);
+    ctx.scale(-1, 1);
+    ctx.translate(-(p.x + 80), 0);
+  }
+
+  ctx.fillStyle = isMe ? '#ff0044' : '#0044ff';
+  ctx.fillRect(p.x, p.y, 80, p.ducking ? 120 : 180);
+
+  ctx.beginPath();
+  ctx.arc(p.x + 40, p.y + 40, 35, 0, Math.PI*2);
+  ctx.fill();
+
+  if (p.attacking) {
+    ctx.fillStyle = 'yellow';
+    ctx.fillRect(p.x + 80, p.y + 80, 60, 40);
+  }
+
+  ctx.restore();
+}
+
+function checkHit() {
+  const dist = Math.abs(me.x - opponent.x);
+  if (dist < 140) {
+    if (me.attacking && !opponent.ducking) {
+      opponent.health = Math.max(0, opponent.health - 12);
+      document.getElementById('p2-health').querySelector('.health-fill').style.width = opponent.health + '%';
+    }
+    if (opponent.attacking && !me.ducking) {
+      me.health = Math.max(0, me.health - 12);
+      document.getElementById('p1-health').querySelector('.health-fill').style.width = me.health + '%';
+    }
+
+    if (me.health <= 0) {
+      statusEl.textContent = "YOU LOSE!";
+      statusEl.style.display = 'block';
+      setTimeout(() => location.reload(), 4000);
+    } else if (opponent.health <= 0) {
+      statusEl.textContent = "YOU WIN!";
+      statusEl.style.display = 'block';
+      setTimeout(() => location.reload(), 4000);
+    }
+  }
+}
+
+function updateHealth() {
+  document.getElementById('p1-health').querySelector('.health-fill').style.width = me.health + '%';
+  document.getElementById('p2-health').querySelector('.health-fill').style.width = opponent.health + '%';
+}
+
+// Resize handling
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  opponent.x = canvas.width - 280;
+});
+</script>
+</body>
+</html>

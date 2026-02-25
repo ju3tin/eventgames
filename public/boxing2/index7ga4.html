@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pose Boxing – Multi-Scene Backgrounds</title>
+
+  <!-- TensorFlow + Pose Detection -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background:#000; overflow:hidden; height:100vh; font-family:Arial, sans-serif; color:#fff;
+    }
+    #ui {
+      position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:100;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      text-align:center; padding:20px;
+    }
+    #ui.hidden { display:none; }
+    h1 { font-size:clamp(3rem, 10vw, 5rem); margin-bottom:1.5rem; text-shadow:0 0 30px #ff0044; }
+    .btn {
+      padding:1rem 2.5rem; font-size:clamp(1.2rem, 5vw, 1.8rem); margin:1rem;
+      background:#ff0044; color:white; border:none; border-radius:12px; cursor:pointer;
+      transition:0.3s; min-width:200px;
+    }
+    .btn:hover { background:#cc0037; transform:scale(1.05); }
+    #scene-select button { background:#444; }
+    #scene-select button.active { background:#ff0044; }
+    #game-container {
+      position:relative; width:100vw; height:100vh;
+    }
+    canvas { position:absolute; inset:0; }
+    #hud {
+      position:absolute; top:10px; left:0; right:0; z-index:10;
+      display:flex; justify-content:space-between; padding:0 5%; pointer-events:none;
+    }
+    .health-bar {
+      width:35vw; max-width:400px; height:30px; background:#222; border:3px solid #fff;
+      border-radius:10px; overflow:hidden;
+    }
+    .health-fill { height:100%; transition:width 0.4s ease; }
+    #p1-health .health-fill { background:#ff0044; }
+    #p2-health .health-fill { background:#0044ff; }
+    #status {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      font-size:clamp(3rem, 10vw, 6rem); font-weight:bold; text-shadow:0 0 40px #000;
+      z-index:20; pointer-events:none; display:none; text-align:center;
+    }
+    #video, #pose {
+      position:absolute; top:10px; right:10px; width:220px; height:165px;
+      object-fit:cover; border:3px solid #444; border-radius:8px; z-index:5;
+    }
+    #pose { opacity:0.75; }
+  </style>
+</head>
+<body>
+
+<div id="ui">
+  <h1>Pose Boxing</h1>
+  <p>Choose your scene, then fight with your body!</p>
+
+  <div id="scene-select" style="margin:2rem 0;">
+    <button class="btn" onclick="setScene(0)" data-scene="0">Dojo</button>
+    <button class="btn" onclick="setScene(1)" data-scene="1">Street</button>
+    <button class="btn" onclick="setScene(2)" data-scene="2">Beach</button>
+  </div>
+
+  <button class="btn" onclick="startGame()">Start Game</button>
+</div>
+
+<div id="game-container" class="hidden">
+  <canvas id="bg-canvas"></canvas> <!-- Background layer -->
+  <canvas id="game-canvas"></canvas> <!-- Fighters & HUD -->
+  <div id="hud">
+    <div class="health-bar" id="p1-health"><div class="health-fill" style="width:100%"></div></div>
+    <div class="health-bar" id="p2-health"><div class="health-fill" style="width:100%"></div></div>
+  </div>
+  <div id="status"></div>
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="pose"></canvas>
+</div>
+
+<script>
+// ────────────────────────────────────────────────
+// CONFIG
+// ────────────────────────────────────────────────
+const scenes = [
+  { name: 'Dojo', bgColor: '#0a1a2a', accent: '#ff8800' },   // dark blue + orange accents
+  { name: 'Street', bgColor: '#1a0a1a', accent: '#44ff00' }, // dark red + green neon
+  { name: 'Beach', bgColor: '#001a33', accent: '#ffff66' }   // ocean blue + yellow sun
+];
+
+let currentScene = 0;
+let detector = null;
+
+// Canvas layers
+const bgCanvas = document.getElementById('bg-canvas');
+const bgCtx = bgCanvas.getContext('2d');
+const gameCanvas = document.getElementById('game-canvas');
+const ctx = gameCanvas.getContext('2d');
+
+const video = document.getElementById('video');
+const poseCanvas = document.getElementById('pose');
+const poseCtx = poseCanvas.getContext('2d');
+const statusEl = document.getElementById('status');
+
+// Players
+let me = { x: 200, y: 400, health: 100, side: 'left', attacking: false, ducking: false };
+let opponent = { x: 0, y: 400, health: 100, side: 'right', attacking: false, ducking: false };
+
+let lastPunch = 0;
+
+// ────────────────────────────────────────────────
+// SCENE SELECTION
+// ────────────────────────────────────────────────
+function setScene(index) {
+  currentScene = index;
+  document.querySelectorAll('#scene-select button').forEach((btn, i) => {
+    btn.classList.toggle('active', i === index);
+  });
+  drawBackground();
+}
+
+function drawBackground() {
+  const scene = scenes[currentScene];
+  bgCtx.fillStyle = scene.bgColor;
+  bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+  // Simple accents (replace with real images later)
+  bgCtx.fillStyle = scene.accent + '33'; // semi-transparent
+  for (let i = 0; i < 10; i++) {
+    const x = Math.random() * bgCanvas.width;
+    const y = Math.random() * bgCanvas.height;
+    bgCtx.fillRect(x, y, 80, 80);
+  }
+}
+
+// ────────────────────────────────────────────────
+// START GAME
+// ────────────────────────────────────────────────
+async function startGame() {
+  document.getElementById('ui').classList.add('hidden');
+  document.getElementById('game-container').classList.remove('hidden');
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  bgCanvas.width = canvas.width;
+  bgCanvas.height = canvas.height;
+  poseCanvas.width = video.videoWidth || 640;
+  poseCanvas.height = video.videoHeight || 480;
+
+  opponent.x = canvas.width - 280;
+
+  // Camera
+  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+  video.srcObject = stream;
+
+  detector = await poseDetection.createDetector(
+    poseDetection.SupportedModels.MoveNet,
+    { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+  );
+
+  drawBackground();
+  gameLoop();
+}
+
+// ────────────────────────────────────────────────
+// GAME LOOP
+// ────────────────────────────────────────────────
+async function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Update pose
+  const poses = await detector.estimatePoses(video);
+  poseCtx.clearRect(0, 0, poseCanvas.width, poseCanvas.height);
+
+  if (poses.length > 0) {
+    const kp = poses[0].keypoints;
+    const leftWrist = kp.find(k => k.name === 'left_wrist');
+    const rightWrist = kp.find(k => k.name === 'right_wrist');
+    const nose = kp.find(k => k.name === 'nose');
+    const leftHip = kp.find(k => k.name === 'left_hip');
+    const rightHip = kp.find(k => k.name === 'right_hip');
+
+    if (leftWrist && rightWrist && nose && leftHip && rightHip) {
+      const avgHipY = (leftHip.y + rightHip.y) / 2;
+      const noseY = nose.y;
+
+      me.ducking = avgHipY > noseY + 120;
+
+      if ((leftWrist.y < noseY - 60 || rightWrist.y < noseY - 60) && Date.now() - lastPunch > 700) {
+        me.attacking = true;
+        lastPunch = Date.now();
+        checkHit();
+        setTimeout(() => me.attacking = false, 400);
+      }
+    }
+  }
+
+  drawFighter(me, true);
+  drawFighter(opponent, false);
+
+  requestAnimationFrame(gameLoop);
+}
+
+function drawFighter(p, isMe) {
+  ctx.save();
+  if (p.side === 'right') {
+    ctx.translate(p.x + 80, 0);
+    ctx.scale(-1, 1);
+    ctx.translate(-(p.x + 80), 0);
+  }
+
+  ctx.fillStyle = isMe ? '#ff0044' : '#0044ff';
+  ctx.fillRect(p.x, p.y, 80, p.ducking ? 120 : 180);
+
+  ctx.beginPath();
+  ctx.arc(p.x + 40, p.y + 40, 35, 0, Math.PI*2);
+  ctx.fill();
+
+  if (p.attacking) {
+    ctx.fillStyle = 'yellow';
+    ctx.fillRect(p.x + 80, p.y + 80, 60, 40);
+  }
+
+  ctx.restore();
+}
+
+function checkHit() {
+  const dist = Math.abs(me.x - opponent.x);
+  if (dist < 140) {
+    if (me.attacking && !opponent.ducking) {
+      opponent.health = Math.max(0, opponent.health - 12);
+      document.getElementById('p2-health').querySelector('.health-fill').style.width = opponent.health + '%';
+    }
+    if (opponent.attacking && !me.ducking) {
+      me.health = Math.max(0, me.health - 12);
+      document.getElementById('p1-health').querySelector('.health-fill').style.width = me.health + '%';
+    }
+
+    if (me.health <= 0) {
+      statusEl.textContent = "YOU LOSE!";
+      statusEl.style.display = 'block';
+      setTimeout(() => location.reload(), 4000);
+    } else if (opponent.health <= 0) {
+      statusEl.textContent = "YOU WIN!";
+      statusEl.style.display = 'block';
+      setTimeout(() => location.reload(), 4000);
+    }
+  }
+}
+
+// Resize
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  bgCanvas.width = canvas.width;
+  bgCanvas.height = canvas.height;
+  opponent.x = canvas.width - 280;
+  drawBackground();
+});
+
+// Start with default scene
+setScene(0);
+</script>
+</body>
+</html>

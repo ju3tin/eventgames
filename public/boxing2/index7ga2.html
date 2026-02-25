@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Real-Time Pose Boxing – PubNub 2-Player</title>
+  <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.8.3.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+  <style>
+    body {
+      margin:0; padding:0; overflow:hidden; background:#000; font-family:Arial, sans-serif; color:#fff;
+    }
+    #game {
+      position:relative; width:100vw; height:100vh;
+    }
+    canvas {
+      position:absolute; inset:0; background:#111;
+    }
+    #hud {
+      position:absolute; top:10px; left:0; right:0; z-index:10;
+      display:flex; justify-content:space-between; padding:0 40px; pointer-events:none;
+    }
+    .health-bar {
+      width:300px; height:30px; background:#333; border:3px solid #fff; border-radius:8px; overflow:hidden;
+    }
+    .health-fill {
+      height:100%; background:#ff0044; transition:width 0.4s;
+    }
+    .p2 .health-fill { background:#0044ff; }
+    #status {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      font-size:5rem; font-weight:bold; text-shadow:0 0 30px #000; z-index:20; pointer-events:none;
+      display:none;
+    }
+    #video, #pose {
+      position:absolute; top:10px; right:10px; width:240px; height:180px;
+      object-fit:cover; border:3px solid #444; border-radius:8px; z-index:5;
+    }
+    #pose { opacity:0.7; }
+  </style>
+</head>
+<body>
+
+<div id="game">
+  <canvas id="c"></canvas>
+  <div id="hud">
+    <div class="health-bar"><div id="p1h" class="health-fill" style="width:100%"></div></div>
+    <div class="health-bar p2"><div id="p2h" class="health-fill" style="width:100%"></div></div>
+  </div>
+  <div id="status">PLAYER 1 WINS!</div>
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="pose"></canvas>
+</div>
+
+<script>
+// ────────────────────────────────────────────────
+// CONFIG
+// ────────────────────────────────────────────────
+const CHANNEL = 'boxing-game-' + Math.random().toString(36).substr(2, 9); // unique per game instance
+const pubnub = new PubNub({
+  publishKey:   "pub-c-xxxxxxxxxxxxxxxxxxxxxxxx", // ← YOUR PubNub PUBLISH KEY
+  subscribeKey: "sub-c-xxxxxxxxxxxxxxxxxxxxxxxx", // ← YOUR PubNub SUBSCRIBE KEY
+  userId: "player-" + Math.random().toString(36).substr(2, 6)
+});
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const video = document.getElementById('video');
+const poseCanvas = document.getElementById('pose');
+const poseCtx = poseCanvas.getContext('2d');
+const status = document.getElementById('status');
+
+let detector = null;
+let myPlayer = { x: 200, y: 400, health: 100, side: 'left', attacking: false };
+let opponent = { x: canvas.width - 280, y: 400, health: 100, side: 'right', attacking: false };
+
+let keys = {};
+let lastAttack = 0;
+
+// ────────────────────────────────────────────────
+// PubNub Setup
+// ────────────────────────────────────────────────
+pubnub.subscribe({ channels: [CHANNEL], withPresence: true });
+
+pubnub.addListener({
+  message: (m) => {
+    if (m.publisher !== pubnub.getUserId()) {
+      opponent.x = m.message.x;
+      opponent.y = m.message.y;
+      opponent.attacking = m.message.attacking;
+      opponent.health = m.message.health;
+      updateHealthBars();
+      checkHit();
+    }
+  }
+});
+
+// ────────────────────────────────────────────────
+// Camera + Pose Detection
+// ────────────────────────────────────────────────
+async function init() {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  video.srcObject = stream;
+
+  detector = await poseDetection.createDetector(
+    poseDetection.SupportedModels.MoveNet,
+    { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+  );
+
+  video.onloadeddata = () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    poseCanvas.width = video.videoWidth;
+    poseCanvas.height = video.videoHeight;
+    loop();
+  };
+}
+
+// ────────────────────────────────────────────────
+// Game Loop
+// ────────────────────────────────────────────────
+async function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw background (simple gradient)
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, '#1a0033');
+  grad.addColorStop(1, '#000');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Update pose
+  const poses = await detector.estimatePoses(video);
+  poseCtx.clearRect(0, 0, poseCanvas.width, poseCanvas.height);
+
+  if (poses.length > 0) {
+    const kp = poses[0].keypoints;
+
+    // Simple attack detection
+    const leftWrist = kp.find(k => k.name === 'left_wrist');
+    const rightWrist = kp.find(k => k.name === 'right_wrist');
+    const nose = kp.find(k => k.name === 'nose');
+
+    if (leftWrist && rightWrist && nose && Date.now() - lastAttack > 800) {
+      if ((leftWrist.y < nose.y - 80 || rightWrist.y < nose.y - 80) && !myPlayer.attacking) {
+        myPlayer.attacking = true;
+        lastAttack = Date.now();
+        checkHit();
+        setTimeout(() => myPlayer.attacking = false, 400);
+      }
+    }
+
+    // Draw pose overlay
+    poseCtx.strokeStyle = '#0f0';
+    poseCtx.lineWidth = 3;
+    const pairs = [[0,1],[0,2],[1,3],[2,4],[5,6],[5,7],[6,8],[7,9],[8,10],[11,12],[11,13],[12,14],[13,15],[14,16]];
+    pairs.forEach(([a,b]) => {
+      if (kp[a]?.score > 0.4 && kp[b]?.score > 0.4) {
+        poseCtx.beginPath();
+        poseCtx.moveTo(kp[a].x, kp[a].y);
+        poseCtx.lineTo(kp[b].x, kp[b].y);
+        poseCtx.stroke();
+      }
+    });
+  }
+
+  // Draw players
+  drawPlayer(myPlayer, true);
+  drawPlayer(opponent, false);
+
+  // Sync my state
+  pubnub.publish({
+    channel: CHANNEL,
+    message: {
+      x: myPlayer.x,
+      y: myPlayer.y,
+      attacking: myPlayer.attacking,
+      health: myPlayer.health
+    }
+  });
+
+  // Keyboard for Player 2 (if testing locally)
+  if (keys['a']) opponent.x -= 5;
+  if (keys['d']) opponent.x += 5;
+  if (keys['w']) opponent.y -= 5;
+  if (keys['s']) opponent.y += 5;
+  if (keys[' '] && Date.now() - lastAttack > 800) {
+    opponent.attacking = true;
+    lastAttack = Date.now();
+    checkHit();
+    setTimeout(() => opponent.attacking = false, 400);
+  }
+
+  requestAnimationFrame(loop);
+}
+
+function drawPlayer(p, isMe) {
+  ctx.save();
+  if (p.side === 'right') ctx.scale(-1, 1);
+
+  // Body
+  ctx.fillStyle = isMe ? '#ff0044' : '#0044ff';
+  ctx.fillRect(p.x, p.y, 80, 180);
+
+  // Head
+  ctx.beginPath();
+  ctx.arc(p.x + 40, p.y + 40, 40, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (p.attacking) {
+    ctx.fillStyle = 'yellow';
+    ctx.fillRect(p.x + (p.side === 'left' ? 80 : -80), p.y + 80, 60, 40);
+  }
+
+  ctx.restore();
+}
+
+function checkHit() {
+  const me = myPlayer;
+  const opp = opponent;
+  const dist = Math.abs(me.x - opp.x);
+
+  if (dist < 140 && (me.attacking || opp.attacking)) {
+    const attacker = me.attacking ? me : opp;
+    const defender = me.attacking ? opp : me;
+
+    defender.health = Math.max(0, defender.health - 12);
+
+    if (defender === myPlayer) {
+      document.getElementById('p1h').style.width = myPlayer.health + '%';
+    } else {
+      document.getElementById('p2h').style.width = opponent.health + '%';
+    }
+
+    if (defender.health <= 0) {
+      status.textContent = me.attacking ? "YOU WIN!" : "YOU LOSE!";
+      status.style.display = 'block';
+      setTimeout(() => location.reload(), 4000);
+    }
+  }
+}
+
+function updateHealthBars() {
+  document.getElementById('p1h').style.width = myPlayer.health + '%';
+  document.getElementById('p2h').style.width = opponent.health + '%';
+}
+
+// Keyboard for local testing (Player 2)
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+// Start
+init();
+</script>
+
+</body>
+</html>

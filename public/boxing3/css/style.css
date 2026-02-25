@@ -1,0 +1,71 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#000; color:#fff; font-family:Arial, sans-serif; overflow:hidden;
+  height:100vh; touch-action:none;
+}
+.screen {
+  position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:100;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:20px;
+}
+.screen.hidden { display:none; }
+h1 { font-size:clamp(3rem, 10vw, 5rem); margin-bottom:1.5rem; text-shadow:0 0 30px #ff0044; }
+p { font-size:clamp(1.2rem, 4vw, 1.8rem); margin:1rem 0 2rem; max-width:90%; }
+.btn {
+  padding:1rem 2.5rem; font-size:clamp(1.2rem, 5vw, 1.8rem); margin:1rem;
+  background:#ff0044; color:white; border:none; border-radius:12px; cursor:pointer;
+  transition:0.3s; min-width:220px;
+}
+.btn:hover { background:#cc0037; transform:scale(1.05); }
+.btn.secondary { background:#444; }
+.btn.secondary:hover { background:#666; }
+#arena-screen .arena-grid {
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1.5rem;
+  max-width:90%; margin:2rem auto;
+}
+.arena-btn {
+  background:none; border:none; cursor:pointer; padding:0; border-radius:12px; overflow:hidden;
+  transition:0.3s;
+}
+.arena-btn:hover { transform:scale(1.08); }
+.arena-btn img {
+  width:100%; height:140px; object-fit:cover; border-radius:12px;
+}
+.arena-btn span { display:block; margin-top:0.8rem; font-size:1.4rem; }
+#character-screen .char-grid {
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:2rem;
+  max-width:90%; margin:2rem auto;
+}
+.char-btn {
+  background:none; border:none; cursor:pointer; text-align:center;
+}
+.char-placeholder {
+  width:140px; height:180px; margin:0 auto; border-radius:12px;
+  transition:0.3s;
+}
+.char-btn:hover .char-placeholder { transform:scale(1.1); }
+#game-container {
+  position:relative; width:100vw; height:100vh;
+}
+canvas { position:absolute; inset:0; }
+#hud {
+  position:absolute; top:10px; left:0; right:0; z-index:10;
+  display:flex; justify-content:space-between; padding:0 5%; pointer-events:none;
+}
+.health-bar {
+  width:35vw; max-width:400px; height:30px; background:#222; border:3px solid #fff;
+  border-radius:10px; overflow:hidden;
+}
+.health-fill { height:100%; transition:width 0.4s ease; }
+#p1-health .health-fill { background:#ff0044; }
+#p2-health .health-fill { background:#0044ff; }
+#status {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-size:clamp(3rem, 10vw, 6rem); font-weight:bold; text-shadow:0 0 40px #000;
+  z-index:20; pointer-events:none; display:none; text-align:center;
+}
+#video, #pose {
+  position:absolute; top:10px; right:10px; width:220px; height:165px;
+  object-fit:cover; border:3px solid #444; border-radius:8px; z-index:5;
+}
+#pose { opacity:0.75; }

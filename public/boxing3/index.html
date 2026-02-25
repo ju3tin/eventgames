@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pose Boxing – Choose Mode, Arena & Character</title>
+
+  <!-- PubNub & TensorFlow -->
+  <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.8.3.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- UI Screens -->
+<div id="start-screen" class="screen active">
+  <h1>Pose Boxing</h1>
+  <p>Control your fighter with body movements!</p>
+
+  <button class="btn" onclick="ui.start('ai')">1 Player vs AI</button>
+  <button class="btn" onclick="ui.start('host')">Host 2-Player Game</button>
+  <button class="btn secondary" onclick="ui.showJoin()">Join 2-Player Game</button>
+
+  <div id="join-input" class="hidden">
+    <input id="room-code" type="text" placeholder="Enter room code" />
+    <button class="btn" onclick="ui.join()">Join</button>
+  </div>
+
+  <div id="share-section" class="hidden">
+    <p>Share this code with your opponent:</p>
+    <div id="room-code-display"></div>
+    <button class="btn secondary" onclick="ui.copyRoomCode()">Copy Code</button>
+  </div>
+</div>
+
+<div id="arena-screen" class="screen hidden">
+  <h1>Choose Arena</h1>
+  <div class="arena-grid">
+    <button class="arena-btn" data-arena="1" onclick="ui.selectArena(1)">
+      <img src="assets/arenas/1arena.jpg" alt="Arena 1" />
+      <span>Arena 1</span>
+    </button>
+    <button class="arena-btn" data-arena="2" onclick="ui.selectArena(2)">
+      <img src="assets/arenas/2arena.jpg" alt="Arena 2" />
+      <span>Arena 2</span>
+    </button>
+    <button class="arena-btn" data-arena="3" onclick="ui.selectArena(3)">
+      <img src="assets/arenas/3arena.jpg" alt="Arena 3" />
+      <span>Arena 3</span>
+    </button>
+  </div>
+</div>
+
+<div id="character-screen" class="screen hidden">
+  <h1>Choose Your Character</h1>
+  <div class="char-grid">
+    <button class="char-btn" data-char="1" onclick="ui.selectCharacter(1)">
+      <div class="char-placeholder" style="background:#ff0044;"></div>
+      <span>Fighter Red</span>
+    </button>
+    <button class="char-btn" data-char="2" onclick="ui.selectCharacter(2)">
+      <div class="char-placeholder" style="background:#0044ff;"></div>
+      <span>Fighter Blue</span>
+    </button>
+    <button class="char-btn" data-char="3" onclick="ui.selectCharacter(3)">
+      <div class="char-placeholder" style="background:#44ff00;"></div>
+      <span>Fighter Green</span>
+    </button>
+  </div>
+</div>
+
+<div id="game-container" class="hidden">
+  <canvas id="c"></canvas>
+  <div id="hud">
+    <div class="health-bar" id="p1-health"><div class="health-fill" style="width:100%"></div></div>
+    <div class="health-bar" id="p2-health"><div class="health-fill" style="width:100%"></div></div>
+  </div>
+  <div id="status"></div>
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="pose"></canvas>
+</div>
+
+<!-- JavaScript files -->
+<script src="js/canvas-setup.js"></script>
+<script src="js/game-state.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/pose-detection.js"></script>
+<script src="js/pubnub-sync.js"></script>
+<script src="js/ai-opponent.js"></script>
+<script src="js/ui-manager.js"></script>
+<script type="module">
+    // Import everything from main.js (it will pull in others)
+    import 'js/main.js';
+  </script>
+
+</body>
+</html>
