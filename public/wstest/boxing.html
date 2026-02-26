@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8" />
-<title>2 Player Boxing Debug</title>
+<title>2 Player Boxing - Input Sync</title>
 <style>
   body { margin:0; background:#111; color:white; text-align:center; }
   canvas { background:#222; display:block; margin:20px auto; }
@@ -10,7 +10,7 @@
 </head>
 <body>
 
-<h2>2 Player Boxing Debug</h2>
+<h2>2 Player Boxing - Input Sync</h2>
 <canvas id="game" width="900" height="500"></canvas>
 
 <script>
@@ -26,7 +26,7 @@ let gameStarted = false;
 console.log("Room to join:", currentRoom);
 
 const keys = {};
-let remoteInput = { left:false, right:false, punch:false };
+let remoteInput = { left:false, right:false, punch:false }; // last input from opponent
 
 document.addEventListener("keydown", e => { keys[e.key.toLowerCase()] = true; });
 document.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
@@ -102,18 +102,27 @@ function drawHP() {
 function update() {
   if (!gameStarted) return;
 
+  // Local input
   const localInput = { left:false,right:false,punch:false };
   if (playerRole === 1) { localInput.left = keys["a"]; localInput.right = keys["d"]; localInput.punch = keys["w"]; }
   else { localInput.left = keys["j"]; localInput.right = keys["l"]; localInput.punch = keys["i"]; }
 
+  // Send local input to server
   socket.send(JSON.stringify({ type:"input", room:currentRoom, payload:localInput }));
   console.log("Local input sent:", localInput);
 
-  if (playerRole === 1) { player1.applyInput(localInput); player2.applyInput(remoteInput); }
-  else { player2.applyInput(localInput); player1.applyInput(remoteInput); }
+  // Apply inputs
+  if (playerRole === 1) {
+    player1.applyInput(localInput);      // local player
+    player2.applyInput(remoteInput);     // remote player
+  } else {
+    player2.applyInput(localInput);
+    player1.applyInput(remoteInput);
+  }
 
   player1.update();
   player2.update();
+
   checkHits();
 
   if (player1.hp <= 0 || player2.hp <= 0) {
@@ -156,7 +165,7 @@ function connect() {
     }
 
     if (data.type === "input") {
-        remoteInput = data.payload;
+        remoteInput = data.payload; // <--- update remote input every frame
         console.log("Remote input received:", remoteInput);
     }
 
