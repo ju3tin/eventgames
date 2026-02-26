@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Online Boxing</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      text-align: center;
+      font-family: Arial;
+    }
+
+    canvas {
+      background: #222;
+      display: block;
+      margin: 20px auto;
+      border: 2px solid white;
+    }
+
+    input, button {
+      padding: 8px;
+      margin: 5px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Online Boxing</h2>
+
+<input id="roomInput" placeholder="Room ID">
+<button onclick="joinRoom()">Join Room</button>
+
+<canvas id="game" width="900" height="500"></canvas>
+
+<script>
+const ws = new WebSocket("wss://webrtc-signaling-server-t3jg.onrender.com");
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let roomId = null;
+let myRole = null;
+let gameStarted = false;
+let gameOver = false;
+let players = {};
+
+const winSound = new Audio("winner.mp3");
+const loseSound = new Audio("loser.mp3");
+
+let keys = { left:false, right:false, punch:false };
+
+let lastPunchTime = 0;
+const punchCooldown = 300;
+
+// ======================
+// CONNECTION
+// ======================
+ws.onopen = () => console.log("✅ Connected to server");
+ws.onerror = err => console.error("WebSocket error:", err);
+ws.onclose = () => console.log("❌ Disconnected");
+
+// ======================
+// JOIN ROOM
+// ======================
+function joinRoom(){
+  roomId = document.getElementById("roomInput").value;
+  console.log("Joining room:", roomId);
+
+  ws.send(JSON.stringify({
+    type:"join",
+    room:roomId
+  }));
+}
+
+// ======================
+// RECEIVE DATA
+// ======================
+ws.onmessage = (event)=>{
+  const data = JSON.parse(event.data);
+  console.log("📩 Received:", data);
+
+  if(data.type === "joined"){
+    myRole = data.payload.role;
+    console.log("🎮 Assigned role:", myRole);
+  }
+
+  if(data.type === "ready"){
+    gameStarted = true;
+    console.log("🚀 Game Started");
+  }
+
+  if(data.type === "state"){
+    players = data.payload;
+
+    if(!gameOver && players[1] && players[2]){
+      if(players[1].hp <= 0 || players[2].hp <= 0){
+        gameOver = true;
+
+        const winner = players[1].hp <= 0 ? 2 : 1;
+        console.log("🏆 Winner:", winner);
+
+        if(myRole === winner){
+          winSound.play();
+        } else {
+          loseSound.play();
+        }
+      }
+    }
+  }
+
+  if(data.type === "error"){
+    alert(data.payload);
+  }
+};
+
+// ======================
+// INPUT
+// ======================
+document.addEventListener("keydown", (e)=>{
+  if(e.key === "a") keys.left = true;
+  if(e.key === "d") keys.right = true;
+
+  if(e.key === " "){
+    const now = Date.now();
+    if(now - lastPunchTime > punchCooldown){
+      keys.punch = true;
+      lastPunchTime = now;
+    }
+  }
+});
+
+document.addEventListener("keyup", (e)=>{
+  if(e.key === "a") keys.left = false;
+  if(e.key === "d") keys.right = false;
+  if(e.key === " ") keys.punch = false;
+});
+
+// ======================
+// SEND INPUT
+// ======================
+function sendInput(){
+  if(!gameStarted || !myRole || gameOver) return;
+
+  ws.send(JSON.stringify({
+    type:"input",
+    room:roomId,
+    payload:keys
+  }));
+}
+
+// ======================
+// DRAW
+// ======================
+function draw(){
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(!players[1] || !players[2]) return;
+
+  Object.keys(players).forEach(id => {
+
+    const p = players[id];
+
+    // Body
+    ctx.fillStyle = id == 1 ? "blue" : "red";
+    ctx.fillRect(p.x, p.y, 80, 120);
+
+    // Punch arm
+    if(p.punching){
+      ctx.fillStyle = "yellow";
+
+      const armLength = 40;
+
+      if(p.facing === 1){
+        ctx.fillRect(p.x + 80, p.y + 40, armLength, 20);
+      } else {
+        ctx.fillRect(p.x - armLength, p.y + 40, armLength, 20);
+      }
+    }
+  });
+
+  // HP Bars
+  ctx.fillStyle="green";
+  ctx.fillRect(50,30, players[1].hp * 2, 20);
+  ctx.fillRect(550,30, players[2].hp * 2, 20);
+
+  ctx.strokeStyle="white";
+  ctx.strokeRect(50,30,200,20);
+  ctx.strokeRect(550,30,200,20);
+
+  // GAME OVER OVERLAY
+  if(gameOver){
+
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle = "white";
+    ctx.font = "60px Arial";
+    ctx.textAlign = "center";
+
+    const winner = players[1].hp <= 0 ? 2 : 1;
+
+    if(myRole === winner){
+      ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2);
+    } else {
+      ctx.fillText("YOU LOSE!", canvas.width/2, canvas.height/2);
+    }
+  }
+}
+
+// ======================
+// GAME LOOP
+// ======================
+function gameLoop(){
+  sendInput();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
