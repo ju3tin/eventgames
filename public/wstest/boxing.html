@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8" />
-<title>2 Player Boxing - Input Sync</title>
+<title>2 Player Boxing - Debug</title>
 <style>
   body { margin:0; background:#111; color:white; text-align:center; }
   canvas { background:#222; display:block; margin:20px auto; }
@@ -10,7 +10,7 @@
 </head>
 <body>
 
-<h2>2 Player Boxing - Input Sync</h2>
+<h2>2 Player Boxing - Debug</h2>
 <canvas id="game" width="900" height="500"></canvas>
 
 <script>
@@ -107,14 +107,14 @@ function update() {
   if (playerRole === 1) { localInput.left = keys["a"]; localInput.right = keys["d"]; localInput.punch = keys["w"]; }
   else { localInput.left = keys["j"]; localInput.right = keys["l"]; localInput.punch = keys["i"]; }
 
-  // Send local input to server
+  // Send input to server
   socket.send(JSON.stringify({ type:"input", room:currentRoom, payload:localInput }));
   console.log("Local input sent:", localInput);
 
   // Apply inputs
   if (playerRole === 1) {
-    player1.applyInput(localInput);      // local player
-    player2.applyInput(remoteInput);     // remote player
+    player1.applyInput(localInput);
+    player2.applyInput(remoteInput);
   } else {
     player2.applyInput(localInput);
     player1.applyInput(remoteInput);
@@ -165,7 +165,7 @@ function connect() {
     }
 
     if (data.type === "input") {
-        remoteInput = data.payload; // <--- update remote input every frame
+        remoteInput = data.payload;
         console.log("Remote input received:", remoteInput);
     }
 
