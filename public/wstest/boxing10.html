@@ -13,6 +13,7 @@
 <h2>🥊 Arcade Boxing</h2>
 <input id="roomInput" placeholder="Room ID">
 <button onclick="joinRoom()">Join Room</button>
+
 <canvas id="game" width="900" height="500"></canvas>
 
 <script>
@@ -40,7 +41,12 @@ let gameOver = false;
 let roundOver = false;
 
 // ===== SOUNDS =====
-const roundSounds = [null, new Audio("round1.mp3"), new Audio("round2.mp3"), new Audio("round3.mp3")];
+const roundSounds = [
+  null,
+  new Audio("round1.mp3"),
+  new Audio("round2.mp3"),
+  new Audio("round3.mp3")
+];
 const fightSound = new Audio("fight.mp3");
 const koSound = new Audio("ko.mp3");
 const winSound = new Audio("winner.mp3");
@@ -70,14 +76,26 @@ function handleMessage(event){
 
   if(data.type==="joined") myRole = data.payload.role;
 
-  if(data.type==="ready"){
+  if(data.type==="ready" && !gameStarted){
     gameStarted = true;
     startRound();
   }
 
   if(data.type==="state"){
     players = data.payload;
-    updateFacing();
+
+    // Update round from server state
+    if(players.round) round = players.round;
+
+    // Check if match is over
+    if(players.score[1] === 2 || players.score[2] === 2) {
+      gameOver = true;
+      roundOver = true;
+      const finalWinner = players.score[1] > players.score[2] ? 1 : 2;
+      if(myRole === finalWinner) winSound.play();
+      else loseSound.play();
+    }
+
     checkKO();
   }
 
@@ -85,16 +103,13 @@ function handleMessage(event){
 }
 
 // ======================
-// ROUND SYSTEM
+// ROUND TIMER
 // ======================
 function startRound(){
   roundOver = false;
   currentTime = roundTime;
 
-  // Reset player positions & HP for new round
-  resetRound();
-
-  // Round announcer
+  // Announcer for round start
   if(roundSounds[round]) announce("Round " + round, roundSounds[round]);
 
   setTimeout(()=>{
@@ -105,85 +120,27 @@ function startRound(){
 
 function startTimer(){
   clearInterval(timerInterval);
-
-  // Stop timer immediately if someone has already won 2 rounds
-  if(score[1] === 2 || score[2] === 2){
-    currentTime = 0;
-    return;
-  }
+  if(gameOver) return;
 
   timerInterval = setInterval(()=>{
     currentTime--;
     if(currentTime <= 0){
       clearInterval(timerInterval);
       roundOver = true;
-      decideWinnerByHP();
     }
   },1000);
 }
 
 // ======================
-// KO / ROUND CHECK
+// CHECK KO
 // ======================
 function checkKO(){
-  if(roundOver) return;
+  if(roundOver || gameOver) return;
 
   if(players[1]?.hp <= 0 || players[2]?.hp <= 0){
     clearInterval(timerInterval);
     roundOver = true;
     koSound.play();
-
-    const winner = players[1].hp <= 0 ? 2 : 1;
-    score[winner]++;
-
-    setTimeout(()=>nextRoundOrGame(),3000);
-  }
-}
-
-function decideWinnerByHP(){
-  roundOver = true;
-
-  let winner = null;
-  if(players[1].hp > players[2].hp) winner = 1;
-  else if(players[2].hp > players[1].hp) winner = 2;
-
-  if(winner) score[winner]++;
-
-  setTimeout(()=>nextRoundOrGame(),2000);
-}
-
-function nextRoundOrGame(){
-  // Check for match winner
-  if(score[1] === 2 || score[2] === 2 || round === maxRounds){
-    gameOver = true;
-    const finalWinner = score[1] > score[2] ? 1 : 2;
-
-    if(myRole === finalWinner) winSound.play();
-    else loseSound.play();
-
-    announce("Player " + finalWinner + " Wins!", null); // already played sound
-    return;
-  }
-
-  round++;
-  startRound();
-}
-
-// ======================
-// RESET ROUND
-// ======================
-function resetRound(){
- // if(players[1]) { players[1].hp = 100; players[1].x = 150; }
- // if(players[2]) { players[2].hp = 100; players[2].x = 650; }
-}
-
-// ======================
-// UPDATE FACING
-// ======================
-function updateFacing(){
-  if(players[1] && players[2]){
-    players[1].facing = players[1].x < players[2].x ? 1 : -1;
-    players[2].facing = players[2].x < players[1].x ? 1 : -1;
   }
 }
 
@@ -239,15 +196,12 @@ function draw(){
     if(p.punching){
       ctx.fillStyle="yellow";
       const armLength=40;
-      if(p.facing===1){
-        ctx.fillRect(p.x+80,p.y+40,armLength,20);
-      } else {
-        ctx.fillRect(p.x-armLength,p.y+40,armLength,20);
-      }
+      if(p.facing===1) ctx.fillRect(p.x+80,p.y+40,armLength,20);
+      else ctx.fillRect(p.x-armLength,p.y+40,armLength,20);
     }
   });
 
-  // HP
+  // HP Bars
   ctx.fillStyle="green";
   ctx.fillRect(50,30, players[1].hp*2,20);
   ctx.fillRect(550,30, players[2].hp*2,20);
@@ -262,7 +216,7 @@ function draw(){
   ctx.fillText(currentTime, canvas.width/2, 40);
 
   // SCORE
-  ctx.fillText(score[1]+" - "+score[2], canvas.width/2, 80);
+  ctx.fillText(players.score[1]+" - "+players.score[2], canvas.width/2, 80);
 
   // GAME OVER
   if(gameOver){
@@ -272,7 +226,7 @@ function draw(){
     ctx.font="60px Arial";
     ctx.textAlign="center";
 
-    const finalWinner = score[1] > score[2] ? 1 : 2;
+    const finalWinner = players.score[1] > players.score[2] ? 1 : 2;
     if(myRole === finalWinner) ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2);
     else ctx.fillText("YOU LOSE!", canvas.width/2, canvas.height/2);
   }
