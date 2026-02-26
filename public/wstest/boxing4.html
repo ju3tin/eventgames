@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>2 Player Boxing - Server Hits</title>
+<style>
+  body { margin:0; background:#111; color:white; text-align:center; }
+  canvas { background:#222; display:block; margin:20px auto; }
+</style>
+</head>
+<body>
+
+<h2>2 Player Boxing - Server-Controlled Hits</h2>
+<canvas id="game" width="900" height="500"></canvas>
+
+<script>
+const WS_URL = "wss://webrtc-signaling-server-t3jg.onrender.com"; // CHANGE THIS
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let socket;
+let currentRoom = prompt("Enter room name:") || "testroom";
+let playerRole = null; // 1 or 2
+let gameStarted = false;
+
+// Track local input
+const keys = {};
+
+// Players
+let players = {
+    1: { x:150, y:350, hp:100, punching:false, facing:1 },
+    2: { x:650, y:350, hp:100, punching:false, facing:-1 }
+};
+
+document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+function drawPlayers() {
+    // Draw player 1
+    ctx.fillStyle = "red";
+    ctx.fillRect(players[1].x, players[1].y, 80, 120);
+    if(players[1].punching){
+        ctx.fillStyle = "yellow";
+        if(players[1].facing===1) ctx.fillRect(players[1].x+80, players[1].y+40, 40, 20);
+        else ctx.fillRect(players[1].x-40, players[1].y+40, 40, 20);
+    }
+
+    // Draw player 2
+    ctx.fillStyle = "blue";
+    ctx.fillRect(players[2].x, players[2].y, 80, 120);
+    if(players[2].punching){
+        ctx.fillStyle = "yellow";
+        if(players[2].facing===1) ctx.fillRect(players[2].x+80, players[2].y+40, 40, 20);
+        else ctx.fillRect(players[2].x-40, players[2].y+40, 40, 20);
+    }
+
+    // Draw HP bars
+    ctx.fillStyle = "green";
+    ctx.fillRect(50,50,players[1].hp*2,20);
+    ctx.fillRect(canvas.width-250,50,players[2].hp*2,20);
+}
+
+function updateLocalInput() {
+    if(!gameStarted || !playerRole) return;
+
+    const localInput = { left:false, right:false, punch:false };
+    if(playerRole===1){ localInput.left=keys["a"]; localInput.right=keys["d"]; localInput.punch=keys["w"]; }
+    else { localInput.left=keys["j"]; localInput.right=keys["l"]; localInput.punch=keys["i"]; }
+
+    // Send input to server
+    socket.send(JSON.stringify({ type:"input", room:currentRoom, payload:localInput }));
+    console.log("Local input sent:", localInput);
+}
+
+function gameLoop() {
+    updateLocalInput();
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawPlayers();
+    requestAnimationFrame(gameLoop);
+}
+
+function connect() {
+    socket = new WebSocket(WS_URL);
+
+    socket.onopen = () => {
+        console.log("Connected to server");
+        socket.send(JSON.stringify({ type:"join", room:currentRoom }));
+        console.log("Join message sent for room:", currentRoom);
+    };
+
+    socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        // Server sends role, ready, and full players state
+        if(data.type==="joined"){
+            playerRole = data.payload.role;
+            console.log("Assigned role:", playerRole);
+        }
+        if(data.type==="ready"){
+            gameStarted=true;
+            console.log("Game started!");
+        }
+        if(data.type==="state"){
+            // Update both players from server state
+            players[1] = data.payload[1];
+            players[2] = data.payload[2];
+            console.log("Players state updated:", players);
+        }
+        if(data.type==="error"){
+            console.warn("Server error:", data.payload);
+        }
+    };
+
+    socket.onclose = () => console.log("Disconnected from server");
+    socket.onerror = err => console.error("Socket error:", err);
+}
+
+connect();
+gameLoop();
+</script>
+
+</body>
+</html>
