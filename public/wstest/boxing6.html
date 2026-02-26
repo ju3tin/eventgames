@@ -30,6 +30,11 @@
 <canvas id="game" width="900" height="500"></canvas>
 
 <script>
+
+const winSound = new Audio("winner.mp3");
+const loseSound = new Audio("loser.mp3");
+
+let gameOver = false;    
 const ws = new WebSocket("wss://webrtc-signaling-server-t3jg.onrender.com");
 
 const canvas = document.getElementById("game");
@@ -135,7 +140,7 @@ document.addEventListener("keyup",(e)=>{
 // SEND INPUT
 // ======================
 function sendInput(){
-  if(!gameStarted || !myRole) return;
+  if(!gameStarted || !myRole || gameOver) return;
 
   ws.send(JSON.stringify({
     type:"input",
@@ -143,7 +148,6 @@ function sendInput(){
     payload:keys
   }));
 }
-
 // ======================
 // DRAW GAME
 // ======================
@@ -196,6 +200,25 @@ function draw(){
   ctx.strokeStyle="white";
   ctx.strokeRect(50,30,200,20);
   ctx.strokeRect(550,30,200,20);
+
+  if(gameOver){
+
+ctx.fillStyle = "rgba(0,0,0,0.7)";
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+ctx.fillStyle = "white";
+ctx.font = "50px Arial";
+ctx.textAlign = "center";
+
+const winner = players[1].hp <= 0 ? 2 : 1;
+
+if(myRole === winner){
+  ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2);
+} else {
+  ctx.fillText("YOU LOSE!", canvas.width/2, canvas.height/2);
+}
+}
+
 }
 
 // ======================
