@@ -2,77 +2,103 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>WebSocket Room Demo</title>
+  <title>2-Person Chat</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    #roomSection { display: none; margin-top: 20px; }
+    body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
+    #chat { display: none; margin-top: 20px; }
+    #messages { 
+      border: 1px solid #ccc; 
+      height: 200px; 
+      overflow-y: auto; 
+      padding: 10px; 
+      margin-bottom: 10px;
+    }
     button { margin: 5px 0; }
-    #messages { margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 150px; overflow-y: auto; }
+    input { padding: 5px; }
   </style>
 </head>
 <body>
 
-  <h2>WebSocket Room Demo</h2>
+<h2>Private 2-Person Chat</h2>
 
-  <button id="createBtn">Create Room</button>
+<div id="joinSection">
+  <input id="roomInput" placeholder="Enter room name" />
+  <button id="joinBtn">Join Room</button>
+</div>
 
-  <div>
-    <input id="roomInput" placeholder="Enter Room ID" />
-    <button id="joinBtn">Join Room</button>
-  </div>
+<div id="chat">
+  <p><strong>Room:</strong> <span id="roomDisplay"></span></p>
+  <button id="copyBtn">Copy Invite Link</button>
 
-  <div id="roomSection">
-    <h3>Room: <span id="roomIdDisplay"></span></h3>
-    <button id="copyBtn">Copy Invite Link</button>
+  <div id="messages"></div>
 
-    <div id="messages"></div>
-
-    <input id="messageInput" placeholder="Type message..." />
-    <button id="sendBtn">Send</button>
-  </div>
+  <input id="messageInput" placeholder="Type message..." />
+  <button id="sendBtn">Send</button>
+</div>
 
 <script>
-const WS_URL = "wss://webrtc-signaling-server-t3jg.onrender.com"; // 🔁 replace this
+const WS_URL = "wss://webrtc-signaling-server-t3jg.onrender.com"; // 🔁 CHANGE THIS
 
 let socket;
 let currentRoom = null;
 
-function connectSocket() {
+function connectWebSocket(roomToJoin = null) {
   socket = new WebSocket(WS_URL);
 
   socket.onopen = () => {
-    console.log("Connected to server");
+    console.log("Connected");
+
+    if (roomToJoin) {
+      joinRoom(roomToJoin);
+    }
   };
 
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
     console.log("Received:", data);
 
-    if (data.type === "room_created") {
-      enterRoom(data.roomId);
+    if (data.type === "error") {
+      alert(data.payload);
+      return;
     }
 
     if (data.type === "joined") {
-      enterRoom(data.roomId);
+      enterChat(currentRoom);
+      return;
     }
 
     if (data.type === "message") {
-      addMessage(data.message);
+      addMessage("Other: " + data.payload);
+      return;
+    }
+
+    if (data.type === "ready") {
+      addMessage("System: Both users connected");
+      return;
     }
   };
 
   socket.onclose = () => {
-    console.log("Disconnected");
+    addMessage("System: Disconnected");
   };
 }
 
-function enterRoom(roomId) {
-  currentRoom = roomId;
-  document.getElementById("roomIdDisplay").textContent = roomId;
-  document.getElementById("roomSection").style.display = "block";
+function joinRoom(room) {
+  currentRoom = room;
 
-  // Update URL so others can join
-  const newUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+  socket.send(JSON.stringify({
+    type: "join",
+    room: room,
+    payload: null
+  }));
+}
+
+function enterChat(room) {
+  document.getElementById("joinSection").style.display = "none";
+  document.getElementById("chat").style.display = "block";
+  document.getElementById("roomDisplay").textContent = room;
+
+  const newUrl = `${window.location.origin}${window.location.pathname}?room=${room}`;
   window.history.replaceState({}, "", newUrl);
 }
 
@@ -80,52 +106,46 @@ function addMessage(msg) {
   const div = document.createElement("div");
   div.textContent = msg;
   document.getElementById("messages").appendChild(div);
+  div.scrollIntoView();
 }
 
-// Create room
-document.getElementById("createBtn").onclick = () => {
-  socket.send(JSON.stringify({ type: "create" }));
-};
-
-// Join room
+// Join button
 document.getElementById("joinBtn").onclick = () => {
-  const roomId = document.getElementById("roomInput").value;
-  if (!roomId) return;
-  socket.send(JSON.stringify({ type: "join", roomId }));
+  const room = document.getElementById("roomInput").value.trim();
+  if (!room) return alert("Enter room name");
+
+  connectWebSocket(room);
 };
 
-// Send message
+// Send button
 document.getElementById("sendBtn").onclick = () => {
   const input = document.getElementById("messageInput");
-  if (!input.value) return;
+  const message = input.value.trim();
+  if (!message) return;
 
   socket.send(JSON.stringify({
     type: "message",
-    roomId: currentRoom,
-    message: input.value
+    room: currentRoom,
+    payload: message
   }));
 
+  addMessage("You: " + message);
   input.value = "";
 };
 
-// Copy link
+// Copy invite link
 document.getElementById("copyBtn").onclick = () => {
-  const link = window.location.href;
-  navigator.clipboard.writeText(link);
+  navigator.clipboard.writeText(window.location.href);
   alert("Invite link copied!");
 };
 
-// Auto-join if ?room= exists
+// Auto join from URL
 window.onload = () => {
-  connectSocket();
-
   const params = new URLSearchParams(window.location.search);
   const room = params.get("room");
 
   if (room) {
-    socket.addEventListener("open", () => {
-      socket.send(JSON.stringify({ type: "join", roomId: room }));
-    });
+    connectWebSocket(room);
   }
 };
 </script>

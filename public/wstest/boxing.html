@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>2 Player Boxing Debug</title>
+<style>
+  body { margin:0; background:#111; color:white; text-align:center; }
+  canvas { background:#222; display:block; margin:20px auto; }
+</style>
+</head>
+<body>
+
+<h2>2 Player Boxing Debug</h2>
+<canvas id="game" width="900" height="500"></canvas>
+
+<script>
+const WS_URL = "wss://webrtc-signaling-server-t3jg.onrender.com"; // 🔁 CHANGE THIS
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let socket;
+let currentRoom = prompt("Enter room name:") || "testroom";
+let playerRole = null; // 1 or 2
+let gameStarted = false;
+
+console.log("Room to join:", currentRoom);
+
+const keys = {};
+let remoteInput = { left:false, right:false, punch:false };
+
+document.addEventListener("keydown", e => { keys[e.key.toLowerCase()] = true; });
+document.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
+
+class Player {
+  constructor(x, color, facing) {
+    this.x = x; this.y = 350; this.width = 80; this.height = 120;
+    this.color = color; this.facing = facing;
+    this.hp = 100; this.punching = false; this.punchTimer = 0;
+  }
+
+  applyInput(input) {
+    if (!input) return;
+    if (input.left) this.x -= 5;
+    if (input.right) this.x += 5;
+    if (input.punch && this.punchTimer <= 0) { this.punching = true; this.punchTimer = 20; }
+  }
+
+  update() {
+    if (this.punchTimer > 0) this.punchTimer--; else this.punching = false;
+    this.x = Math.max(0, Math.min(canvas.width - this.width, this.x));
+  }
+
+  draw() {
+    ctx.fillStyle = this.color;
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+
+    // draw punch
+    if (this.punching) {
+      ctx.fillStyle = "yellow";
+      if (this.facing === 1) ctx.fillRect(this.x + this.width, this.y + 40, 40, 20);
+      else ctx.fillRect(this.x - 40, this.y + 40, 40, 20);
+    }
+  }
+
+  getHitbox() {
+    if (!this.punching) return null;
+    if (this.facing === 1) return { x:this.x+this.width, y:this.y+40, width:40, height:20 };
+    else return { x:this.x-40, y:this.y+40, width:40, height:20 };
+  }
+}
+
+const player1 = new Player(150, "red", 1);
+const player2 = new Player(650, "blue", -1);
+
+function rectCollision(a, b) {
+  return a && b && a.x < b.x + b.width &&
+         a.x + a.width > b.x &&
+         a.y < b.y + b.height &&
+         a.y + a.height > b.y;
+}
+
+function checkHits() {
+  const hit1 = player1.getHitbox();
+  const hit2 = player2.getHitbox();
+
+  if (hit1 && rectCollision(hit1, player2)) {
+    player2.hp -= 1;
+    console.log("Player 1 hit Player 2, HP:", player2.hp);
+  }
+  if (hit2 && rectCollision(hit2, player1)) {
+    player1.hp -= 1;
+    console.log("Player 2 hit Player 1, HP:", player1.hp);
+  }
+}
+
+function drawHP() {
+  ctx.fillStyle = "green";
+  ctx.fillRect(50,50,player1.hp*2,20);
+  ctx.fillRect(canvas.width-250,50,player2.hp*2,20);
+}
+
+function update() {
+  if (!gameStarted) return;
+
+  const localInput = { left:false,right:false,punch:false };
+  if (playerRole === 1) { localInput.left = keys["a"]; localInput.right = keys["d"]; localInput.punch = keys["w"]; }
+  else { localInput.left = keys["j"]; localInput.right = keys["l"]; localInput.punch = keys["i"]; }
+
+  socket.send(JSON.stringify({ type:"input", room:currentRoom, payload:localInput }));
+  console.log("Local input sent:", localInput);
+
+  if (playerRole === 1) { player1.applyInput(localInput); player2.applyInput(remoteInput); }
+  else { player2.applyInput(localInput); player1.applyInput(remoteInput); }
+
+  player1.update();
+  player2.update();
+  checkHits();
+
+  if (player1.hp <= 0 || player2.hp <= 0) {
+    gameStarted = false;
+    alert(player1.hp <= 0 ? "Blue Wins!" : "Red Wins!");
+    console.log("Game Over");
+  }
+}
+
+function render() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  player1.draw();
+  player2.draw();
+  drawHP();
+}
+
+function gameLoop() { update(); render(); requestAnimationFrame(gameLoop); }
+
+function connect() {
+  socket = new WebSocket(WS_URL);
+
+  socket.onopen = () => { 
+    console.log("Connected to server"); 
+    socket.send(JSON.stringify({ type:"join", room:currentRoom, payload:null }));
+    console.log("Join message sent for room:", currentRoom);
+  };
+
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log("Received from server:", data);
+
+    if (data.type === "joined") {
+        playerRole = data.payload.role;
+        console.log("Assigned role:", playerRole);
+    }
+
+    if (data.type === "ready") {
+        gameStarted = true;
+        console.log("Game started!");
+    }
+
+    if (data.type === "input") {
+        remoteInput = data.payload;
+        console.log("Remote input received:", remoteInput);
+    }
+
+    if (data.type === "error") {
+        console.warn("Server error:", data.payload);
+    }
+  };
+
+  socket.onclose = () => console.log("Disconnected from server");
+  socket.onerror = err => console.error("Socket error:", err);
+}
+
+connect();
+gameLoop();
+</script>
+
+</body>
+</html>
