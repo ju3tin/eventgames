@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Online Boxing - Arcade Mode</title>
+  <style>
+    body { background: black; color: white; text-align: center; font-family: Arial; }
+    canvas { background: #222; display: block; margin: 20px auto; border: 3px solid white; }
+    input, button { padding: 8px; margin: 5px; font-size: 16px; }
+  </style>
+</head>
+<body>
+
+<h2>🥊 Arcade Boxing</h2>
+<input id="roomInput" placeholder="Room ID">
+<button onclick="joinRoom()">Join Room</button>
+<canvas id="game" width="900" height="500"></canvas>
+
+<script>
+const ws = new WebSocket("wss://webrtc-signaling-server-t3jg.onrender.com");
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let roomId = null;
+let myRole = null;
+let gameStarted = false;
+
+let players = {};
+let keys = { left:false, right:false, punch:false };
+
+// ===== MATCH STATE =====
+let round = 1;
+let score = {1:0, 2:0};
+let maxRounds = 3;
+
+let roundTime = 30;
+let currentTime = roundTime;
+let timerInterval = null;
+
+let gameOver = false;
+let roundOver = false;
+
+// ===== SOUNDS =====
+const roundSounds = [null, new Audio("round1.mp3"), new Audio("round2.mp3"), new Audio("round3.mp3")];
+const fightSound = new Audio("fight.mp3");
+const koSound = new Audio("ko.mp3");
+const winSound = new Audio("winner.mp3");
+const loseSound = new Audio("loser.mp3");
+
+// ======================
+// CONNECTION
+// ======================
+ws.onopen = ()=>console.log("✅ Connected to server");
+ws.onmessage = handleMessage;
+ws.onerror = err => console.error("WebSocket error:", err);
+ws.onclose = ()=>console.log("❌ Disconnected");
+
+// ======================
+// JOIN ROOM
+// ======================
+function joinRoom(){
+  roomId = document.getElementById("roomInput").value;
+  ws.send(JSON.stringify({type:"join", room:roomId}));
+}
+
+// ======================
+// RECEIVE
+// ======================
+function handleMessage(event){
+  const data = JSON.parse(event.data);
+
+  if(data.type==="joined") myRole = data.payload.role;
+
+  if(data.type==="ready"){
+    gameStarted = true;
+    startRound();
+  }
+
+  if(data.type==="state"){
+    players = data.payload;
+    updateFacing();
+    checkKO();
+  }
+
+  if(data.type==="error") alert(data.payload);
+}
+
+// ======================
+// ROUND SYSTEM
+// ======================
+function startRound(){
+  roundOver = false;
+  currentTime = roundTime;
+  resetRound();
+
+  // Round-specific announcer
+  if(roundSounds[round]) announce("Round " + round, roundSounds[round]);
+
+  setTimeout(()=>{
+    announce("Fight!", fightSound);
+    startTimer();
+  },2000);
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    currentTime--;
+    if(currentTime <= 0){
+      clearInterval(timerInterval);
+      decideWinnerByHP();
+    }
+  },1000);
+}
+
+// ======================
+// KO / ROUND CHECK
+// ======================
+function checkKO(){
+  if(roundOver) return;
+
+  if(players[1]?.hp <= 0 || players[2]?.hp <= 0){
+    clearInterval(timerInterval);
+    roundOver = true;
+    koSound.play();
+
+    const winner = players[1].hp <= 0 ? 2 : 1;
+    const loser = winner === 1 ? 2 : 1;
+
+    // Play winner/loser sounds
+    if(myRole === winner) winSound.play();
+    if(myRole === loser) loseSound.play();
+
+    score[winner]++;
+
+    setTimeout(()=>nextRoundOrGame(),3000);
+  }
+}
+
+function decideWinnerByHP(){
+  roundOver = true;
+
+  let winner = null;
+  if(players[1].hp > players[2].hp) winner = 1;
+  else if(players[2].hp > players[1].hp) winner = 2;
+
+  const loser = winner === 1 ? 2 : 1;
+
+  if(winner){
+    score[winner]++;
+    if(myRole === winner) winSound.play();
+    if(myRole === loser) loseSound.play();
+  }
+
+  setTimeout(()=>nextRoundOrGame(),2000);
+}
+
+function nextRoundOrGame(){
+  if(score[1] === 2 || score[2] === 2 || round === maxRounds){
+    gameOver = true;
+    const finalWinner = score[1] > score[2] ? 1 : 2;
+    announce("Player " + finalWinner + " Wins!", winSound);
+    return;
+  }
+
+  round++;
+  startRound();
+}
+
+// ======================
+// RESET ROUND
+// ======================
+function resetRound(){
+  if(players[1]) { players[1].hp = 100; players[1].x = 150; }
+  if(players[2]) { players[2].hp = 100; players[2].x = 650; }
+}
+
+// ======================
+// UPDATE FACING
+// ======================
+function updateFacing(){
+  if(players[1] && players[2]){
+    players[1].facing = players[1].x < players[2].x ? 1 : -1;
+    players[2].facing = players[2].x < players[1].x ? 1 : -1;
+  }
+}
+
+// ======================
+// ANNOUNCER
+// ======================
+function announce(text, sound){
+  sound.play();
+  ctx.fillStyle="white";
+  ctx.font="60px Arial";
+  ctx.textAlign="center";
+  ctx.fillText(text, canvas.width/2, canvas.height/2);
+}
+
+// ======================
+// INPUT
+// ======================
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="a") keys.left=true;
+  if(e.key==="d") keys.right=true;
+  if(e.key===" ") keys.punch=true;
+});
+
+document.addEventListener("keyup",(e)=>{
+  if(e.key==="a") keys.left=false;
+  if(e.key==="d") keys.right=false;
+  if(e.key===" ") keys.punch=false;
+});
+
+// ======================
+// SEND INPUT
+// ======================
+function sendInput(){
+  if(!gameStarted || gameOver || roundOver) return;
+
+  ws.send(JSON.stringify({ type:"input", room:roomId, payload:keys }));
+}
+
+// ======================
+// DRAW
+// ======================
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(!players[1] || !players[2]) return;
+
+  Object.keys(players).forEach(id=>{
+    const p = players[id];
+
+    ctx.fillStyle = id==1 ? "blue" : "red";
+    ctx.fillRect(p.x,p.y,80,120);
+
+    if(p.punching){
+      ctx.fillStyle="yellow";
+      const armLength=40;
+      if(p.facing===1){
+        ctx.fillRect(p.x+80,p.y+40,armLength,20);
+      } else {
+        ctx.fillRect(p.x-armLength,p.y+40,armLength,20);
+      }
+    }
+  });
+
+  // HP
+  ctx.fillStyle="green";
+  ctx.fillRect(50,30, players[1].hp*2,20);
+  ctx.fillRect(550,30, players[2].hp*2,20);
+
+  ctx.strokeStyle="white";
+  ctx.strokeRect(50,30,200,20);
+  ctx.strokeRect(550,30,200,20);
+
+  // TIMER
+  ctx.fillStyle="white";
+  ctx.font="30px Arial";
+  ctx.fillText(currentTime, canvas.width/2, 40);
+
+  // SCORE
+  ctx.fillText(score[1]+" - "+score[2], canvas.width/2, 80);
+
+  // GAME OVER
+  if(gameOver){
+    ctx.fillStyle="rgba(0,0,0,0.7)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle="white";
+    ctx.font="60px Arial";
+    ctx.textAlign="center";
+
+    const finalWinner = score[1] > score[2] ? 1 : 2;
+    if(myRole === finalWinner){
+      ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2);
+    } else {
+      ctx.fillText("YOU LOSE!", canvas.width/2, canvas.height/2);
+    }
+  }
+}
+
+// ======================
+// LOOP
+// ======================
+function loop(){ sendInput(); draw(); requestAnimationFrame(loop); }
+loop();
+
+</script>
+</body>
+</html>
