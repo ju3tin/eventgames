@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Online Boxing</title>
+  <style>
+    body {
+      background:#111;
+      color:white;
+      text-align:center;
+      font-family:Arial;
+    }
+    canvas {
+      background:#222;
+      display:block;
+      margin:20px auto;
+    }
+    input, button {
+      padding:8px;
+      margin:5px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Online Boxing</h2>
+
+<input id="roomInput" placeholder="Room ID">
+<button onclick="joinRoom()">Join Room</button>
+
+<canvas id="game" width="900" height="500"></canvas>
+
+<script>
+const ws = new WebSocket("wss://webrtc-signaling-server-t3jg.onrender.com");
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let roomId = null;
+let myRole = null;
+let gameStarted = false;
+let players = {};
+
+let keys = {
+  left:false,
+  right:false,
+  punch:false
+};
+
+let lastPunchTime = 0;
+const punchCooldown = 300; // ms
+
+// ======================
+// CONNECTION
+// ======================
+ws.onopen = () => {
+  console.log("✅ Connected to server");
+};
+
+ws.onclose = () => {
+  console.log("❌ Disconnected");
+};
+
+ws.onerror = (err) => {
+  console.error("WebSocket Error:", err);
+};
+
+// ======================
+// JOIN ROOM
+// ======================
+function joinRoom(){
+  roomId = document.getElementById("roomInput").value;
+
+  console.log("Joining room:", roomId);
+
+  ws.send(JSON.stringify({
+    type:"join",
+    room:roomId
+  }));
+}
+
+// ======================
+// RECEIVE MESSAGES
+// ======================
+ws.onmessage = (event)=>{
+  const data = JSON.parse(event.data);
+  console.log("📩 Received:", data);
+
+  if(data.type==="joined"){
+    myRole = data.payload.role;
+    console.log("🎮 My Role:", myRole);
+  }
+
+  if(data.type==="ready"){
+    gameStarted = true;
+    console.log("🚀 Game Started");
+  }
+
+  if(data.type==="state"){
+    players = data.payload;
+
+    console.log(
+      "📊 State | P1 HP:", players[1]?.hp,
+      "| P2 HP:", players[2]?.hp
+    );
+  }
+
+  if(data.type==="error"){
+    alert(data.payload);
+  }
+};
+
+// ======================
+// INPUT
+// ======================
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="a") keys.left=true;
+  if(e.key==="d") keys.right=true;
+
+  if(e.key==="w"){
+    const now = Date.now();
+    if(now - lastPunchTime > punchCooldown){
+      keys.punch=true;
+      lastPunchTime = now;
+    }
+  }
+});
+
+document.addEventListener("keyup",(e)=>{
+  if(e.key==="a") keys.left=false;
+  if(e.key==="d") keys.right=false;
+  if(e.key==="w") keys.punch=false;
+});
+
+// ======================
+// SEND INPUT
+// ======================
+function sendInput(){
+  if(!gameStarted || !myRole) return;
+
+  ws.send(JSON.stringify({
+    type:"input",
+    room:roomId,
+    payload:keys
+  }));
+}
+
+// ======================
+// DRAW GAME
+// ======================
+function draw(){
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(!players[1] || !players[2]) return;
+
+  Object.keys(players).forEach(id=>{
+
+    const p = players[id];
+
+    // BODY
+    ctx.fillStyle = id == 1 ? "blue" : "red";
+    ctx.fillRect(p.x, p.y, 80, 120);
+
+    // PUNCH ANIMATION
+    if(p.punching){
+
+      ctx.fillStyle="yellow";
+
+      const armLength = 40;
+
+      if(p.facing === 1){
+        ctx.fillRect(
+          p.x + 80,
+          p.y + 40,
+          armLength,
+          20
+        );
+      } else {
+        ctx.fillRect(
+          p.x - armLength,
+          p.y + 40,
+          armLength,
+          20
+        );
+      }
+
+      console.log("👊 Player", id, "punching");
+    }
+  });
+
+  // HP BARS
+  ctx.fillStyle="green";
+  ctx.fillRect(50,30, players[1].hp * 2, 20);
+  ctx.fillRect(550,30, players[2].hp * 2, 20);
+
+  ctx.strokeStyle="white";
+  ctx.strokeRect(50,30,200,20);
+  ctx.strokeRect(550,30,200,20);
+}
+
+// ======================
+// GAME LOOP
+// ======================
+function gameLoop(){
+  sendInput();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
