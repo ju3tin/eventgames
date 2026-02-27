@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Sprite Studio V2 - Fighting Game Editor</title>
+<style>
+body { background:#111; color:white; font-family:Arial; text-align:center; }
+canvas { border:2px solid white; margin:10px auto; display:block; cursor:crosshair; background:#222; }
+input, button, select { margin:5px; padding:5px; }
+textarea { width:95%; height:200px; margin-top:10px; background:#000; color:#0f0; }
+.controls { margin-top:10px; }
+</style>
+</head>
+<body>
+
+<h2>🔥 Sprite Studio V2 – Fighting Game Editor</h2>
+
+<input type="file" id="imageLoader">
+
+<canvas id="sheetCanvas"></canvas>
+
+<div class="controls">
+Duration(ms): <input type="number" id="duration" value="100">
+OffsetX: <input type="number" id="offsetX" value="0">
+OffsetY: <input type="number" id="offsetY" value="0">
+<button onclick="addFrame()">Add Frame</button>
+<button onclick="setAnchorMode()">Set Anchor</button>
+<button onclick="setHitboxMode()">Add Hitbox</button>
+<button onclick="setHurtboxMode()">Add Hurtbox</button>
+<button onclick="previewAnimation()">Preview</button>
+<button onclick="exportJSON()">Export JSON</button>
+</div>
+
+<h3>Preview</h3>
+<canvas id="previewCanvas" width="500" height="500"></canvas>
+<button onclick="flipPreview()">Flip</button>
+<label><input type="checkbox" id="toggleBoxes" checked> Show Boxes</label>
+
+<textarea id="output"></textarea>
+
+<script>
+
+const sheetCanvas = document.getElementById("sheetCanvas");
+const sheetCtx = sheetCanvas.getContext("2d");
+const previewCanvas = document.getElementById("previewCanvas");
+const previewCtx = previewCanvas.getContext("2d");
+
+let image = new Image();
+let frames = [];
+let selecting = false;
+let startX, startY;
+let currentRect = null;
+let mode = "frame"; // frame, anchor, hitbox, hurtbox
+let anchor = { x: 0, y: 0 };
+let flip = false;
+
+document.getElementById("imageLoader").addEventListener("change", function(e){
+    const reader = new FileReader();
+    reader.onload = function(event){
+        image.onload = function(){
+            sheetCanvas.width = image.width;
+            sheetCanvas.height = image.height;
+            sheetCtx.drawImage(image,0,0);
+        }
+        image.src = event.target.result;
+    }
+    reader.readAsDataURL(e.target.files[0]);
+});
+
+sheetCanvas.addEventListener("mousedown", e=>{
+    const rect = sheetCanvas.getBoundingClientRect();
+    startX = e.clientX - rect.left;
+    startY = e.clientY - rect.top;
+
+    if(mode === "anchor"){
+        anchor.x = startX;
+        anchor.y = startY;
+        redrawSheet();
+        drawAnchor();
+        return;
+    }
+
+    selecting = true;
+});
+
+sheetCanvas.addEventListener("mousemove", e=>{
+    if(!selecting) return;
+
+    const rect = sheetCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    redrawSheet();
+
+    const w = x - startX;
+    const h = y - startY;
+
+    sheetCtx.strokeStyle="red";
+    sheetCtx.strokeRect(startX,startY,w,h);
+
+    currentRect = { sx:startX, sy:startY, sw:w, sh:h };
+});
+
+sheetCanvas.addEventListener("mouseup", ()=>{
+    selecting=false;
+});
+
+function redrawSheet(){
+    sheetCtx.clearRect(0,0,sheetCanvas.width,sheetCanvas.height);
+    sheetCtx.drawImage(image,0,0);
+    drawAnchor();
+}
+
+function drawAnchor(){
+    sheetCtx.fillStyle="yellow";
+    sheetCtx.beginPath();
+    sheetCtx.arc(anchor.x,anchor.y,6,0,Math.PI*2);
+    sheetCtx.fill();
+}
+
+function addFrame(){
+    if(!currentRect) return alert("Select frame area first!");
+
+    frames.push({
+        ...currentRect,
+        offsetX: parseInt(document.getElementById("offsetX").value),
+        offsetY: parseInt(document.getElementById("offsetY").value),
+        duration: parseInt(document.getElementById("duration").value),
+        hitboxes: [],
+        hurtboxes: []
+    });
+
+    alert("Frame Added!");
+}
+
+function setAnchorMode(){ mode="anchor"; alert("Click to set anchor point."); }
+function setHitboxMode(){ mode="hitbox"; alert("Drag inside preview to create hitbox."); }
+function setHurtboxMode(){ mode="hurtbox"; alert("Drag inside preview to create hurtbox."); }
+
+previewCanvas.addEventListener("mousedown", e=>{
+    if(mode !== "hitbox" && mode !== "hurtbox") return;
+
+    const rect = previewCanvas.getBoundingClientRect();
+    startX = e.clientX - rect.left;
+    startY = e.clientY - rect.top;
+    selecting=true;
+});
+
+previewCanvas.addEventListener("mousemove", e=>{
+    if(!selecting) return;
+    previewFrame();
+    const rect = previewCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    previewCtx.strokeStyle = mode==="hitbox"?"red":"blue";
+    previewCtx.strokeRect(startX,startY,x-startX,y-startY);
+});
+
+previewCanvas.addEventListener("mouseup", e=>{
+    if(!selecting) return;
+    selecting=false;
+
+    const rect = previewCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const box = {
+        x:startX,
+        y:startY,
+        w:x-startX,
+        h:y-startY
+    };
+
+    if(frames.length===0) return;
+
+    if(mode==="hitbox") frames[frames.length-1].hitboxes.push(box);
+    if(mode==="hurtbox") frames[frames.length-1].hurtboxes.push(box);
+
+    previewFrame();
+});
+
+function previewAnimation(){
+    let index=0;
+    let last=0;
+
+    function animate(timestamp){
+        if(!last) last=timestamp;
+        previewFrame(index);
+
+        if(timestamp-last>frames[index].duration){
+            index=(index+1)%frames.length;
+            last=timestamp;
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+}
+
+function previewFrame(index=frames.length-1){
+    if(frames.length===0) return;
+
+    const frame=frames[index];
+    previewCtx.clearRect(0,0,500,500);
+
+    previewCtx.save();
+
+    if(flip){
+        previewCtx.scale(-1,1);
+        previewCtx.translate(-500,0);
+    }
+
+    previewCtx.drawImage(
+        image,
+        frame.sx,frame.sy,frame.sw,frame.sh,
+        250 - anchor.x + frame.offsetX,
+        250 - anchor.y + frame.offsetY,
+        frame.sw,frame.sh
+    );
+
+    if(document.getElementById("toggleBoxes").checked){
+        previewCtx.strokeStyle="red";
+        frame.hitboxes.forEach(b=>{
+            previewCtx.strokeRect(b.x,b.y,b.w,b.h);
+        });
+
+        previewCtx.strokeStyle="blue";
+        frame.hurtboxes.forEach(b=>{
+            previewCtx.strokeRect(b.x,b.y,b.w,b.h);
+        });
+    }
+
+    previewCtx.restore();
+}
+
+function flipPreview(){ flip=!flip; previewFrame(); }
+
+function exportJSON(){
+    document.getElementById("output").value =
+        JSON.stringify({
+            anchor,
+            frames
+        },null,4);
+}
+
+</script>
+</body>
+</html>
