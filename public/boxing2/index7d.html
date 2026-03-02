@@ -326,6 +326,8 @@ async function detect(){
     keypoints.forEach(k=>{
       if(k.score > 0.5) drawPoint(k.x, k.y, "yellow");
     });
+    leftWrist = keypoints.find(k=>k.name==="left_wrist");
+    rightWrist = keypoints.find(k=>k.name==="right_wrist");
   }
 
   // Update UI status
@@ -335,9 +337,33 @@ async function detect(){
   // Draw hands
   hands.forEach(hand=>{
     const color = hand.handedness==="Right" ? "lime" : "cyan";
+    const wristPoint = toCanvas(hand.keypoints[0].x, hand.keypoints[0].y);
+
+    // Connect to closest body wrist
+    let closestBodyWrist=null;
+    if(leftWrist||rightWrist){
+      const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+      if(leftWrist&&rightWrist) closestBodyWrist=dist(wristPoint,leftWrist)<dist(wristPoint,rightWrist)?leftWrist:rightWrist;
+      else closestBodyWrist = leftWrist||rightWrist;
+    }
+    if(closestBodyWrist) drawLine(closestBodyWrist.x,closestBodyWrist.y,wristPoint.x,wristPoint.y,"white");
+
+
+    
     hand.keypoints.forEach(k=>{
       const p = toCanvas(k.x,k.y);
       drawPoint(p.x,p.y,color);
+    });
+
+
+       // Fingers
+       const fingers = [[0,1,2,3,4],[0,5,6,7,8],[0,9,10,11,12],[0,13,14,15,16],[0,17,18,19,20]];
+    fingers.forEach(f=>{
+      for(let i=0;i<f.length-1;i++){
+        const p1 = toCanvas(hand.keypoints[f[i]].x,hand.keypoints[f[i]].y);
+        const p2 = toCanvas(hand.keypoints[f[i+1]].x,hand.keypoints[f[i+1]].y);
+        drawLine(p1.x,p1.y,p2.x,p2.y,color);
+      }
     });
   });
 
