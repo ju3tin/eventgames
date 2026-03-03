@@ -107,6 +107,7 @@ export default async function ProfilePage() {
                       <p className="text-2xl font-bold">{stats.totalMinutes}</p>
                       <p className="text-xs text-muted-foreground">Minutes Played</p>
                     </div>
+                    <a href="/achievements" className="text-xs text-muted-foreground">View Achievements &#8594;</a>
                   </div>
                 </CardContent>
               </Card>
