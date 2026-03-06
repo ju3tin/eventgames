@@ -7,22 +7,24 @@ export default function PoseDetector() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [detector, setDetector] = useState(null);
+  const handsRef = useRef(null);
 
-  // For FPS calculation
   const lastFrameTimeRef = useRef(performance.now());
   const fpsRef = useRef(0);
 
-  const drawPose = (poses, ctx, video) => {
-    const canvasWidth = canvasRef.current.width;
-    const canvasHeight = canvasRef.current.height;
+  // Draw poses + hands on canvas
+  const drawFrame = (poses, handResults, ctx, video) => {
+    const canvas = canvasRef.current;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
 
-    // Draw video frame first
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
 
     let totalScore = 0;
     let keypointCount = 0;
 
-    // Draw keypoints and skeleton
+    // Draw pose keypoints and skeleton
     poses.forEach((pose) => {
       pose.keypoints.forEach((kp) => {
         if (kp.score > 0.5) {
@@ -38,7 +40,6 @@ export default function PoseDetector() {
         }
       });
 
-      // Skeleton
       const adjacentPairs = window.poseDetection.util.getAdjacentPairs(
         window.poseDetection.SupportedModels.MoveNet
       );
@@ -60,101 +61,132 @@ export default function PoseDetector() {
       });
     });
 
+    // Draw hand landmarks
+    if (handResults?.multiHandLandmarks) {
+      handResults.multiHandLandmarks.forEach((landmarks) => {
+        landmarks.forEach((lm) => {
+          const x = lm.x * canvasWidth;
+          const y = lm.y * canvasHeight;
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, 2 * Math.PI);
+          ctx.fillStyle = "yellow";
+          ctx.fill();
+        });
+
+        const connections = window.Hands.HAND_CONNECTIONS;
+        connections.forEach(([i, j]) => {
+          const lm1 = landmarks[i];
+          const lm2 = landmarks[j];
+          ctx.beginPath();
+          ctx.moveTo(lm1.x * canvasWidth, lm1.y * canvasHeight);
+          ctx.lineTo(lm2.x * canvasWidth, lm2.y * canvasHeight);
+          ctx.strokeStyle = "orange";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        });
+      });
+    }
+
     // Draw FPS
     const now = performance.now();
     fpsRef.current = 1000 / (now - lastFrameTimeRef.current);
     lastFrameTimeRef.current = now;
-
     ctx.fillStyle = "white";
     ctx.font = "16px sans-serif";
     ctx.fillText(`FPS: ${fpsRef.current.toFixed(1)}`, 10, 20);
-
-    // Draw average keypoint confidence
-    const avgConfidence = keypointCount > 0 ? totalScore / keypointCount : 0;
-    ctx.fillText(`Avg Confidence: ${avgConfidence.toFixed(2)}`, 10, 40);
   };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     let animationFrameId;
-    let frameCount = 0;
 
-    async function initPoseDetector() {
-      if (!window.tf || !window.poseDetection) return;
+    async function init() {
+      if (!window.tf || !window.poseDetection || !window.Hands) return;
 
       await window.tf.setBackend("webgl");
       await window.tf.ready();
 
-      const detector = await window.poseDetection.createDetector(
+      const poseDetector = await window.poseDetection.createDetector(
         window.poseDetection.SupportedModels.MoveNet,
-        {
-          modelType: window.poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
-        }
+        { modelType: window.poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
       );
-      setDetector(detector);
+      setDetector(poseDetector);
 
-      if (navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 320, height: 240 },
-        });
-        const video = videoRef.current;
-        if (video) {
-          video.srcObject = stream;
-          video.onloadedmetadata = () => {
-            video.play();
+      const hands = new window.Hands.Hands({ 
+        maxNumHands: 2, 
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+      handsRef.current = hands;
 
-            const canvas = canvasRef.current;
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+      const video = videoRef.current;
+      if (navigator.mediaDevices.getUserMedia && video) {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video.play();
 
-            const ctx = canvas.getContext("2d");
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext("2d");
 
-            const detectLoop = async () => {
-              frameCount++;
-              if (!detector) return;
-
-              // Skip every other frame for mobile performance
-              if (frameCount % 2 === 0) {
-                const poses = await detector.estimatePoses(video);
-                drawPose(poses, ctx, video);
-              }
-
-              animationFrameId = requestAnimationFrame(detectLoop);
-            };
-            detectLoop();
+          const resizeCanvas = () => {
+            const parent = canvas.parentElement;
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
           };
-        }
+          resizeCanvas();
+          window.addEventListener("resize", resizeCanvas);
+
+          hands.onResults((results) => {
+            handsRef.current.latestResults = results;
+          });
+
+          const detectLoop = async () => {
+            if (!poseDetector) return;
+
+            const poses = await poseDetector.estimatePoses(video);
+            const handResults = handsRef.current.latestResults;
+            drawFrame(poses, handResults, ctx, video);
+
+            animationFrameId = requestAnimationFrame(detectLoop);
+          };
+          detectLoop();
+
+          const handsLoop = async () => {
+            if (hands && video) {
+              await hands.send({ image: video });
+              requestAnimationFrame(handsLoop);
+            }
+          };
+          handsLoop();
+        };
       }
+
+      return () => window.removeEventListener("resize", resizeCanvas);
     }
 
-    initPoseDetector();
+    init();
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, [detector]);
+  }, []);
 
   return (
     <div
       style={{
         position: "relative",
         width: "100%",
-        maxWidth: "640px",
+        maxWidth: "100vw",
         aspectRatio: "4/3",
         margin: "0 auto",
       }}
     >
       <Script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs" strategy="beforeInteractive" />
-      <Script
-        src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"
-        strategy="beforeInteractive"
-      />
+      <Script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection" strategy="beforeInteractive" />
       <Script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" strategy="beforeInteractive" />
 
-
-      {/* Hidden video element */}
       <video ref={videoRef} style={{ display: "none" }} playsInline autoPlay />
-
-      {/* Canvas displays video + skeleton + FPS */}
       <canvas
         ref={canvasRef}
         style={{
