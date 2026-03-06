@@ -1,32 +1,38 @@
 // motion/detectJump.ts
 
-let lastY = 0           // tracks previous ankle height
-let isJumping = false    // state to avoid multiple detections per jump
+/**
+ * Jump detection state
+ */
+let lastY: number = 0
+let isJumping: boolean = false
 
 /**
- * Detects a jump based on MoveNet pose keypoints
- * @param pose MoveNet pose object
- * @returns true if a jump is detected
+ * detectJump
+ * Checks if a jump occurred based on MoveNet pose keypoints.
+ * @param pose - MoveNet pose object
+ * @returns true if jump detected
  */
-export function detectJump(pose: any): boolean {
-  if (!pose || !pose.keypoints) return false
+export function detectJump(pose: { keypoints: Array<{ name: string; x: number; y: number; score: number }> }): boolean {
+  if (!pose?.keypoints || pose.keypoints.length === 0) return false
 
-  // get left and right ankle
-  const leftAnkle = pose.keypoints.find((k: any) => k.name === "left_ankle")
-  const rightAnkle = pose.keypoints.find((k: any) => k.name === "right_ankle")
+  const leftAnkle = pose.keypoints.find(k => k.name === "left_ankle")
+  const rightAnkle = pose.keypoints.find(k => k.name === "right_ankle")
+
   if (!leftAnkle || !rightAnkle) return false
 
   // average Y position of ankles
   const avgY = (leftAnkle.y + rightAnkle.y) / 2
 
-  // detect upward motion (jump)
-  if (!isJumping && avgY < lastY - 20) {  // threshold: 20 pixels
+  // detect upward movement exceeding threshold
+  const JUMP_THRESHOLD = 20 // pixels, adjust as needed
+
+  if (!isJumping && avgY < lastY - JUMP_THRESHOLD) {
     isJumping = true
     lastY = avgY
     return true
   }
 
-  // reset jumping state when returning to baseline
+  // reset jumping state when returning down
   if (isJumping && avgY >= lastY) {
     isJumping = false
   }
