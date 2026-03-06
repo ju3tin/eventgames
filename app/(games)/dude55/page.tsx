@@ -1,25 +1,33 @@
-"use client"
+"use client"  // make the entire page a client component
 
-import { motionEvents } from "@/events/MotionEvents"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import dynamic from "next/dynamic"
+import { detectJump } from "@/motion/detectJump"
 
-const MotionEngine = dynamic(() => import("@/components/MotionEngine"), { ssr: false })
+// Dynamically import MotionEngine to prevent server-side import errors
+const MotionEngine = dynamic(() => import("@/components/MotionEngine"), {
+  ssr: false
+})
 
+export default function JumpGame() {
+  const [score, setScore] = useState(0)
 
-export default function SquatGame(){
-
-  const [reps,setReps] = useState(0)
-
-  useEffect(()=>{
-    motionEvents.on("squat", (count:number)=> setReps(count))
-  },[])
+  function handlePose(pose: any) {
+    if (detectJump(pose)) {
+      setScore(prev => prev + 1)
+    }
+  }
 
   return (
-    <div>
-      <h1>Squat Battle</h1>
-      <p>Reps: {reps}</p>
-      <MotionEngine />
+    <div className="flex flex-col items-center justify-center h-screen p-4 bg-gray-900 text-white">
+      <h1 className="text-3xl font-bold mb-4">Jump Game</h1>
+      <p className="mb-4 text-xl">Score: {score}</p>
+      <div className="w-full max-w-md">
+        <MotionEngine onPose={handlePose} />
+      </div>
+      <p className="mt-4 text-center text-sm text-gray-400">
+        Jump in front of the camera to score points!
+      </p>
     </div>
   )
 }
