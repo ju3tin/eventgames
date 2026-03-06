@@ -1,8 +1,11 @@
 "use client"
 
-import MotionEngine from "@/components/MotionEngine"
 import { motionEvents } from "@/events/MotionEvents"
 import { useEffect, useState } from "react"
+import dynamic from "next/dynamic"
+
+const MotionEngine = dynamic(() => import("@/components/MotionEngine"), { ssr: false })
+
 
 export default function SquatGame(){
 
