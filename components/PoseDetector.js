@@ -8,29 +8,28 @@ export default function PoseDetector() {
   const canvasRef = useRef(null);
   const [detector, setDetector] = useState(null);
 
-  // Draw keypoints and skeleton
   const drawPose = (poses) => {
     const ctx = canvasRef.current.getContext("2d");
-    const video = videoRef.current;
+    if (!ctx) return;
 
-    if (!ctx || !video) return;
-
-    // Clear previous frame
-    ctx.clearRect(0, 0, video.videoWidth, video.videoHeight);
+    // Clear only canvas, video is underneath
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
     poses.forEach((pose) => {
       // Draw keypoints
-      pose.keypoints.forEach((keypoint) => {
-        if (keypoint.score > 0.5) { // only confident points
+      pose.keypoints.forEach((kp) => {
+        if (kp.score > 0.5) {
           ctx.beginPath();
-          ctx.arc(keypoint.x, keypoint.y, 5, 0, 2 * Math.PI);
+          ctx.arc(kp.x, kp.y, 5, 0, 2 * Math.PI);
           ctx.fillStyle = "red";
           ctx.fill();
         }
       });
 
-      // Draw skeleton lines
-      const adjacentPairs = window.poseDetection.util.getAdjacentPairs(window.poseDetection.SupportedModels.MoveNet);
+      // Draw skeleton
+      const adjacentPairs = window.poseDetection.util.getAdjacentPairs(
+        window.poseDetection.SupportedModels.MoveNet
+      );
       adjacentPairs.forEach(([i, j]) => {
         const kp1 = pose.keypoints[i];
         const kp2 = pose.keypoints[j];
@@ -57,28 +56,29 @@ export default function PoseDetector() {
       );
       setDetector(detector);
 
-      // Start webcam
       if (navigator.mediaDevices.getUserMedia) {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+        const video = videoRef.current;
+        if (video) {
+          video.srcObject = stream;
+          video.onloadedmetadata = () => {
+            video.play();
 
-          // Wait for video to load metadata
-          videoRef.current.onloadedmetadata = () => {
-            videoRef.current.play();
+            // Set canvas to match video resolution (pixel-perfect)
+            const canvas = canvasRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.style.width = "400px"; // CSS scaling
+            canvas.style.height = "300px"; // CSS scaling
 
-            // Set canvas size same as video
-            canvasRef.current.width = videoRef.current.videoWidth;
-            canvasRef.current.height = videoRef.current.videoHeight;
-
-            // Start detection loop
-            const detect = async () => {
+            // Detection loop
+            const detectLoop = async () => {
               if (!detector) return;
-              const poses = await detector.estimatePoses(videoRef.current);
+              const poses = await detector.estimatePoses(video);
               drawPose(poses);
-              requestAnimationFrame(detect);
+              requestAnimationFrame(detectLoop);
             };
-            detect();
+            detectLoop();
           };
         }
       }
@@ -89,9 +89,11 @@ export default function PoseDetector() {
 
   return (
     <div style={{ position: "relative", width: 400, height: 300 }}>
-      {/* CDN Scripts */}
       <Script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs" strategy="beforeInteractive" />
-      <Script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection" strategy="beforeInteractive" />
+      <Script
+        src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"
+        strategy="beforeInteractive"
+      />
 
       <video
         ref={videoRef}
@@ -105,8 +107,6 @@ export default function PoseDetector() {
           position: "absolute",
           top: 0,
           left: 0,
-          width: 400,
-          height: 300,
           pointerEvents: "none",
         }}
       />
