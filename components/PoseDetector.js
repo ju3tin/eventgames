@@ -6,13 +6,14 @@ import Script from "next/script";
 export default function PoseDetector() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
   const [detector, setDetector] = useState(null);
 
   const drawPose = (poses) => {
     const ctx = canvasRef.current.getContext("2d");
-    if (!ctx) return;
+    if (!ctx || !videoRef.current) return;
 
-    // Clear only canvas, video is underneath
+    // Clear previous frame
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
     poses.forEach((pose) => {
@@ -26,7 +27,7 @@ export default function PoseDetector() {
         }
       });
 
-      // Draw skeleton
+      // Draw skeleton lines
       const adjacentPairs = window.poseDetection.util.getAdjacentPairs(
         window.poseDetection.SupportedModels.MoveNet
       );
@@ -64,14 +65,16 @@ export default function PoseDetector() {
           video.onloadedmetadata = () => {
             video.play();
 
-            // Set canvas to match video resolution (pixel-perfect)
             const canvas = canvasRef.current;
+            // Set canvas internal resolution to video size
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            canvas.style.width = "400px"; // CSS scaling
-            canvas.style.height = "300px"; // CSS scaling
 
-            // Detection loop
+            // Scale canvas to container width
+            canvas.style.width = "100%";
+            canvas.style.height = "100%";
+
+            // Start detection loop
             const detectLoop = async () => {
               if (!detector) return;
               const poses = await detector.estimatePoses(video);
@@ -88,7 +91,16 @@ export default function PoseDetector() {
   }, [detector]);
 
   return (
-    <div style={{ position: "relative", width: 400, height: 300 }}>
+    <div
+      ref={containerRef}
+      style={{
+        position: "relative",
+        width: "100%",        // Full width of parent container
+        maxWidth: "640px",    // Optional max width
+        aspectRatio: "4/3",   // Maintain video aspect ratio
+        margin: "0 auto",
+      }}
+    >
       <Script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs" strategy="beforeInteractive" />
       <Script
         src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"
@@ -99,14 +111,22 @@ export default function PoseDetector() {
         ref={videoRef}
         autoPlay
         playsInline
-        style={{ width: 400, height: 300, border: "1px solid black" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          borderRadius: "8px",
+          objectFit: "cover",
+        }}
       />
+
       <canvas
         ref={canvasRef}
         style={{
           position: "absolute",
           top: 0,
           left: 0,
+          width: "100%",
+          height: "100%",
           pointerEvents: "none",
         }}
       />
