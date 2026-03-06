@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
+
+import PoseDetector from "@/components/PoseDetector";
 //import { detectJump } from "@/motion/detectJump"
 
 // Dynamically import MotionEngine to prevent server-side import errors
@@ -20,6 +22,7 @@ export default function JumpGame() {
        </div>
       <p className="mt-4 text-center text-sm text-gray-400">
         Jump in front of the camera to score points!
+        <PoseDetector />
       </p>
     </div>
   )
