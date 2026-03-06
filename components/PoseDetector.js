@@ -148,6 +148,8 @@ export default function PoseDetector() {
         src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"
         strategy="beforeInteractive"
       />
+      <Script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" strategy="beforeInteractive" />
+
 
       {/* Hidden video element */}
       <video ref={videoRef} style={{ display: "none" }} playsInline autoPlay />
