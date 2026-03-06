@@ -8,25 +8,20 @@ export default function PoseDetector() {
   const canvasRef = useRef(null);
   const [detector, setDetector] = useState(null);
 
-  const drawPose = (poses) => {
-    const ctx = canvasRef.current.getContext("2d");
-    const video = videoRef.current;
-    if (!ctx || !video) return;
-
+  const drawPose = (poses, ctx, video) => {
     const canvasWidth = canvasRef.current.width;
     const canvasHeight = canvasRef.current.height;
-    const videoWidth = video.videoWidth;
-    const videoHeight = video.videoHeight;
 
-    // Clear previous frame
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    // Draw the video frame first
+    ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
 
+    // Draw keypoints and skeleton
     poses.forEach((pose) => {
-      // Draw keypoints
+      // Keypoints
       pose.keypoints.forEach((kp) => {
         if (kp.score > 0.5) {
-          const x = (kp.x / videoWidth) * canvasWidth;
-          const y = (kp.y / videoHeight) * canvasHeight;
+          const x = (kp.x / video.videoWidth) * canvasWidth;
+          const y = (kp.y / video.videoHeight) * canvasHeight;
           ctx.beginPath();
           ctx.arc(x, y, 5, 0, 2 * Math.PI);
           ctx.fillStyle = "red";
@@ -34,7 +29,7 @@ export default function PoseDetector() {
         }
       });
 
-      // Draw skeleton
+      // Skeleton lines
       const adjacentPairs = window.poseDetection.util.getAdjacentPairs(
         window.poseDetection.SupportedModels.MoveNet
       );
@@ -42,10 +37,10 @@ export default function PoseDetector() {
         const kp1 = pose.keypoints[i];
         const kp2 = pose.keypoints[j];
         if (kp1.score > 0.5 && kp2.score > 0.5) {
-          const x1 = (kp1.x / videoWidth) * canvasWidth;
-          const y1 = (kp1.y / videoHeight) * canvasHeight;
-          const x2 = (kp2.x / videoWidth) * canvasWidth;
-          const y2 = (kp2.y / videoHeight) * canvasHeight;
+          const x1 = (kp1.x / video.videoWidth) * canvasWidth;
+          const y1 = (kp1.y / video.videoHeight) * canvasHeight;
+          const x2 = (kp2.x / video.videoWidth) * canvasWidth;
+          const y2 = (kp2.y / video.videoHeight) * canvasHeight;
           ctx.beginPath();
           ctx.moveTo(x1, y1);
           ctx.lineTo(x2, y2);
@@ -60,6 +55,8 @@ export default function PoseDetector() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    let animationFrameId;
+
     async function initPoseDetector() {
       if (!window.tf || !window.poseDetection) return;
 
@@ -68,6 +65,7 @@ export default function PoseDetector() {
       );
       setDetector(detector);
 
+      // Setup webcam
       if (navigator.mediaDevices.getUserMedia) {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         const video = videoRef.current;
@@ -80,12 +78,14 @@ export default function PoseDetector() {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
 
-            // Start detection loop
+            const ctx = canvas.getContext("2d");
+
+            // Detection + draw loop
             const detectLoop = async () => {
               if (!detector) return;
               const poses = await detector.estimatePoses(video);
-              drawPose(poses);
-              requestAnimationFrame(detectLoop);
+              drawPose(poses, ctx, video);
+              animationFrameId = requestAnimationFrame(detectLoop);
             };
             detectLoop();
           };
@@ -94,6 +94,8 @@ export default function PoseDetector() {
     }
 
     initPoseDetector();
+
+    return () => cancelAnimationFrame(animationFrameId);
   }, [detector]);
 
   return (
@@ -102,6 +104,7 @@ export default function PoseDetector() {
         position: "relative",
         width: "100%",
         maxWidth: "640px",
+        aspectRatio: "4/3",
         margin: "0 auto",
       }}
     >
@@ -111,26 +114,16 @@ export default function PoseDetector() {
         strategy="beforeInteractive"
       />
 
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        style={{
-          width: "100%",
-          height: "auto",
-          borderRadius: "8px",
-          objectFit: "cover",
-        }}
-      />
+      {/* Hidden video element, only used as source */}
+      <video ref={videoRef} style={{ display: "none" }} playsInline autoPlay />
+
       <canvas
         ref={canvasRef}
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
           width: "100%",
           height: "100%",
-          pointerEvents: "none",
+          borderRadius: "8px",
+          display: "block",
         }}
       />
     </div>
