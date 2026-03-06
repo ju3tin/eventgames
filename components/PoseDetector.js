@@ -8,16 +8,22 @@ export default function PoseDetector() {
   const canvasRef = useRef(null);
   const [detector, setDetector] = useState(null);
 
+  // For FPS calculation
+  const lastFrameTimeRef = useRef(performance.now());
+  const fpsRef = useRef(0);
+
   const drawPose = (poses, ctx, video) => {
     const canvasWidth = canvasRef.current.width;
     const canvasHeight = canvasRef.current.height;
 
-    // Draw the video frame first
+    // Draw video frame first
     ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+
+    let totalScore = 0;
+    let keypointCount = 0;
 
     // Draw keypoints and skeleton
     poses.forEach((pose) => {
-      // Keypoints
       pose.keypoints.forEach((kp) => {
         if (kp.score > 0.5) {
           const x = (kp.x / video.videoWidth) * canvasWidth;
@@ -26,10 +32,13 @@ export default function PoseDetector() {
           ctx.arc(x, y, 5, 0, 2 * Math.PI);
           ctx.fillStyle = "red";
           ctx.fill();
+
+          totalScore += kp.score;
+          keypointCount++;
         }
       });
 
-      // Skeleton lines
+      // Skeleton
       const adjacentPairs = window.poseDetection.util.getAdjacentPairs(
         window.poseDetection.SupportedModels.MoveNet
       );
@@ -50,24 +59,45 @@ export default function PoseDetector() {
         }
       });
     });
+
+    // Draw FPS
+    const now = performance.now();
+    fpsRef.current = 1000 / (now - lastFrameTimeRef.current);
+    lastFrameTimeRef.current = now;
+
+    ctx.fillStyle = "white";
+    ctx.font = "16px sans-serif";
+    ctx.fillText(`FPS: ${fpsRef.current.toFixed(1)}`, 10, 20);
+
+    // Draw average keypoint confidence
+    const avgConfidence = keypointCount > 0 ? totalScore / keypointCount : 0;
+    ctx.fillText(`Avg Confidence: ${avgConfidence.toFixed(2)}`, 10, 40);
   };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     let animationFrameId;
+    let frameCount = 0;
 
     async function initPoseDetector() {
       if (!window.tf || !window.poseDetection) return;
 
+      await window.tf.setBackend("webgl");
+      await window.tf.ready();
+
       const detector = await window.poseDetection.createDetector(
-        window.poseDetection.SupportedModels.MoveNet
+        window.poseDetection.SupportedModels.MoveNet,
+        {
+          modelType: window.poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+        }
       );
       setDetector(detector);
 
-      // Setup webcam
       if (navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 320, height: 240 },
+        });
         const video = videoRef.current;
         if (video) {
           video.srcObject = stream;
@@ -80,11 +110,16 @@ export default function PoseDetector() {
 
             const ctx = canvas.getContext("2d");
 
-            // Detection + draw loop
             const detectLoop = async () => {
+              frameCount++;
               if (!detector) return;
-              const poses = await detector.estimatePoses(video);
-              drawPose(poses, ctx, video);
+
+              // Skip every other frame for mobile performance
+              if (frameCount % 2 === 0) {
+                const poses = await detector.estimatePoses(video);
+                drawPose(poses, ctx, video);
+              }
+
               animationFrameId = requestAnimationFrame(detectLoop);
             };
             detectLoop();
@@ -114,9 +149,10 @@ export default function PoseDetector() {
         strategy="beforeInteractive"
       />
 
-      {/* Hidden video element, only used as source */}
+      {/* Hidden video element */}
       <video ref={videoRef} style={{ display: "none" }} playsInline autoPlay />
 
+      {/* Canvas displays video + skeleton + FPS */}
       <canvas
         ref={canvasRef}
         style={{
