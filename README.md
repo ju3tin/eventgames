@@ -5,10 +5,7 @@ No controllers. No keyboard. Just you and real-time pose detection.
 
 https://github.com/your-username/move-your-body-to-play
 
-<p align="center">
-  <img src="https://via.placeholder.com/800x450.png?text=Gameplay+Demo+(replace+with+real+screenshot)" alt="Gameplay screenshot" width="800"/>
 
-</p>
 
 
 
