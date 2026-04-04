@@ -41,7 +41,8 @@ const Close = styled.img`
 `
 
 type Props = {
-  closeModal: () => void
+  closeModal: () => void;
+  children: () => void
 }
 
 const Modal: React.FC<Props> = ({ children, closeModal }) => {
