@@ -1,3 +1,4 @@
+"use client"
 import React, { useRef, useEffect, useState } from 'react'
 import '@tensorflow/tfjs-core'
 import '@tensorflow/tfjs-converter'
