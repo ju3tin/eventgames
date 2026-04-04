@@ -50,7 +50,7 @@ const Modal: React.FC<Props> = ({ children, closeModal }) => {
     <ModalWrapper>
       <StyledModal>
         <Close src="/svgs/close.svg" alt="close" onClick={closeModal} />
-        {children}
+        {/*children*/}
       </StyledModal>
     </ModalWrapper>
   )
