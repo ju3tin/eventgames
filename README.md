@@ -11,6 +11,10 @@ https://github.com/your-username/move-your-body-to-play
 </p>
 
 
+
+https://github.com/user-attachments/assets/98d9304c-6faa-43a9-b8f6-c93fdd8e7221
+
+
 ## 🎮 What is this?
 
 A collection of fun, browser-based mini-games that use **TensorFlow.js** + **pose detection** (MoveNet or BlazePose) to track your body movements in real-time and turn them into game controls.
