@@ -7,7 +7,9 @@ https://github.com/your-username/move-your-body-to-play
 
 <p align="center">
   <img src="https://via.placeholder.com/800x450.png?text=Gameplay+Demo+(replace+with+real+screenshot)" alt="Gameplay screenshot" width="800"/>
+  https://motionplay.vercel.app/videos/web1.mp4
 </p>
+
 
 ## 🎮 What is this?
 
