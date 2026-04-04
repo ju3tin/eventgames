@@ -8,7 +8,7 @@ export const RecordedVideo = (props: { recordedChunks: BlobPart[] }) => {
   const [isVideoStarted, setIsVideoStarted] = useState<boolean>(false)
   const blob = new Blob(props.recordedChunks, {
  //   type: isSafari ? 'video/mp4' : 'video/webm',
-    'video/mp4'
+    type: 'video/mp4'
   })
   const url = URL.createObjectURL(blob)
 
