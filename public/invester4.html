@@ -9,11 +9,26 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/webslides@1.5.0/static/css/webslides.css">
 
   <style>
-    body { font-family: system-ui, sans-serif; }
+    body {
+      font-family: system-ui, sans-serif;
+    }
 
-    #marketChart {
+    /* FIXED chart container */
+    .chart-container {
+      position: relative;
       width: 100%;
-      height: 320px;
+      max-width: 600px;
+      height: 260px;
+      margin: 0 auto;
+    }
+
+    .chart-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    h2 {
+      margin-bottom: 20px;
     }
   </style>
 </head>
@@ -65,11 +80,15 @@
     </div>
   </section>
 
-  <!-- MARKET CHART -->
-  <section>
-    <div class="wrap">
+  <!-- FIXED CHART -->
+  <section class="aligncenter">
+    <div class="wrap size-60">
       <h2>📊 Market Opportunity</h2>
-      <canvas id="marketChart"></canvas>
+
+      <div class="chart-container">
+        <canvas id="marketChart"></canvas>
+      </div>
+
     </div>
   </section>
 
@@ -139,7 +158,7 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- FIXED + STYLED CHART -->
+<!-- FINAL CHART SCRIPT -->
 <script>
 function createChart() {
   const canvas = document.getElementById('marketChart');
@@ -147,8 +166,7 @@ function createChart() {
   if (canvas && !canvas.chart) {
     const ctx = canvas.getContext('2d');
 
-    // Gradient line
-    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    const gradient = ctx.createLinearGradient(0, 0, 0, 260);
     gradient.addColorStop(0, "rgba(0, 240, 255, 0.6)");
     gradient.addColorStop(1, "rgba(0, 240, 255, 0)");
 
@@ -156,44 +174,25 @@ function createChart() {
       type: 'line',
       data: {
         labels: ['2020', '2022', '2025', '2030'],
-        datasets: [
-          {
-            label: 'Gaming Market ($B)',
-            data: [160, 200, 300, 450],
-            borderColor: '#00f0ff',
-            backgroundColor: gradient,
-            fill: true,
-            tension: 0.4,
-            pointRadius: 4,
-            pointBackgroundColor: '#00f0ff'
-          }
-        ]
+        datasets: [{
+          label: 'Gaming Market ($B)',
+          data: [160, 200, 300, 450],
+          borderColor: '#00f0ff',
+          backgroundColor: gradient,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4
+        }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: {
-          duration: 1200
-        },
-        plugins: {
-          legend: {
-            labels: { color: '#333' }
-          }
-        },
-        scales: {
-          x: {
-            ticks: { color: '#666' }
-          },
-          y: {
-            ticks: { color: '#666' }
-          }
-        }
+        animation: { duration: 1200 }
       }
     });
   }
 }
 
-// Run on load + slide change
 window.addEventListener('load', createChart);
 document.addEventListener('ws:slide-change', createChart);
 </script>
