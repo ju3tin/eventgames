@@ -9,11 +9,23 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/webslides@1.5.0/static/css/webslides.css">
 
   <style>
-    body {
-      font-family: system-ui, sans-serif;
+    body { font-family: system-ui, sans-serif; }
+
+    /* Full-screen video background */
+    .background video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
-    /* FIXED chart container */
+    .background.dark::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+    }
+
+    /* Chart container fix */
     .chart-container {
       position: relative;
       width: 100%;
@@ -27,9 +39,17 @@
       height: 100% !important;
     }
 
-    h2 {
-      margin-bottom: 20px;
+    /* Webcam video styling */
+    #webcamVideo {
+      width: 100%;
+      max-width: 640px;
+      border-radius: 8px;
+      border: 3px solid #00f0ff;
+      box-shadow: 0 0 20px rgba(0,240,255,0.4);
+      margin-top: 20px;
     }
+
+    h2 { margin-bottom: 20px; }
   </style>
 </head>
 
@@ -37,7 +57,7 @@
 <main role="main">
 <article id="webslides">
 
-  <!-- HERO -->
+  <!-- 1. Hero -->
   <section class="aligncenter">
     <div class="wrap">
       <h1><strong>Turn Your Body Into a Game Controller</strong></h1>
@@ -46,7 +66,20 @@
     </div>
   </section>
 
-  <!-- PROBLEM -->
+  <!-- 2. Full-screen Gameplay Video -->
+  <section class="aligncenter">
+    <span class="background dark">
+      <video autoplay loop muted playsinline>
+        <source src="videos/demo.mp4" type="video/mp4">
+      </video>
+    </span>
+    <div class="wrap">
+      <h1><strong>See It In Action</strong></h1>
+      <p class="text-intro">No controller. Just movement.</p>
+    </div>
+  </section>
+
+  <!-- 3. Problem -->
   <section>
     <div class="wrap">
       <h2>🚨 Problem</h2>
@@ -59,7 +92,7 @@
     </div>
   </section>
 
-  <!-- SOLUTION -->
+  <!-- 4. Solution -->
   <section class="bg-primary aligncenter">
     <div class="wrap">
       <h2>💡 Solution</h2>
@@ -68,7 +101,7 @@
     </div>
   </section>
 
-  <!-- PRODUCT -->
+  <!-- 5. Product -->
   <section>
     <div class="wrap">
       <h2>🎮 Product</h2>
@@ -80,19 +113,17 @@
     </div>
   </section>
 
-  <!-- FIXED CHART -->
+  <!-- 6. Market Chart -->
   <section class="aligncenter">
     <div class="wrap size-60">
       <h2>📊 Market Opportunity</h2>
-
       <div class="chart-container">
         <canvas id="marketChart"></canvas>
       </div>
-
     </div>
   </section>
 
-  <!-- INSIGHT -->
+  <!-- 7. Market Insight -->
   <section>
     <div class="wrap">
       <h2>📈 Market Insight</h2>
@@ -105,7 +136,7 @@
     </div>
   </section>
 
-  <!-- GTM -->
+  <!-- 8. Go-To-Market -->
   <section>
     <div class="wrap">
       <h2>🚀 Go-To-Market</h2>
@@ -117,7 +148,7 @@
     </div>
   </section>
 
-  <!-- BUSINESS -->
+  <!-- 9. Business Model -->
   <section class="bg-black aligncenter">
     <div class="wrap">
       <h2>💰 Business Model</h2>
@@ -125,7 +156,7 @@
     </div>
   </section>
 
-  <!-- ADVANTAGE -->
+  <!-- 10. Competitive Advantage -->
   <section>
     <div class="wrap">
       <h2>🏆 Advantage</h2>
@@ -138,7 +169,16 @@
     </div>
   </section>
 
-  <!-- CLOSING -->
+  <!-- 11. Live Webcam Demo -->
+  <section class="aligncenter">
+    <div class="wrap">
+      <h1><strong>Try It Yourself</strong></h1>
+      <p class="text-intro">Your body is the controller</p>
+      <video id="webcamVideo" autoplay playsinline></video>
+    </div>
+  </section>
+
+  <!-- 12. Closing -->
   <section class="aligncenter bg-primary">
     <div class="wrap">
       <h1>Every camera becomes a console</h1>
@@ -158,7 +198,7 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- FINAL CHART SCRIPT -->
+<!-- Chart Script -->
 <script>
 function createChart() {
   const canvas = document.getElementById('marketChart');
@@ -195,6 +235,26 @@ function createChart() {
 
 window.addEventListener('load', createChart);
 document.addEventListener('ws:slide-change', createChart);
+</script>
+
+<!-- Webcam Script -->
+<script>
+async function startWebcam() {
+  const video = document.getElementById('webcamVideo');
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+  } catch (err) {
+    console.error("Webcam not accessible:", err);
+  }
+}
+
+document.addEventListener('ws:slide-change', (e) => {
+  const slide = e.detail.slide;
+  if (slide.querySelector('#webcamVideo')) {
+    startWebcam();
+  }
+});
 </script>
 
 </body>
