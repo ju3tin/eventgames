@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Move Your Body to Play</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- WebSlides CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/webslides@1.5.0/static/css/webslides.css">
+
+  <!-- Optional style tweaks -->
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    canvas { max-width: 100%; height: 300px; }
+  </style>
+</head>
+
+<body>
+<main role="main">
+<article id="webslides">
+
+  <!-- 1. Hero -->
+  <section class="aligncenter">
+    <div class="wrap">
+      <h1><strong>Turn Your Body Into a Game Controller</strong></h1>
+      <p class="text-intro">Move Your Body to Play</p>
+      <p>
+        A browser-based platform using AI pose detection<br>
+        to transform real-world movement into gameplay.
+      </p>
+    </div>
+  </section>
+
+  <!-- 2. Problem -->
+  <section>
+    <div class="wrap">
+      <h2>🚨 Problem</h2>
+      <ul class="flexblock features">
+        <li>Gaming is sedentary</li>
+        <li>Requires expensive hardware</li>
+        <li>Fitness apps lack engagement</li>
+        <li>Motion gaming failed due to friction</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3. Solution -->
+  <section class="bg-primary aligncenter">
+    <div class="wrap">
+      <h2>💡 The Solution</h2>
+      <p class="text-intro">A camera-first gaming platform</p>
+      <p>
+        Your body becomes the controller.<br>
+        Powered by real-time AI in the browser.
+      </p>
+    </div>
+  </section>
+
+  <!-- 4. Product -->
+  <section>
+    <div class="wrap">
+      <h2>🎮 Product</h2>
+      <ul class="flexblock gallery">
+        <li>
+          <h3>Jump Duck</h3>
+          <p>Jump and duck to avoid obstacles</p>
+        </li>
+        <li>
+          <h3>Air Drums</h3>
+          <p>Play drums in the air</p>
+        </li>
+        <li>
+          <h3>Body Pong</h3>
+          <p>Control paddle with movement</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 5. Market -->
+  <section>
+    <div class="wrap">
+      <h2>📊 Market Opportunity</h2>
+      <canvas id="marketChart"></canvas>
+    </div>
+  </section>
+
+  <!-- 6. Insight -->
+  <section>
+    <div class="wrap">
+      <h2>📈 Market Insight</h2>
+      <ul>
+        <li>Fitness + Gaming is converging</li>
+        <li>Browser gaming is rising</li>
+        <li>AI is now real-time capable</li>
+        <li>Short-form video drives virality</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 7. GTM -->
+  <section>
+    <div class="wrap">
+      <h2>🚀 Go-To-Market</h2>
+      <ol>
+        <li><strong>Phase 1:</strong> TikTok & influencer growth</li>
+        <li><strong>Phase 2:</strong> Game marketplace + SDK</li>
+        <li><strong>Phase 3:</strong> Subscriptions + B2B</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 8. Business Model -->
+  <section class="bg-black aligncenter">
+    <div class="wrap">
+      <h2>💰 Business Model</h2>
+      <p>Freemium • Subscriptions • Marketplace • B2B Licensing</p>
+    </div>
+  </section>
+
+  <!-- 9. Advantage -->
+  <section>
+    <div class="wrap">
+      <h2>🏆 Competitive Advantage</h2>
+      <ul class="flexblock features">
+        <li>No hardware required</li>
+        <li>Instant browser access</li>
+        <li>AI-powered interaction</li>
+        <li>Built for virality</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 10. Closing -->
+  <section class="aligncenter bg-primary">
+    <div class="wrap">
+      <h1>We’re turning every camera into a game console</h1>
+      <p class="text-intro">And every player into the controller.</p>
+    </div>
+  </section>
+
+</article>
+</main>
+
+<!-- WebSlides JS -->
+<script src="https://cdn.jsdelivr.net/npm/webslides@1.5.0/static/js/webslides.js"></script>
+<script>
+  window.ws = new WebSlides();
+</script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Chart Fix for WebSlides -->
+<script>
+document.addEventListener('ws:slide-change', function() {
+  const canvas = document.getElementById('marketChart');
+
+  if (canvas && !canvas.chart) {
+    const ctx = canvas.getContext('2d');
+
+    canvas.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['2020', '2022', '2025', '2030'],
+        datasets: [{
+          label: 'Gaming Market ($B)',
+          data: [160, 200, 300, 450],
+          borderColor: '#00f0ff',
+          tension: 0.3,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  }
+});
+</script>
+
+</body>
+</html>
