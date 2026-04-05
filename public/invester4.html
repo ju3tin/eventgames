@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Move Your Body to Play</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- WebSlides CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/webslides@1.5.0/static/css/webslides.css">
+
+  <style>
+    body { font-family: system-ui, sans-serif; }
+
+    #marketChart {
+      width: 100%;
+      height: 320px;
+    }
+  </style>
+</head>
+
+<body>
+<main role="main">
+<article id="webslides">
+
+  <!-- HERO -->
+  <section class="aligncenter">
+    <div class="wrap">
+      <h1><strong>Turn Your Body Into a Game Controller</strong></h1>
+      <p class="text-intro">Move Your Body to Play</p>
+      <p>AI-powered motion gaming in the browser</p>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section>
+    <div class="wrap">
+      <h2>🚨 Problem</h2>
+      <ul class="flexblock features">
+        <li>Gaming is sedentary</li>
+        <li>Requires expensive hardware</li>
+        <li>Fitness apps lack engagement</li>
+        <li>Motion gaming failed due to friction</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- SOLUTION -->
+  <section class="bg-primary aligncenter">
+    <div class="wrap">
+      <h2>💡 Solution</h2>
+      <p class="text-intro">Your body becomes the controller</p>
+      <p>Real-time AI pose detection. No installs. No hardware.</p>
+    </div>
+  </section>
+
+  <!-- PRODUCT -->
+  <section>
+    <div class="wrap">
+      <h2>🎮 Product</h2>
+      <ul class="flexblock gallery">
+        <li><h3>Jump Duck</h3><p>Jump & duck obstacles</p></li>
+        <li><h3>Air Drums</h3><p>Play drums in the air</p></li>
+        <li><h3>Body Pong</h3><p>Move to control paddle</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- MARKET CHART -->
+  <section>
+    <div class="wrap">
+      <h2>📊 Market Opportunity</h2>
+      <canvas id="marketChart"></canvas>
+    </div>
+  </section>
+
+  <!-- INSIGHT -->
+  <section>
+    <div class="wrap">
+      <h2>📈 Market Insight</h2>
+      <ul>
+        <li>Fitness + Gaming convergence</li>
+        <li>Browser gaming is rising</li>
+        <li>AI now runs in real-time</li>
+        <li>Short-form video drives growth</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- GTM -->
+  <section>
+    <div class="wrap">
+      <h2>🚀 Go-To-Market</h2>
+      <ol>
+        <li><strong>Phase 1:</strong> Viral TikTok growth</li>
+        <li><strong>Phase 2:</strong> Marketplace + SDK</li>
+        <li><strong>Phase 3:</strong> Subscriptions + B2B</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- BUSINESS -->
+  <section class="bg-black aligncenter">
+    <div class="wrap">
+      <h2>💰 Business Model</h2>
+      <p>Freemium • Subscriptions • Marketplace • B2B</p>
+    </div>
+  </section>
+
+  <!-- ADVANTAGE -->
+  <section>
+    <div class="wrap">
+      <h2>🏆 Advantage</h2>
+      <ul class="flexblock features">
+        <li>No hardware</li>
+        <li>Instant browser access</li>
+        <li>AI-powered gameplay</li>
+        <li>Built for virality</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CLOSING -->
+  <section class="aligncenter bg-primary">
+    <div class="wrap">
+      <h1>Every camera becomes a console</h1>
+      <p class="text-intro">Every player becomes the controller</p>
+    </div>
+  </section>
+
+</article>
+</main>
+
+<!-- WebSlides -->
+<script src="https://cdn.jsdelivr.net/npm/webslides@1.5.0/static/js/webslides.js"></script>
+<script>
+  window.ws = new WebSlides();
+</script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- FIXED + STYLED CHART -->
+<script>
+function createChart() {
+  const canvas = document.getElementById('marketChart');
+
+  if (canvas && !canvas.chart) {
+    const ctx = canvas.getContext('2d');
+
+    // Gradient line
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, "rgba(0, 240, 255, 0.6)");
+    gradient.addColorStop(1, "rgba(0, 240, 255, 0)");
+
+    canvas.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['2020', '2022', '2025', '2030'],
+        datasets: [
+          {
+            label: 'Gaming Market ($B)',
+            data: [160, 200, 300, 450],
+            borderColor: '#00f0ff',
+            backgroundColor: gradient,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#00f0ff'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 1200
+        },
+        plugins: {
+          legend: {
+            labels: { color: '#333' }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#666' }
+          },
+          y: {
+            ticks: { color: '#666' }
+          }
+        }
+      }
+    });
+  }
+}
+
+// Run on load + slide change
+window.addEventListener('load', createChart);
+document.addEventListener('ws:slide-change', createChart);
+</script>
+
+</body>
+</html>
