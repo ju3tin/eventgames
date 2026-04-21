@@ -14,3 +14,15 @@
 
 Operations
 - Can settle the winners funds manually, no need to automate if its work
+So from the frontend we just need:
+
+-  a unique link to send, 
+- people to send to
+- people click enter, 
+- sign/deposit, 
+- maybe give them a single test game before the real one for the first time, 
+- a real game
+- a results screen where they see their ranking.
+- click here to play again
+
+Anything I m missing?
