@@ -1,4 +1,5 @@
 // pages/page.tsx
+"use client"
 import WebcamCanvas from '@/components/WebcamCanvas';
 
 const Page = () => {
