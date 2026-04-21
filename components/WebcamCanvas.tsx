@@ -1,86 +1,126 @@
-// components/WebcamCanvas.tsx
 import { useEffect, useRef, useState } from 'react';
+import * as tf from '@tensorflow/tfjs';
+import * as poseDetection from '@tensorflow-models/pose-detection';
+import '@tensorflow/tfjs-backend-webgl';
 
 const WebcamCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [model, setModel] = useState<any>(null);
+  const [detector, setDetector] =
+    useState<poseDetection.PoseDetector | null>(null);
 
+  // Initialize TensorFlow and load MoveNet
   useEffect(() => {
-    // Load the MoveNet model from TensorFlow.js CDN
-    const loadModel = async () => {
+    const init = async () => {
       try {
-        // Wait for the MoveNet model to be loaded
-        const moveNetModel = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
-          modelType: poseDetection.movenet.ModelType.SINGLEPOSE_LIGHTNING,
-        });
-        setModel(moveNetModel);
-      } catch (error) {
-        console.error('Error loading MoveNet model:', error);
+        await tf.setBackend('webgl');
+        await tf.ready();
+
+        const model = await poseDetection.createDetector(
+          poseDetection.SupportedModels.MoveNet,
+          {
+            modelType:
+              poseDetection.movenet.ModelType.SINGLEPOSE_LIGHTNING,
+          }
+        );
+
+        setDetector(model);
+      } catch (err) {
+        console.error('Model init error:', err);
       }
     };
 
-    loadModel();
+    init();
   }, []);
 
+  // Start webcam
   useEffect(() => {
-    const startWebcam = async () => {
+    const setupCamera = async () => {
       try {
-        // Request webcam access
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480 },
+          audio: false,
+        });
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          await videoRef.current.play();
         }
       } catch (err) {
-        console.error('Error accessing webcam:', err);
+        console.error('Webcam error:', err);
       }
     };
 
-    startWebcam();
+    setupCamera();
+  }, []);
 
-    const drawToCanvas = async () => {
-      if (canvasRef.current && videoRef.current && model) {
-        const canvas = canvasRef.current;
-        const context = canvas.getContext('2d');
+  // Draw loop
+  useEffect(() => {
+    let animationId: number;
 
-        if (context) {
-          // Set canvas size to match window size
-          canvas.width = window.innerWidth;
-          canvas.height = window.innerHeight;
-
-          // Draw the video frame to the canvas
-          context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-
-          // Run MoveNet model to get pose detection
-          const poses = await model.estimatePoses(videoRef.current);
-
-          // Draw keypoints on the canvas
-          poses.forEach((pose: any) => {
-            pose.keypoints.forEach((keypoint: any) => {
-              if (keypoint.score > 0.5) {
-                context.beginPath();
-                context.arc(keypoint.position.x, keypoint.position.y, 5, 0, 2 * Math.PI);
-                context.fillStyle = 'red';
-                context.fill();
-              }
-            });
-          });
-        }
+    const render = async () => {
+      if (!canvasRef.current || !videoRef.current || !detector) {
+        animationId = requestAnimationFrame(render);
+        return;
       }
 
-      requestAnimationFrame(drawToCanvas); // Loop to continuously draw the webcam feed and update pose
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) return;
+
+      // Match canvas to video size
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Mirror the video (selfie view)
+      ctx.save();
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+      ctx.restore();
+
+      // Detect poses
+      const poses = await detector.estimatePoses(video);
+
+      // Draw keypoints
+      poses.forEach((pose) => {
+        pose.keypoints.forEach((keypoint) => {
+          if (keypoint.score && keypoint.score > 0.5) {
+            ctx.beginPath();
+            ctx.arc(
+              canvas.width - keypoint.x, // flip X to match mirrored video
+              keypoint.y,
+              5,
+              0,
+              2 * Math.PI
+            );
+            ctx.fillStyle = 'red';
+            ctx.fill();
+          }
+        });
+      });
+
+      animationId = requestAnimationFrame(render);
     };
 
-    // Start the drawing loop
-    drawToCanvas();
-  }, [model]);
+    render();
+
+    return () => cancelAnimationFrame(animationId);
+  }, [detector]);
 
   return (
-    <div style={{ position: 'relative', height: '100vh', width: '100vw' }}>
-      {/* Fullscreen video element (hidden) */}
-      <video ref={videoRef} style={{ display: 'none' }} autoPlay />
-      {/* Fullscreen canvas */}
-      <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0 }} />
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: '#000',
+      }}
+    >
+      <video ref={videoRef} style={{ display: 'none' }} />
+      <canvas ref={canvasRef} />
     </div>
   );
 };
