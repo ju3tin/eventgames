@@ -1,0 +1,16 @@
+ First test:
+
+- Justin is host, earns 5% of the jackpot as the creator
+
+- Platform earns 5% of the jackpot
+
+- Entry 0.01 Sol to play
+
+- Competition lasts a 24 hours
+
+- Live leaderboard of scores
+
+- Winner takes all once the countdown is over.
+
+Operations
+- Can settle the winners funds manually, no need to automate if its work
