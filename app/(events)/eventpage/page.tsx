@@ -2,7 +2,7 @@
 import dynamic from 'next/dynamic';
 
 const WebcamCanvas = dynamic(
-  () => import('../components/WebcamCanvas'),
+  () => import('@/components/WebcamCanvas'),
   { ssr: false }
 );
 
