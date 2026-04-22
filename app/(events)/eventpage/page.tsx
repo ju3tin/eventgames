@@ -106,7 +106,7 @@ export default function PoseNetPage() {
 
           // Draw video frame (optional - comment out if you want only skeleton)
           ctx.save();
-          ctx.scale(1, 1); // Mirror effect (common for pose demos)
+          ctx.scale(-1, 1); // Mirror effect (common for pose demos)
           ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
           ctx.restore();
 
