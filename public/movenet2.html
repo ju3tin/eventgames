@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MoveNet Fullscreen Fixed</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    video {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<video id="video" autoplay playsinline muted></video>
+<canvas id="canvas"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let detector;
+let lastPose = null;
+let lastDetectionTime = 0;
+
+const DETECTION_INTERVAL = 120; // ~8–10 FPS (good for mobile)
+
+// ----------------------
+// Resize canvas (mobile safe)
+// ----------------------
+function resizeCanvas() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+// ----------------------
+// Draw pose
+// ----------------------
+function drawKeypoints(keypoints) {
+  for (const kp of keypoints) {
+    if (kp.score > 0.4) {
+      ctx.beginPath();
+      ctx.arc(kp.x, kp.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = "red";
+      ctx.fill();
+    }
+  }
+}
+
+function drawSkeleton(keypoints) {
+  const pairs = [
+    [5,6],[5,7],[7,9],[6,8],[8,10],
+    [5,11],[6,12],[11,12],
+    [11,13],[13,15],[12,14],[14,16]
+  ];
+
+  for (const [i, j] of pairs) {
+    const a = keypoints[i];
+    const b = keypoints[j];
+
+    if (a.score > 0.4 && b.score > 0.4) {
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = "lime";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+}
+
+// ----------------------
+// Main loop
+// ----------------------
+async function render() {
+  if (video.readyState >= 2) {
+
+    const now = performance.now();
+
+    // Run AI only sometimes (important for performance)
+    if (detector && (now - lastDetectionTime > DETECTION_INTERVAL)) {
+      const poses = await detector.estimatePoses(video, {
+        flipHorizontal: true
+      });
+
+      if (poses.length > 0) {
+        lastPose = poses[0];
+      }
+
+      lastDetectionTime = now;
+    }
+
+    const cw = window.innerWidth;
+    const ch = window.innerHeight;
+
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+
+    // ----------------------
+    // COVER scaling (fixes full screen issue)
+    // ----------------------
+    const vr = vw / vh;
+    const cr = cw / ch;
+
+    let drawW, drawH, offsetX, offsetY;
+
+    if (vr > cr) {
+      drawH = ch;
+      drawW = ch * vr;
+      offsetX = (cw - drawW) / 2;
+      offsetY = 0;
+    } else {
+      drawW = cw;
+      drawH = cw / vr;
+      offsetX = 0;
+      offsetY = (ch - drawH) / 2;
+    }
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Mirror like selfie cam
+    ctx.save();
+    ctx.translate(cw, 0);
+    ctx.scale(-1, 1);
+
+    // Draw video full screen (correct aspect ratio)
+    ctx.drawImage(video, offsetX, offsetY, drawW, drawH);
+
+    // Draw pose aligned to video
+    if (lastPose) {
+
+      const scaleX = drawW / vw;
+      const scaleY = drawH / vh;
+
+      const adjusted = lastPose.keypoints.map(kp => ({
+        ...kp,
+        x: kp.x * scaleX + offsetX,
+        y: kp.y * scaleY + offsetY
+      }));
+
+      drawKeypoints(adjusted);
+      drawSkeleton(adjusted);
+    }
+
+    ctx.restore();
+  }
+
+  requestAnimationFrame(render);
+}
+
+// ----------------------
+// Start camera (mobile optimized)
+// ----------------------
+async function startCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: "user",
+      width: { ideal: 640 },
+      height: { ideal: 480 }
+    },
+    audio: false
+  });
+
+  video.srcObject = stream;
+
+  return new Promise(resolve => {
+    video.onloadedmetadata = () => {
+      video.play();
+      resolve();
+    };
+  });
+}
+
+// ----------------------
+// Init MoveNet
+// ----------------------
+async function init() {
+  resizeCanvas();
+
+  await startCamera();
+
+  await tf.ready();
+
+  detector = await poseDetection.createDetector(
+    poseDetection.SupportedModels.MoveNet,
+    {
+      modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
+    }
+  );
+
+  render();
+}
+
+// ----------------------
+// Events
+// ----------------------
+window.addEventListener("resize", resizeCanvas);
+window.addEventListener("orientationchange", () => {
+  setTimeout(resizeCanvas, 100);
+});
+
+init();
+</script>
+
+</body>
+</html>
