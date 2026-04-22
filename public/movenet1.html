@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MoveNet Mobile Optimized</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    video {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<video id="video" autoplay playsinline muted></video>
+<canvas id="canvas"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let detector;
+let lastPose = null;
+let lastDetectionTime = 0;
+
+const DETECTION_INTERVAL = 100; // ~10 FPS
+
+// Resize (lighter than full retina to save performance)
+function resizeCanvas() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2); // cap DPR
+
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+// Draw keypoints
+function drawKeypoints(keypoints) {
+  for (let kp of keypoints) {
+    if (kp.score > 0.4) {
+      ctx.beginPath();
+      ctx.arc(kp.x, kp.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = "red";
+      ctx.fill();
+    }
+  }
+}
+
+// Draw skeleton
+function drawSkeleton(keypoints) {
+  const pairs = [
+    [5,6],[5,7],[7,9],[6,8],[8,10],
+    [5,11],[6,12],[11,12],
+    [11,13],[13,15],[12,14],[14,16]
+  ];
+
+  for (let [i, j] of pairs) {
+    const a = keypoints[i];
+    const b = keypoints[j];
+
+    if (a.score > 0.4 && b.score > 0.4) {
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = "lime";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+}
+
+// Main loop
+async function render() {
+  if (video.readyState >= 2) {
+
+    const now = performance.now();
+
+    // Run AI less often
+    if (detector && (now - lastDetectionTime > DETECTION_INTERVAL)) {
+      const poses = await detector.estimatePoses(video, {
+        flipHorizontal: true
+      });
+
+      if (poses.length > 0) {
+        lastPose = poses[0];
+      }
+
+      lastDetectionTime = now;
+    }
+
+    const cw = canvas.width / (window.devicePixelRatio || 1);
+    const ch = canvas.height / (window.devicePixelRatio || 1);
+
+    // Draw video (mirrored)
+    ctx.save();
+    ctx.translate(cw, 0);
+    ctx.scale(-1, 1);
+
+    ctx.drawImage(video, 0, 0, cw, ch);
+
+    // Draw pose
+    if (lastPose) {
+      drawKeypoints(lastPose.keypoints);
+      drawSkeleton(lastPose.keypoints);
+    }
+
+    ctx.restore();
+  }
+
+  requestAnimationFrame(render);
+}
+
+// Camera (LOW resolution = faster)
+async function startCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: "user",
+      width: { ideal: 640 },
+      height: { ideal: 480 }
+    },
+    audio: false
+  });
+
+  video.srcObject = stream;
+
+  return new Promise(resolve => {
+    video.onloadedmetadata = () => {
+      video.play();
+      resolve();
+    };
+  });
+}
+
+// Init
+async function init() {
+  resizeCanvas();
+
+  await startCamera();
+
+  await tf.ready();
+
+  detector = await poseDetection.createDetector(
+    poseDetection.SupportedModels.MoveNet,
+    {
+      modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
+    }
+  );
+
+  render();
+}
+
+// Events
+window.addEventListener("resize", resizeCanvas);
+window.addEventListener("orientationchange", () => {
+  setTimeout(resizeCanvas, 100);
+});
+
+init();
+</script>
+
+</body>
+</html>
