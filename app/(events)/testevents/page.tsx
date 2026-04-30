@@ -5,10 +5,9 @@ import { Connection, PublicKey, SystemProgram } from '@solana/web3.js';
 import { AnchorProvider, Program, BN } from '@coral-xyz/anchor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import idlJson from '@/idl/test.json';
+import idl from '@/idl/test1.json';
 
-// ================= CONFIG =================
-const PROGRAM_ID = new PublicKey('7mCaQvGKDicYCH2ruxF6uD9W8QJpk4hE2cWLmimU8iuT');
+// ============== CONFIG ==============
 const DEVNET_RPC = 'https://api.devnet.solana.com';
 
 const USDC_MINT = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
@@ -19,28 +18,20 @@ const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xW
 const VAULT_AUTHORITY_SEED = Buffer.from('vault_authority');
 const ESCROW_VAULT_SEED = Buffer.from('escrow_vault');
 
-const IDL = idlJson as any;
-
-// ================= HELPERS =================
-const safeBN = (value: string | number, fallback = '0') => {
+// ============== HELPERS ==============
+const safeBN = (val: any, fallback = '0') => {
   try {
-    if (value === '' || value === undefined || value === null) {
-      return new BN(fallback);
-    }
-    return new BN(value.toString());
+    if (!val) return new BN(fallback);
+    return new BN(val.toString());
   } catch {
     return new BN(fallback);
   }
 };
 
-const getErrorMessage = (error: any) => {
-  if (error?.message) return error.message;
-  return 'Transaction failed';
-};
-
-// ================= COMPONENT =================
+// ============== COMPONENT ==============
 export default function CreateChallengePage() {
   const wallet = useWallet();
+  const connection = new Connection(DEVNET_RPC, 'confirmed');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -56,9 +47,7 @@ export default function CreateChallengePage() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<any>(null);
-
-  const connection = new Connection(DEVNET_RPC, 'confirmed');
+  const [status, setStatus] = useState<string | null>(null);
 
   const handleChange = (e: any) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -68,7 +57,7 @@ export default function CreateChallengePage() {
     e.preventDefault();
 
     if (!wallet.publicKey) {
-      setStatus({ type: 'error', message: 'Connect wallet first' });
+      setStatus('❌ Connect wallet first');
       return;
     }
 
@@ -76,41 +65,41 @@ export default function CreateChallengePage() {
     setStatus(null);
 
     try {
-      // ================= TIME =================
+      // ===== TIME =====
       const start = new Date(`${formData.startDate}T${formData.startTime}`);
       const finish = new Date(`${formData.finishDate}T${formData.finishTime}`);
 
       const startTs = Math.floor(start.getTime() / 1000);
       const finishTs = Math.floor(finish.getTime() / 1000);
 
-      // ================= PROVIDER =================
+      // ===== PROVIDER =====
       const provider = new AnchorProvider(connection, wallet as any, {
         commitment: 'confirmed',
       });
 
-      const program = new Program(IDL, PROGRAM_ID, provider);
+      const program = new Program(idl as any, provider);
 
-      // ================= PDA =================
+      // ===== PDA =====
       const [challengePda] = PublicKey.findProgramAddressSync(
         [
           Buffer.from('challenge'),
           wallet.publicKey.toBuffer(),
           Buffer.from(formData.name.trim()),
         ],
-        PROGRAM_ID
+        program.programId
       );
 
       const [vaultAuthority] = PublicKey.findProgramAddressSync(
         [VAULT_AUTHORITY_SEED, challengePda.toBuffer()],
-        PROGRAM_ID
+        program.programId
       );
 
       const [escrowVault] = PublicKey.findProgramAddressSync(
         [ESCROW_VAULT_SEED, challengePda.toBuffer()],
-        PROGRAM_ID
+        program.programId
       );
 
-      // ================= ENUM =================
+      // ===== ENUM =====
       const prizeRuleMap: any = {
         WinnerTakesAll: { winnerTakesAll: {} },
         Top3Split: { top3Split: {} },
@@ -118,7 +107,7 @@ export default function CreateChallengePage() {
         ScoreMultiplier: { scoreMultiplier: {} },
       };
 
-      // ================= TX =================
+      // ===== TX =====
       const tx = await program.methods
         .createChallenge(
           formData.name.trim(),
@@ -130,7 +119,7 @@ export default function CreateChallengePage() {
           safeBN(finishTs),
           new BN(0),
           safeBN(formData.entryFee, '1000000'),
-          Number(formData.maxParticipants || 100)
+          Number(formData.maxParticipants)
         )
         .accounts({
           challenge: challengePda,
@@ -145,23 +134,17 @@ export default function CreateChallengePage() {
         })
         .rpc();
 
-      setStatus({
-        type: 'success',
-        message: `✅ Success: ${tx}`,
-      });
-    } catch (err) {
+      setStatus(`✅ Success: ${tx}`);
+    } catch (err: any) {
       console.error(err);
-      setStatus({
-        type: 'error',
-        message: getErrorMessage(err),
-      });
+      setStatus(`❌ ${err.message || 'Transaction failed'}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-8 text-white bg-black min-h-screen">
+    <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-xl mx-auto space-y-6">
 
         <div className="flex justify-between">
@@ -171,10 +154,11 @@ export default function CreateChallengePage() {
 
         <form onSubmit={createChallenge} className="space-y-4">
 
-          <input name="name" placeholder="Name" onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" required />
-          <textarea name="description" placeholder="Description" onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" required />
+          <input name="name" placeholder="Name" required onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
 
-          <input type="number" name="gameId" placeholder="Game ID" onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
+          <textarea name="description" placeholder="Description" required onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
+
+          <input name="gameId" type="number" onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
 
           <select name="prizeRule" onChange={handleChange} className="w-full p-3 bg-gray-800 rounded">
             <option>WinnerTakesAll</option>
@@ -183,14 +167,14 @@ export default function CreateChallengePage() {
             <option>ScoreMultiplier</option>
           </select>
 
-          <input type="date" name="startDate" onChange={handleChange} required className="w-full p-3 bg-gray-800 rounded" />
-          <input type="time" name="startTime" onChange={handleChange} required className="w-full p-3 bg-gray-800 rounded" />
+          <input type="date" name="startDate" required onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
+          <input type="time" name="startTime" required onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
 
-          <input type="date" name="finishDate" onChange={handleChange} required className="w-full p-3 bg-gray-800 rounded" />
-          <input type="time" name="finishTime" onChange={handleChange} required className="w-full p-3 bg-gray-800 rounded" />
+          <input type="date" name="finishDate" required onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
+          <input type="time" name="finishTime" required onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
 
-          <input type="number" name="entryFee" placeholder="Entry Fee" onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
-          <input type="number" name="maxParticipants" placeholder="Max Participants" onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
+          <input type="number" name="entryFee" onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
+          <input type="number" name="maxParticipants" onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
 
           <button disabled={loading} className="w-full p-4 bg-blue-600 rounded">
             {loading ? 'Creating...' : 'Create Challenge'}
@@ -198,11 +182,7 @@ export default function CreateChallengePage() {
 
         </form>
 
-        {status && (
-          <div className={status.type === 'error' ? 'text-red-400' : 'text-green-400'}>
-            {status.message}
-          </div>
-        )}
+        {status && <div>{status}</div>}
 
       </div>
     </div>
