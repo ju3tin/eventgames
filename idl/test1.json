@@ -1,0 +1,354 @@
+{
+  "version": "0.1.0",
+  "name": "motionplay_challenges",
+  "address": "7mCaQvGKDicYCH2ruxF6uD9W8QJpk4hE2cWLmimU8iuT",
+  "instructions": [
+    {
+      "name": "createChallenge",
+      "accounts": [
+        {
+          "name": "challenge",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "escrowVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "creator",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
+        },
+        {
+          "name": "gameId",
+          "type": "u64"
+        },
+        {
+          "name": "prizeRule",
+          "type": {
+            "defined": "PrizeRule"
+          }
+        },
+        {
+          "name": "startDate",
+          "type": "i64"
+        },
+        {
+          "name": "startTime",
+          "type": "i64"
+        },
+        {
+          "name": "finishDate",
+          "type": "i64"
+        },
+        {
+          "name": "finishTime",
+          "type": "i64"
+        },
+        {
+          "name": "entryFee",
+          "type": "u64"
+        },
+        {
+          "name": "maxParticipants",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "joinChallenge",
+      "accounts": [
+        {
+          "name": "challenge",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "participant",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "participantTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "distributePrizes",
+      "accounts": [
+        {
+          "name": "challenge",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "platformTreasury",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "winner1",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "winner2",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "winner3",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Challenge",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "creator",
+            "type": "publicKey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "name": "gameId",
+            "type": "u64"
+          },
+          {
+            "name": "prizeRule",
+            "type": {
+              "defined": "PrizeRule"
+            }
+          },
+          {
+            "name": "startDate",
+            "type": "i64"
+          },
+          {
+            "name": "startTime",
+            "type": "i64"
+          },
+          {
+            "name": "finishDate",
+            "type": "i64"
+          },
+          {
+            "name": "finishTime",
+            "type": "i64"
+          },
+          {
+            "name": "entryFee",
+            "type": "u64"
+          },
+          {
+            "name": "maxParticipants",
+            "type": "u16"
+          },
+          {
+            "name": "currentParticipants",
+            "type": "u16"
+          },
+          {
+            "name": "platformFeeBps",
+            "type": "u16"
+          },
+          {
+            "name": "escrowBump",
+            "type": "u8"
+          },
+          {
+            "name": "vaultAuthorityBump",
+            "type": "u8"
+          },
+          {
+            "name": "createdAt",
+            "type": "i64"
+          },
+          {
+            "name": "isActive",
+            "type": "bool"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "PrizeRule",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "WinnerTakesAll"
+          },
+          {
+            "name": "Top3Split"
+          },
+          {
+            "name": "ParticipationRewards"
+          },
+          {
+            "name": "ScoreMultiplier"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidTime",
+      "msg": "Invalid start or finish time"
+    },
+    {
+      "code": 6001,
+      "name": "NameTooLong",
+      "msg": "Name is too long"
+    },
+    {
+      "code": 6002,
+      "name": "DescriptionTooLong",
+      "msg": "Description is too long"
+    },
+    {
+      "code": 6003,
+      "name": "MaxParticipantsReached",
+      "msg": "Maximum number of participants reached"
+    },
+    {
+      "code": 6004,
+      "name": "ChallengeNotActive",
+      "msg": "Challenge is not active"
+    },
+    {
+      "code": 6005,
+      "name": "Unauthorized",
+      "msg": "Only admin or creator can perform this action"
+    },
+    {
+      "code": 6006,
+      "name": "ChallengeNotEnded",
+      "msg": "Challenge has not ended yet"
+    },
+    {
+      "code": 6007,
+      "name": "ChallengeStillActive",
+      "msg": "Challenge is still active"
+    },
+    {
+      "code": 6008,
+      "name": "ComplexDistributionNotSupported",
+      "msg": "ParticipationRewards and ScoreMultiplier not supported yet"
+    }
+  ]
+}
