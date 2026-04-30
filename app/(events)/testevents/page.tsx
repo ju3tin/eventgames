@@ -7,7 +7,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import idl from '@/idl/test1.json';
 
-// ============== CONFIG ==============
+// ================= CONFIG =================
 const DEVNET_RPC = 'https://api.devnet.solana.com';
 
 const USDC_MINT = new PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
@@ -18,7 +18,7 @@ const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xW
 const VAULT_AUTHORITY_SEED = Buffer.from('vault_authority');
 const ESCROW_VAULT_SEED = Buffer.from('escrow_vault');
 
-// ============== HELPERS ==============
+// ================= HELPERS =================
 const safeBN = (val: any, fallback = '0') => {
   try {
     if (!val) return new BN(fallback);
@@ -28,7 +28,12 @@ const safeBN = (val: any, fallback = '0') => {
   }
 };
 
-// ============== COMPONENT ==============
+const getErrorMessage = (err: any) => {
+  if (err?.message) return err.message;
+  return 'Transaction failed';
+};
+
+// ================= COMPONENT =================
 export default function CreateChallengePage() {
   const wallet = useWallet();
   const connection = new Connection(DEVNET_RPC, 'confirmed');
@@ -99,12 +104,12 @@ export default function CreateChallengePage() {
         program.programId
       );
 
-      // ===== ENUM =====
+      // ===== ✅ FIXED ENUM (MATCHES RUST EXACTLY) =====
       const prizeRuleMap: any = {
-        WinnerTakesAll: { winnerTakesAll: {} },
-        Top3Split: { top3Split: {} },
-        ParticipationRewards: { participationRewards: {} },
-        ScoreMultiplier: { scoreMultiplier: {} },
+        WinnerTakesAll: { WinnerTakesAll: {} },
+        Top3Split: { Top3Split: {} },
+        ParticipationRewards: { ParticipationRewards: {} },
+        ScoreMultiplier: { ScoreMultiplier: {} },
       };
 
       // ===== TX =====
@@ -113,7 +118,7 @@ export default function CreateChallengePage() {
           formData.name.trim(),
           formData.description.trim(),
           safeBN(formData.gameId, '1'),
-          prizeRuleMap[formData.prizeRule],
+          prizeRuleMap[formData.prizeRule], // ✅ FIXED HERE
           safeBN(startTs),
           new BN(0),
           safeBN(finishTs),
@@ -137,7 +142,7 @@ export default function CreateChallengePage() {
       setStatus(`✅ Success: ${tx}`);
     } catch (err: any) {
       console.error(err);
-      setStatus(`❌ ${err.message || 'Transaction failed'}`);
+      setStatus(`❌ ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
@@ -155,7 +160,6 @@ export default function CreateChallengePage() {
         <form onSubmit={createChallenge} className="space-y-4">
 
           <input name="name" placeholder="Name" required onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
-
           <textarea name="description" placeholder="Description" required onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
 
           <input name="gameId" type="number" onChange={handleChange} className="w-full p-3 bg-gray-800 rounded" />
