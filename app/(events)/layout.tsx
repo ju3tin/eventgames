@@ -17,18 +17,9 @@ export const metadata: Metadata = {
   generator: 'v0.app',
   icons: {
     icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
+      { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
+      { url: '/icon-dark-32x32.png', media: '(prefers-color-scheme: dark)' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
     ],
     apple: '/apple-icon.png',
   },
@@ -39,15 +30,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Devnet RPC Endpoint
   const endpoint = 'https://api.devnet.solana.com';
 
-  // List of wallets you want to support
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
-      // You can add more wallets here later (Backpack, etc.)
     ],
     []
   );
@@ -55,15 +43,38 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geist.className} antialiased`}>
-        <ConnectionProvider endpoint={endpoint}>
-          <WalletProvider wallets={wallets} autoConnect>
-            <WalletModalProvider>
-              {children}
-            </WalletModalProvider>
-          </WalletProvider>
-        </ConnectionProvider>
+        {/* All Solana providers must be wrapped in 'use client' component */}
+        <ClientWalletProvider endpoint={endpoint} wallets={wallets}>
+          {children}
+        </ClientWalletProvider>
         <Analytics />
       </body>
     </html>
+  );
+}
+
+// Separate Client Component to avoid SSR issues
+'use client';
+
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+
+function ClientWalletProvider({
+  children,
+  endpoint,
+  wallets,
+}: {
+  children: React.ReactNode;
+  endpoint: string;
+  wallets: any[];
+}) {
+  return (
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>
+          {children}
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
   );
 }
