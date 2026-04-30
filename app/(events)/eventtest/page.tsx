@@ -63,7 +63,7 @@ export default function CreateChallengePage() {
         commitment: 'confirmed',
       });
 
-      const program = new Program(IDL, PROGRAM_ID, provider);
+      const program = new Program(idl, PROGRAM_ID, provider);
 
       // Create Unix timestamps
       const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
