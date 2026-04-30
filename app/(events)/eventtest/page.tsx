@@ -5,7 +5,7 @@ import { Connection, PublicKey, SystemProgram } from '@solana/web3.js';
 import { AnchorProvider, Program, BN } from '@coral-xyz/anchor';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { IDL } from '@/idl/test.json'; // Make sure your IDL is exported here
+import idl from '@/idl/test.json'; // Make sure your IDL is exported here
 
 // ================== DEVNET CONFIG ==================
 const PROGRAM_ID = new PublicKey('7mCaQvGKDicYCH2ruxF6uD9W8QJpk4hE2cWLmimU8iuT');
