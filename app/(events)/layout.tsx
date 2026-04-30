@@ -3,14 +3,6 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
-import { useMemo } from 'react';
-
-const geist = Geist({ subsets: ['latin'] });
-const geistMono = Geist_Mono({ subsets: ['latin'] });
-
 export const metadata: Metadata = {
   title: 'Motion Play - Achievements',
   description: 'Track your achievements and unlock rewards across all Motion Play games',
@@ -30,6 +22,27 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  return (
+    <html lang="en">
+      <body className={`${Geist({ subsets: ['latin'] }).className} antialiased`}>
+        <ClientWalletProviders>
+          {children}
+        </ClientWalletProviders>
+        <Analytics />
+      </body>
+    </html>
+  );
+}
+
+// ================== CLIENT WALLET PROVIDERS ==================
+'use client';
+
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { useMemo } from 'react';
+
+function ClientWalletProviders({ children }: { children: React.ReactNode }) {
   const endpoint = 'https://api.devnet.solana.com';
 
   const wallets = useMemo(
@@ -40,34 +53,6 @@ export default function RootLayout({
     []
   );
 
-  return (
-    <html lang="en">
-      <body className={`${geist.className} antialiased`}>
-        {/* All Solana providers must be wrapped in 'use client' component */}
-        <ClientWalletProvider endpoint={endpoint} wallets={wallets}>
-          {children}
-        </ClientWalletProvider>
-        <Analytics />
-      </body>
-    </html>
-  );
-}
-
-// Separate Client Component to avoid SSR issues
-'use client';
-
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-
-function ClientWalletProvider({
-  children,
-  endpoint,
-  wallets,
-}: {
-  children: React.ReactNode;
-  endpoint: string;
-  wallets: any[];
-}) {
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
