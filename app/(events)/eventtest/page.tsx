@@ -5,7 +5,9 @@ import { Connection, PublicKey, SystemProgram } from '@solana/web3.js';
 import { AnchorProvider, Program, BN } from '@coral-xyz/anchor';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import idl from '@/idl/test.json'; // Make sure your IDL is exported here
+import idlJson from '@/idl/test.json';
+
+const IDL = idlJson as any;   // or better: as const
 
 // ================== DEVNET CONFIG ==================
 const PROGRAM_ID = new PublicKey('7mCaQvGKDicYCH2ruxF6uD9W8QJpk4hE2cWLmimU8iuT');
@@ -65,7 +67,7 @@ export default function CreateChallengePage() {
     { commitment: 'confirmed' }
   );
 
-      const program = new Program(idl, PROGRAM_ID, provider);
+      const program = new Program(IDL, PROGRAM_ID, provider);
 
       // Create Unix timestamps
       const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
