@@ -22,6 +22,93 @@ const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xW
 const VAULT_AUTHORITY_SEED = Buffer.from('vault_authority');
 const ESCROW_VAULT_SEED = Buffer.from('escrow_vault');
 
+// This guard catches missing wallet/account PublicKeys before Anchor/Solana
+// dereferences the internal `_bn` field inside a minified bundle error.
+const isPublicKeyLike = (value: unknown): value is PublicKey => {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      'toBase58' in value &&
+      typeof (value as PublicKey).toBase58 === 'function' &&
+      'toBuffer' in value &&
+      typeof (value as PublicKey).toBuffer === 'function'
+  );
+};
+
+const requirePublicKey = (value: unknown, label: string): PublicKey => {
+  if (!isPublicKeyLike(value)) {
+    console.error('Missing or invalid PublicKey', {
+      label,
+      value,
+      valueType: value === null ? 'null' : typeof value,
+    });
+    throw new Error(`${label} is missing or invalid. This usually causes the minified Solana error \`undefined is not an object (evaluating 't._bn')\`.`);
+  }
+
+  return value;
+};
+
+const parseUnsignedInteger = (value: string, label: string) => {
+  const normalized = value.trim();
+
+  if (!/^\d+$/.test(normalized)) {
+    throw new Error(`${label} must be a whole number.`);
+  }
+
+  return normalized;
+};
+
+const getErrorMessage = (error: unknown) => {
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  if (error instanceof Error && error.message) {
+    const normalizedMessage = error.message.toLowerCase();
+
+    if (normalizedMessage.includes('user rejected') || normalizedMessage.includes('declined')) {
+      return 'Wallet approval was cancelled.';
+    }
+
+    return error.message;
+  }
+
+  if (error && typeof error === 'object') {
+    const errorRecord = error as {
+      message?: string;
+      errorMessage?: string;
+      logs?: string[];
+      error?: { errorMessage?: string; message?: string };
+    };
+
+    if (errorRecord.error?.errorMessage) {
+      return errorRecord.error.errorMessage;
+    }
+
+    if (errorRecord.error?.message) {
+      return errorRecord.error.message;
+    }
+
+    if (errorRecord.errorMessage) {
+      return errorRecord.errorMessage;
+    }
+
+    if (errorRecord.message) {
+      return errorRecord.message;
+    }
+
+    const failedLog = errorRecord.logs?.find((log) =>
+      /error|failed|rejected|insufficient/i.test(log)
+    );
+
+    if (failedLog) {
+      return failedLog;
+    }
+  }
+
+  return 'Transaction failed. Check console for details.';
+};
+
 export default function CreateChallengePage() {
   const wallet = useWallet();
 
@@ -47,96 +134,126 @@ export default function CreateChallengePage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-const createChallenge = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const createChallenge = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  if (!wallet.publicKey) {
-    setStatus({ type: 'error', message: 'Please connect your wallet first' });
-    return;
-  }
-
-  setLoading(true);
-  setStatus(null);
-
-  try {
-    // === DEBUG: Log all values before sending ===
-    console.log("Form Data:", formData);
-
-    const startDateTime = new Date(`${formData.startDate}T${formData.startTime || '00:00'}`);
-    const finishDateTime = new Date(`${formData.finishDate}T${formData.finishTime || '23:59'}`);
-
-    console.log("Start DateTime:", startDateTime);
-    console.log("Finish DateTime:", finishDateTime);
-
-    const startTs = Math.floor(startDateTime.getTime() / 1000);
-    const finishTs = Math.floor(finishDateTime.getTime() / 1000);
-
-    console.log("Start Timestamp:", startTs);
-    console.log("Finish Timestamp:", finishTs);
-
-    if (isNaN(startTs) || isNaN(finishTs)) {
-      throw new Error("Invalid date/time. Please select valid start and finish dates.");
+    if (!wallet.publicKey || !wallet.signTransaction) {
+      console.error('Wallet is not ready for challenge creation', {
+        connected: wallet.connected,
+        connecting: wallet.connecting,
+        disconnecting: wallet.disconnecting,
+        hasPublicKey: Boolean(wallet.publicKey),
+        hasSignTransaction: Boolean(wallet.signTransaction),
+        walletName: wallet.wallet?.adapter?.name,
+      });
+      setStatus({ type: 'error', message: 'Please connect your wallet first' });
+      return;
     }
 
-    const provider = new AnchorProvider(
-      devnetConnection,
-      wallet as any,
-      { commitment: 'confirmed' }
-    );
+    if (!formData.name.trim() || !formData.description.trim() || !formData.startDate || !formData.finishDate) {
+      setStatus({ type: 'error', message: 'Please fill all required fields' });
+      return;
+    }
 
-    const program = new Program(IDL, provider);
+    setLoading(true);
+    setStatus(null);
 
-    const [challengePda] = PublicKey.findProgramAddressSync(
-      [Buffer.from('challenge'), wallet.publicKey.toBuffer(), Buffer.from(formData.name || "Default")],
-      PROGRAM_ID
-    );
+    try {
+      const walletPublicKey = requirePublicKey(wallet.publicKey, 'wallet.publicKey');
+      const gameId = parseUnsignedInteger(formData.gameId || '1', 'Game ID');
+      const entryFee = parseUnsignedInteger(formData.entryFee || '0', 'Entry fee');
+      const maxParticipantsValue = parseUnsignedInteger(formData.maxParticipants || '100', 'Max participants');
+      const maxParticipants = Number.parseInt(maxParticipantsValue, 10);
 
-    const [vaultAuthority] = PublicKey.findProgramAddressSync([VAULT_AUTHORITY_SEED], PROGRAM_ID);
-    const [escrowVault] = PublicKey.findProgramAddressSync(
-      [ESCROW_VAULT_SEED, challengePda.toBuffer()],
-      PROGRAM_ID
-    );
+      if (maxParticipants < 1) {
+        throw new Error('Max participants must be at least 1.');
+      }
 
-    const txSignature = await program.methods
-      .createChallenge(
-        formData.name || "Untitled Challenge",
-        formData.description || "No description provided",
-        new BN(formData.gameId || "1"),
-        { [formData.prizeRule]: {} } as any,
-        new BN(startTs),
-        new BN(0),
-        new BN(finishTs),
-        new BN(0),
-        new BN(formData.entryFee || "0"),
-        parseInt(formData.maxParticipants || "10")
-      )
-      .accounts({
-        challenge: challengePda,
-        vaultAuthority,
-        escrowVault,
-        mint: USDC_MINT,
-        admin: wallet.publicKey,
-        creator: wallet.publicKey,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc();
+      if (maxParticipants > 65535) {
+        throw new Error('Max participants must be 65535 or less.');
+      }
 
-    setStatus({
-      type: 'success',
-      message: `✅ Challenge created successfully! Tx: ${txSignature}`
-    });
-  } catch (error: any) {
-    console.error("Full Error:", error);
-    setStatus({
-      type: 'error',
-      message: error.message || "Transaction failed - Check browser console (F12)"
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+      const provider = new AnchorProvider(
+        devnetConnection,
+        wallet as any,
+        { commitment: 'confirmed' }
+      );
+
+      const program = new Program(IDL, provider);
+
+      const startDateTime = new Date(`${formData.startDate}T${formData.startTime || '00:00'}`);
+      const finishDateTime = new Date(`${formData.finishDate}T${formData.finishTime || '23:59'}`);
+
+      if (Number.isNaN(startDateTime.getTime()) || Number.isNaN(finishDateTime.getTime())) {
+        throw new Error('Invalid start or finish date/time');
+      }
+
+      if (finishDateTime <= startDateTime) {
+        throw new Error('Finish time must be after start time.');
+      }
+
+      const startTs = Math.floor(startDateTime.getTime() / 1000);
+      const finishTs = Math.floor(finishDateTime.getTime() / 1000);
+
+      const [challengePda] = PublicKey.findProgramAddressSync(
+        [Buffer.from('challenge'), walletPublicKey.toBuffer(), Buffer.from(formData.name.trim())],
+        PROGRAM_ID
+      );
+
+      const [vaultAuthority] = PublicKey.findProgramAddressSync([VAULT_AUTHORITY_SEED], PROGRAM_ID);
+      const [escrowVault] = PublicKey.findProgramAddressSync(
+        [ESCROW_VAULT_SEED, challengePda.toBuffer()],
+        PROGRAM_ID
+      );
+
+      const accounts = {
+        challenge: requirePublicKey(challengePda, 'accounts.challenge'),
+        vaultAuthority: requirePublicKey(vaultAuthority, 'accounts.vaultAuthority'),
+        escrowVault: requirePublicKey(escrowVault, 'accounts.escrowVault'),
+        mint: requirePublicKey(USDC_MINT, 'accounts.mint'),
+        admin: requirePublicKey(walletPublicKey, 'accounts.admin'),
+        creator: requirePublicKey(walletPublicKey, 'accounts.creator'),
+        tokenProgram: requirePublicKey(TOKEN_PROGRAM_ID, 'accounts.tokenProgram'),
+        associatedTokenProgram: requirePublicKey(ASSOCIATED_TOKEN_PROGRAM_ID, 'accounts.associatedTokenProgram'),
+        systemProgram: requirePublicKey(SystemProgram.programId, 'accounts.systemProgram'),
+      };
+
+      console.debug('createChallenge accounts', Object.fromEntries(
+        Object.entries(accounts).map(([key, value]) => [key, value.toBase58()])
+      ));
+
+      const txSignature = await program.methods
+        .createChallenge(
+          formData.name.trim(),
+          formData.description.trim(),
+          new BN(gameId),
+          { [formData.prizeRule]: {} } as any,
+          new BN(startTs),
+          new BN(0),
+          new BN(finishTs),
+          new BN(0),
+          new BN(entryFee),
+          maxParticipants
+        )
+        .accounts(accounts)
+        .rpc();
+
+      setStatus({
+        type: 'success',
+        message: `✅ Challenge created! Tx: ${txSignature}`
+      });
+
+      console.log('Explorer:', `https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
+    } catch (error: unknown) {
+      console.error('createChallenge failed', error);
+      setStatus({
+        type: 'error',
+        message: getErrorMessage(error)
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-8">
