@@ -58,10 +58,12 @@ export default function CreateChallengePage() {
     setLoading(true);
     setStatus(null);
 
-    try {
-      const provider = new AnchorProvider(devnetConnection, wallet as any, {
-        commitment: 'confirmed',
-      });
+   try {
+  const provider = new AnchorProvider(
+    devnetConnection, 
+    wallet as any, 
+    { commitment: 'confirmed' }
+  );
 
       const program = new Program(idl, PROGRAM_ID, provider);
 
