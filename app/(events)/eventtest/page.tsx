@@ -134,7 +134,7 @@ export default function CreateChallengePage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const createChallenge = async (e: React.FormEvent) => {
+ const createChallenge = async (e: React.FormEvent) => {
   e.preventDefault();
 
   if (!wallet.publicKey) {
@@ -146,6 +146,8 @@ export default function CreateChallengePage() {
   setStatus(null);
 
   try {
+    console.log("Form Data before transaction:", formData);
+
     const startDateTime = new Date(`${formData.startDate}T${formData.startTime || '00:00'}`);
     const finishDateTime = new Date(`${formData.finishDate}T${formData.finishTime || '23:59'}`);
 
@@ -171,41 +173,41 @@ export default function CreateChallengePage() {
       PROGRAM_ID
     );
 
-    const txSignature = await program.methods
-      .createChallenge(
-        formData.name.trim(),
-        formData.description.trim(),
-        new BN(formData.gameId || "1"),           // u64
-        { [formData.prizeRule]: {} } as any,      // enum
-        new BN(startTs),                          // i64
-        new BN(0),                                // i64
-        new BN(finishTs),                         // i64
-        new BN(0),                                // i64
-        new BN(formData.entryFee || "1000000"),   // u64
-        Number(formData.maxParticipants || "100") // u16 - important: use Number, not BN
-      )
-      .accounts({
-        challenge: challengePda,
-        vaultAuthority,
-        escrowVault,
-        mint: USDC_MINT,
-        admin: wallet.publicKey,
-        creator: wallet.publicKey,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc();
+    // Simplified and explicit call
+    const txSignature = await program.methods.createChallenge(
+      formData.name.trim(),
+      formData.description.trim(),
+      new BN(formData.gameId || 1),
+      { WinnerTakesAll: {} },                    // ← Try hardcoding first
+      new BN(startTs),
+      new BN(0),
+      new BN(finishTs),
+      new BN(0),
+      new BN(formData.entryFee || 1000000),
+      Number(formData.maxParticipants || 100)
+    )
+    .accounts({
+      challenge: challengePda,
+      vaultAuthority: vaultAuthority,
+      escrowVault: escrowVault,
+      mint: USDC_MINT,
+      admin: wallet.publicKey,
+      creator: wallet.publicKey,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    })
+    .rpc();
 
     setStatus({
       type: 'success',
-      message: `✅ Challenge created successfully! Tx: ${txSignature}`
+      message: `✅ Challenge created! Tx: ${txSignature}`
     });
   } catch (error: any) {
     console.error("Create Challenge Error:", error);
     setStatus({
       type: 'error',
-      message: error.message || "Transaction failed. Check console."
+      message: error.message || "Failed to create challenge"
     });
   } finally {
     setLoading(false);
