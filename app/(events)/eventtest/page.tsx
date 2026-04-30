@@ -47,89 +47,97 @@ export default function CreateChallengePage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const createChallenge = async (e: React.FormEvent) => {
-    e.preventDefault();
+const createChallenge = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!wallet.publicKey) {
-      setStatus({ type: 'error', message: 'Please connect your wallet first' });
-      return;
+  if (!wallet.publicKey || !wallet.signTransaction) {
+    setStatus({ type: 'error', message: 'Please connect your wallet first' });
+    return;
+  }
+
+  // Basic validation
+  if (!formData.name || !formData.description || !formData.startDate || !formData.finishDate) {
+    setStatus({ type: 'error', message: 'Please fill all required fields' });
+    return;
+  }
+
+  setLoading(true);
+  setStatus(null);
+
+  try {
+    const provider = new AnchorProvider(
+      devnetConnection,
+      wallet as any,
+      { commitment: 'confirmed' }
+    );
+
+    const program = new Program(IDL, provider);
+
+    // Safe timestamp conversion
+    const startDateTime = new Date(`${formData.startDate}T${formData.startTime || '00:00'}`);
+    const finishDateTime = new Date(`${formData.finishDate}T${formData.finishTime || '23:59'}`);
+
+    if (isNaN(startDateTime.getTime()) || isNaN(finishDateTime.getTime())) {
+      throw new Error("Invalid start or finish date/time");
     }
 
-    setLoading(true);
-    setStatus(null);
+    const startTs = Math.floor(startDateTime.getTime() / 1000);
+    const finishTs = Math.floor(finishDateTime.getTime() / 1000);
 
-    try {
-      const provider = new AnchorProvider(
-        devnetConnection,
-        wallet as any,
-        { commitment: 'confirmed' }
-      );
+    // Derive PDAs
+    const [challengePda] = PublicKey.findProgramAddressSync(
+      [Buffer.from('challenge'), wallet.publicKey.toBuffer(), Buffer.from(formData.name)],
+      PROGRAM_ID
+    );
 
-      // ✅ Correct way for Anchor v0.30+
-      const program = new Program(IDL, provider);
+    const [vaultAuthority] = PublicKey.findProgramAddressSync([VAULT_AUTHORITY_SEED], PROGRAM_ID);
+    const [escrowVault] = PublicKey.findProgramAddressSync(
+      [ESCROW_VAULT_SEED, challengePda.toBuffer()],
+      PROGRAM_ID
+    );
 
-      // Create Unix timestamps
-      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
-      const finishDateTime = new Date(`${formData.finishDate}T${formData.finishTime}`);
+    const txSignature = await program.methods
+      .createChallenge(
+        formData.name,
+        formData.description,
+        new BN(formData.gameId || 1),
+        { [formData.prizeRule]: {} } as any,
+        new BN(startTs),
+        new BN(0),
+        new BN(finishTs),
+        new BN(0),
+        new BN(formData.entryFee || 0),
+        parseInt(formData.maxParticipants || '100')
+      )
+      .accounts({
+        challenge: challengePda,
+        vaultAuthority,
+        escrowVault,
+        mint: USDC_MINT,
+        admin: wallet.publicKey,
+        creator: wallet.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
 
-      const startTs = Math.floor(startDateTime.getTime() / 1000);
-      const finishTs = Math.floor(finishDateTime.getTime() / 1000);
+    setStatus({
+      type: 'success',
+      message: `✅ Challenge created! Tx: ${txSignature}`
+    });
 
-      // Derive PDAs
-      const [challengePda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('challenge'), wallet.publicKey.toBuffer(), Buffer.from(formData.name)],
-        PROGRAM_ID
-      );
-
-      const [vaultAuthority] = PublicKey.findProgramAddressSync([VAULT_AUTHORITY_SEED], PROGRAM_ID);
-
-      const [escrowVault] = PublicKey.findProgramAddressSync(
-        [ESCROW_VAULT_SEED, challengePda.toBuffer()],
-        PROGRAM_ID
-      );
-
-      const txSignature = await program.methods
-        .createChallenge(
-          formData.name,
-          formData.description,
-          new BN(formData.gameId),
-          { [formData.prizeRule]: {} } as any,
-          new BN(startTs),
-          new BN(0),
-          new BN(finishTs),
-          new BN(0),
-          new BN(formData.entryFee),
-          parseInt(formData.maxParticipants)
-        )
-        .accounts({
-          challenge: challengePda,
-          vaultAuthority: vaultAuthority,
-          escrowVault: escrowVault,
-          mint: USDC_MINT,
-          admin: wallet.publicKey,
-          creator: wallet.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
-
-      setStatus({
-        type: 'success',
-        message: `Challenge created successfully on Devnet! Tx: ${txSignature}`
-      });
-
-      console.log('✅ Transaction:', `https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
-    } catch (error: any) {
-      console.error(error);
-      setStatus({
-        type: 'error',
-        message: error.message || 'Failed to create challenge. Check console for details.'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    console.log('Explorer:', `https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
+  } catch (error: any) {
+    console.error(error);
+    setStatus({
+      type: 'error',
+      message: error.message || 'Transaction failed. Check console for details.'
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-8">
