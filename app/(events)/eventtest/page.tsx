@@ -135,125 +135,107 @@ export default function CreateChallengePage() {
   };
 
   const createChallenge = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!wallet.publicKey || !wallet.signTransaction) {
-      console.error('Wallet is not ready for challenge creation', {
-        connected: wallet.connected,
-        connecting: wallet.connecting,
-        disconnecting: wallet.disconnecting,
-        hasPublicKey: Boolean(wallet.publicKey),
-        hasSignTransaction: Boolean(wallet.signTransaction),
-        walletName: wallet.wallet?.adapter?.name,
-      });
-      setStatus({ type: 'error', message: 'Please connect your wallet first' });
-      return;
+  if (!wallet.publicKey) {
+    setStatus({ type: 'error', message: 'Please connect your wallet first' });
+    return;
+  }
+
+  setLoading(true);
+  setStatus(null);
+
+  try {
+    console.log("=== Starting createChallenge ===");
+    console.log("Raw Form Data:", formData);
+
+    // Validate required fields
+    if (!formData.name?.trim()) throw new Error("Challenge name is required");
+    if (!formData.description?.trim()) throw new Error("Description is required");
+    if (!formData.startDate) throw new Error("Start date is required");
+    if (!formData.finishDate) throw new Error("Finish date is required");
+
+    // Parse dates safely
+    const startStr = `${formData.startDate}T${formData.startTime || '00:00'}`;
+    const finishStr = `${formData.finishDate}T${formData.finishTime || '23:59'}`;
+
+    const startDateTime = new Date(startStr);
+    const finishDateTime = new Date(finishStr);
+
+    console.log("Parsed Start Date:", startDateTime.toISOString());
+    console.log("Parsed Finish Date:", finishDateTime.toISOString());
+
+    if (isNaN(startDateTime.getTime()) || isNaN(finishDateTime.getTime())) {
+      throw new Error("Invalid start or finish date/time");
     }
 
-    if (!formData.name.trim() || !formData.description.trim() || !formData.startDate || !formData.finishDate) {
-      setStatus({ type: 'error', message: 'Please fill all required fields' });
-      return;
-    }
+    const startTs = Math.floor(startDateTime.getTime() / 1000);
+    const finishTs = Math.floor(finishDateTime.getTime() / 1000);
 
-    setLoading(true);
-    setStatus(null);
+    console.log("Final Timestamps → Start:", startTs, "Finish:", finishTs);
 
-    try {
-      const walletPublicKey = requirePublicKey(wallet.publicKey, 'wallet.publicKey');
-      const gameId = parseUnsignedInteger(formData.gameId || '1', 'Game ID');
-      const entryFee = parseUnsignedInteger(formData.entryFee || '0', 'Entry fee');
-      const maxParticipantsValue = parseUnsignedInteger(formData.maxParticipants || '100', 'Max participants');
-      const maxParticipants = Number.parseInt(maxParticipantsValue, 10);
+    const provider = new AnchorProvider(
+      devnetConnection,
+      wallet as any,
+      { commitment: 'confirmed' }
+    );
 
-      if (maxParticipants < 1) {
-        throw new Error('Max participants must be at least 1.');
-      }
+    const program = new Program(IDL, provider);
 
-      if (maxParticipants > 65535) {
-        throw new Error('Max participants must be 65535 or less.');
-      }
+    const [challengePda] = PublicKey.findProgramAddressSync(
+      [Buffer.from('challenge'), wallet.publicKey.toBuffer(), Buffer.from(formData.name.trim())],
+      PROGRAM_ID
+    );
 
-      const provider = new AnchorProvider(
-        devnetConnection,
-        wallet as any,
-        { commitment: 'confirmed' }
-      );
+    const [vaultAuthority] = PublicKey.findProgramAddressSync([VAULT_AUTHORITY_SEED], PROGRAM_ID);
+    const [escrowVault] = PublicKey.findProgramAddressSync(
+      [ESCROW_VAULT_SEED, challengePda.toBuffer()],
+      PROGRAM_ID
+    );
 
-      const program = new Program(IDL, provider);
+    console.log("PDAs derived successfully");
 
-      const startDateTime = new Date(`${formData.startDate}T${formData.startTime || '00:00'}`);
-      const finishDateTime = new Date(`${formData.finishDate}T${formData.finishTime || '23:59'}`);
+    // Call instruction with explicit safe values
+    const txSignature = await program.methods
+      .createChallenge(
+        formData.name.trim(),
+        formData.description.trim(),
+        new BN(formData.gameId || "1"),
+        { [formData.prizeRule]: {} } as any,
+        new BN(startTs),           // ← This was likely the culprit
+        new BN(0),
+        new BN(finishTs),          // ← This was likely the culprit
+        new BN(0),
+        new BN(formData.entryFee || "1000000"),
+        parseInt(formData.maxParticipants || "100", 10)
+      )
+      .accounts({
+        challenge: challengePda,
+        vaultAuthority,
+        escrowVault,
+        mint: USDC_MINT,
+        admin: wallet.publicKey,
+        creator: wallet.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
 
-      if (Number.isNaN(startDateTime.getTime()) || Number.isNaN(finishDateTime.getTime())) {
-        throw new Error('Invalid start or finish date/time');
-      }
-
-      if (finishDateTime <= startDateTime) {
-        throw new Error('Finish time must be after start time.');
-      }
-
-      const startTs = Math.floor(startDateTime.getTime() / 1000);
-      const finishTs = Math.floor(finishDateTime.getTime() / 1000);
-
-      const [challengePda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('challenge'), walletPublicKey.toBuffer(), Buffer.from(formData.name.trim())],
-        PROGRAM_ID
-      );
-
-      const [vaultAuthority] = PublicKey.findProgramAddressSync([VAULT_AUTHORITY_SEED], PROGRAM_ID);
-      const [escrowVault] = PublicKey.findProgramAddressSync(
-        [ESCROW_VAULT_SEED, challengePda.toBuffer()],
-        PROGRAM_ID
-      );
-
-      const accounts = {
-        challenge: requirePublicKey(challengePda, 'accounts.challenge'),
-        vaultAuthority: requirePublicKey(vaultAuthority, 'accounts.vaultAuthority'),
-        escrowVault: requirePublicKey(escrowVault, 'accounts.escrowVault'),
-        mint: requirePublicKey(USDC_MINT, 'accounts.mint'),
-        admin: requirePublicKey(walletPublicKey, 'accounts.admin'),
-        creator: requirePublicKey(walletPublicKey, 'accounts.creator'),
-        tokenProgram: requirePublicKey(TOKEN_PROGRAM_ID, 'accounts.tokenProgram'),
-        associatedTokenProgram: requirePublicKey(ASSOCIATED_TOKEN_PROGRAM_ID, 'accounts.associatedTokenProgram'),
-        systemProgram: requirePublicKey(SystemProgram.programId, 'accounts.systemProgram'),
-      };
-
-      console.debug('createChallenge accounts', Object.fromEntries(
-        Object.entries(accounts).map(([key, value]) => [key, value.toBase58()])
-      ));
-
-      const txSignature = await program.methods
-        .createChallenge(
-          formData.name.trim(),
-          formData.description.trim(),
-          new BN(gameId),
-          { [formData.prizeRule]: {} } as any,
-          new BN(startTs),
-          new BN(0),
-          new BN(finishTs),
-          new BN(0),
-          new BN(entryFee),
-          maxParticipants
-        )
-        .accounts(accounts)
-        .rpc();
-
-      setStatus({
-        type: 'success',
-        message: `✅ Challenge created! Tx: ${txSignature}`
-      });
-
-      console.log('Explorer:', `https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
-    } catch (error: unknown) {
-      console.error('createChallenge failed', error);
-      setStatus({
-        type: 'error',
-        message: getErrorMessage(error)
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    setStatus({
+      type: 'success',
+      message: `✅ Challenge created! Tx: ${txSignature}`
+    });
+  } catch (error: any) {
+    console.error("=== FULL ERROR ===", error);
+    setStatus({
+      type: 'error',
+      message: error.message || "Failed to create challenge. Check console (F12)"
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-8">
