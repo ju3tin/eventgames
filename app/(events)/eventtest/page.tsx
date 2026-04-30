@@ -50,14 +50,8 @@ export default function CreateChallengePage() {
 const createChallenge = async (e: React.FormEvent) => {
   e.preventDefault();
 
-  if (!wallet.publicKey || !wallet.signTransaction) {
+  if (!wallet.publicKey) {
     setStatus({ type: 'error', message: 'Please connect your wallet first' });
-    return;
-  }
-
-  // Basic validation
-  if (!formData.name || !formData.description || !formData.startDate || !formData.finishDate) {
-    setStatus({ type: 'error', message: 'Please fill all required fields' });
     return;
   }
 
@@ -65,6 +59,25 @@ const createChallenge = async (e: React.FormEvent) => {
   setStatus(null);
 
   try {
+    // === DEBUG: Log all values before sending ===
+    console.log("Form Data:", formData);
+
+    const startDateTime = new Date(`${formData.startDate}T${formData.startTime || '00:00'}`);
+    const finishDateTime = new Date(`${formData.finishDate}T${formData.finishTime || '23:59'}`);
+
+    console.log("Start DateTime:", startDateTime);
+    console.log("Finish DateTime:", finishDateTime);
+
+    const startTs = Math.floor(startDateTime.getTime() / 1000);
+    const finishTs = Math.floor(finishDateTime.getTime() / 1000);
+
+    console.log("Start Timestamp:", startTs);
+    console.log("Finish Timestamp:", finishTs);
+
+    if (isNaN(startTs) || isNaN(finishTs)) {
+      throw new Error("Invalid date/time. Please select valid start and finish dates.");
+    }
+
     const provider = new AnchorProvider(
       devnetConnection,
       wallet as any,
@@ -73,20 +86,8 @@ const createChallenge = async (e: React.FormEvent) => {
 
     const program = new Program(IDL, provider);
 
-    // Safe timestamp conversion
-    const startDateTime = new Date(`${formData.startDate}T${formData.startTime || '00:00'}`);
-    const finishDateTime = new Date(`${formData.finishDate}T${formData.finishTime || '23:59'}`);
-
-    if (isNaN(startDateTime.getTime()) || isNaN(finishDateTime.getTime())) {
-      throw new Error("Invalid start or finish date/time");
-    }
-
-    const startTs = Math.floor(startDateTime.getTime() / 1000);
-    const finishTs = Math.floor(finishDateTime.getTime() / 1000);
-
-    // Derive PDAs
     const [challengePda] = PublicKey.findProgramAddressSync(
-      [Buffer.from('challenge'), wallet.publicKey.toBuffer(), Buffer.from(formData.name)],
+      [Buffer.from('challenge'), wallet.publicKey.toBuffer(), Buffer.from(formData.name || "Default")],
       PROGRAM_ID
     );
 
@@ -98,16 +99,16 @@ const createChallenge = async (e: React.FormEvent) => {
 
     const txSignature = await program.methods
       .createChallenge(
-        formData.name,
-        formData.description,
-        new BN(formData.gameId || 1),
+        formData.name || "Untitled Challenge",
+        formData.description || "No description provided",
+        new BN(formData.gameId || "1"),
         { [formData.prizeRule]: {} } as any,
         new BN(startTs),
         new BN(0),
         new BN(finishTs),
         new BN(0),
-        new BN(formData.entryFee || 0),
-        parseInt(formData.maxParticipants || '100')
+        new BN(formData.entryFee || "0"),
+        parseInt(formData.maxParticipants || "10")
       )
       .accounts({
         challenge: challengePda,
@@ -124,15 +125,13 @@ const createChallenge = async (e: React.FormEvent) => {
 
     setStatus({
       type: 'success',
-      message: `✅ Challenge created! Tx: ${txSignature}`
+      message: `✅ Challenge created successfully! Tx: ${txSignature}`
     });
-
-    console.log('Explorer:', `https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
   } catch (error: any) {
-    console.error(error);
+    console.error("Full Error:", error);
     setStatus({
       type: 'error',
-      message: error.message || 'Transaction failed. Check console for details.'
+      message: error.message || "Transaction failed - Check browser console (F12)"
     });
   } finally {
     setLoading(false);
