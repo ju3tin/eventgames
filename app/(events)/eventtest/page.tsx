@@ -146,33 +146,11 @@ export default function CreateChallengePage() {
   setStatus(null);
 
   try {
-    console.log("=== Starting createChallenge ===");
-    console.log("Raw Form Data:", formData);
-
-    // Validate required fields
-    if (!formData.name?.trim()) throw new Error("Challenge name is required");
-    if (!formData.description?.trim()) throw new Error("Description is required");
-    if (!formData.startDate) throw new Error("Start date is required");
-    if (!formData.finishDate) throw new Error("Finish date is required");
-
-    // Parse dates safely
-    const startStr = `${formData.startDate}T${formData.startTime || '00:00'}`;
-    const finishStr = `${formData.finishDate}T${formData.finishTime || '23:59'}`;
-
-    const startDateTime = new Date(startStr);
-    const finishDateTime = new Date(finishStr);
-
-    console.log("Parsed Start Date:", startDateTime.toISOString());
-    console.log("Parsed Finish Date:", finishDateTime.toISOString());
-
-    if (isNaN(startDateTime.getTime()) || isNaN(finishDateTime.getTime())) {
-      throw new Error("Invalid start or finish date/time");
-    }
+    const startDateTime = new Date(`${formData.startDate}T${formData.startTime || '00:00'}`);
+    const finishDateTime = new Date(`${formData.finishDate}T${formData.finishTime || '23:59'}`);
 
     const startTs = Math.floor(startDateTime.getTime() / 1000);
     const finishTs = Math.floor(finishDateTime.getTime() / 1000);
-
-    console.log("Final Timestamps → Start:", startTs, "Finish:", finishTs);
 
     const provider = new AnchorProvider(
       devnetConnection,
@@ -193,21 +171,18 @@ export default function CreateChallengePage() {
       PROGRAM_ID
     );
 
-    console.log("PDAs derived successfully");
-
-    // Call instruction with explicit safe values
     const txSignature = await program.methods
       .createChallenge(
         formData.name.trim(),
         formData.description.trim(),
-        new BN(formData.gameId || "1"),
-        { [formData.prizeRule]: {} } as any,
-        new BN(startTs),           // ← This was likely the culprit
-        new BN(0),
-        new BN(finishTs),          // ← This was likely the culprit
-        new BN(0),
-        new BN(formData.entryFee || "1000000"),
-        parseInt(formData.maxParticipants || "100", 10)
+        new BN(formData.gameId || "1"),           // u64
+        { [formData.prizeRule]: {} } as any,      // enum
+        new BN(startTs),                          // i64
+        new BN(0),                                // i64
+        new BN(finishTs),                         // i64
+        new BN(0),                                // i64
+        new BN(formData.entryFee || "1000000"),   // u64
+        Number(formData.maxParticipants || "100") // u16 - important: use Number, not BN
       )
       .accounts({
         challenge: challengePda,
@@ -224,13 +199,13 @@ export default function CreateChallengePage() {
 
     setStatus({
       type: 'success',
-      message: `✅ Challenge created! Tx: ${txSignature}`
+      message: `✅ Challenge created successfully! Tx: ${txSignature}`
     });
   } catch (error: any) {
-    console.error("=== FULL ERROR ===", error);
+    console.error("Create Challenge Error:", error);
     setStatus({
       type: 'error',
-      message: error.message || "Failed to create challenge. Check console (F12)"
+      message: error.message || "Transaction failed. Check console."
     });
   } finally {
     setLoading(false);
