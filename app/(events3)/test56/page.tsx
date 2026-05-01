@@ -16,59 +16,87 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
 
   // =========================
-  // PROGRAM ID (YOUR DEPLOYED PROGRAM)
+  // PROGRAM ID
   // =========================
-  const programId = new PublicKey(
-    "DNjSQoQ7u9Zrfot4uaATGbszQyF8HhRpbYGBy11eMQ7t"
+  const programId = useMemo(
+    () =>
+      new PublicKey(
+        "DNjSQoQ7u9Zrfot4uaATGbszQyF8HhRpbYGBy11eMQ7t"
+      ),
+    []
   );
 
   // =========================
-  // YOUR REAL MINT
+  // MINT
   // =========================
-  const mint = new PublicKey(
-    "5vQnjwhBHex9rVJ4KbUkMuz3TkfPsYZB1JQFrZn7yJpb"
+  const mint = useMemo(
+    () =>
+      new PublicKey(
+        "5vQnjwhBHex9rVJ4KbUkMuz3TkfPsYZB1JQFrZn7yJpb"
+      ),
+    []
   );
 
   // =========================
-  // IDL (PASTE FULL JSON HERE)
+  // IDL
   // =========================
   const IDL: any = {
-    /* PASTE YOUR IDL HERE */
+    /* PASTE IDL HERE */
   };
 
   // =========================
-  // PROVIDER + PROGRAM (FIXED TYPE SAFE)
+  // SAFE PROVIDER (FIXED TYPE ISSUE ROOT CAUSE)
   // =========================
-  const provider = useMemo(() => {
-    if (!wallet || !connection) return null;
+  const provider = useMemo<anchor.AnchorProvider | null>(() => {
+    if (!wallet.publicKey) return null;
 
     return new anchor.AnchorProvider(
       connection,
       wallet as unknown as anchor.Wallet,
       { commitment: "processed" }
     );
-  }, [wallet, connection]);
+  }, [wallet.publicKey, connection]);
 
+  // =========================
+  // SAFE PROGRAM (IMPORTANT FIX)
+  // =========================
   const program = useMemo(() => {
     if (!provider) return null;
-    return new anchor.Program(IDL as anchor.Idl, programId, provider);
-  }, [provider]);
+
+    return new anchor.Program(
+      IDL as anchor.Idl,
+      programId,
+      provider
+    );
+  }, [provider, programId]);
 
   // =========================
   // CONSTANTS
   // =========================
-  const randomString = "abc12345"; // MUST be 8 chars
+  const randomString = "abc12345";
 
-  const admin = wallet.publicKey!;
-  const creator = wallet.publicKey!;
+  const admin = wallet.publicKey;
+  const creator = wallet.publicKey;
 
   // =========================
-  // PDAs (MATCH YOUR RUST PROGRAM)
+  // GUARD (IMPORTANT FOR NEXT.JS)
+  // =========================
+  if (!wallet.publicKey) {
+    return (
+      <div style={{ padding: 40 }}>
+        <WalletMultiButton />
+        <p>Please connect wallet</p>
+      </div>
+    );
+  }
+
+  // =========================
+  // PDAs
   // =========================
   const [challengePda] = PublicKey.findProgramAddressSync(
     [
       Buffer.from("challenge"),
-      admin.toBuffer(),
+      admin!.toBuffer(),
       Buffer.from(randomString),
     ],
     programId
@@ -86,23 +114,22 @@ export default function Page() {
   );
 
   // =========================
-  // CREATE CHALLENGE
+  // CREATE
   // =========================
   const createChallenge = async () => {
     try {
-      if (!program || !wallet.publicKey) return;
-
+      if (!program) return;
       setLoading(true);
 
       await program.methods
         .createChallenge(
           "Test Challenge",
-          "First working challenge",
+          "Working version",
           new anchor.BN(1),
           randomString,
           new anchor.BN(Math.floor(Date.now() / 1000)),
           new anchor.BN(Math.floor(Date.now() / 1000) + 3600),
-          new anchor.BN(1_000_000_000), // 1 token (9 decimals)
+          new anchor.BN(1_000_000_000),
           10
         )
         .accounts({
@@ -119,7 +146,7 @@ export default function Page() {
         })
         .rpc();
 
-      alert("Challenge created");
+      alert("Created");
     } catch (e) {
       console.error(e);
       alert("Create failed");
@@ -129,12 +156,11 @@ export default function Page() {
   };
 
   // =========================
-  // JOIN CHALLENGE
+  // JOIN
   // =========================
   const joinChallenge = async () => {
     try {
-      if (!program || !wallet.publicKey) return;
-
+      if (!program) return;
       setLoading(true);
 
       const participantTokenAccount = getAssociatedTokenAddressSync(
@@ -155,7 +181,7 @@ export default function Page() {
         })
         .rpc();
 
-      alert("Joined challenge");
+      alert("Joined");
     } catch (e) {
       console.error(e);
       alert("Join failed");
@@ -165,12 +191,11 @@ export default function Page() {
   };
 
   // =========================
-  // DISTRIBUTE PRIZES
+  // DISTRIBUTE
   // =========================
   const distributePrizes = async () => {
     try {
-      if (!program || !wallet.publicKey) return;
-
+      if (!program) return;
       setLoading(true);
 
       const platformTreasury = getAssociatedTokenAddressSync(
@@ -197,7 +222,7 @@ export default function Page() {
         })
         .rpc();
 
-      alert("Prizes distributed");
+      alert("Distributed");
     } catch (e) {
       console.error(e);
       alert("Distribute failed");
@@ -206,20 +231,17 @@ export default function Page() {
     }
   };
 
-  // =========================
-  // UI
-  // =========================
   return (
     <div style={{ padding: 40 }}>
       <WalletMultiButton />
 
       <div style={{ marginTop: 20, display: "flex", gap: 10 }}>
         <button onClick={createChallenge} disabled={loading}>
-          Create Challenge
+          Create
         </button>
 
         <button onClick={joinChallenge} disabled={loading}>
-          Join Challenge
+          Join
         </button>
 
         <button onClick={distributePrizes} disabled={loading}>
