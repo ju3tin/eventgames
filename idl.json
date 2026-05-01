@@ -1,0 +1,299 @@
+{
+  "version": "0.1.0",
+  "name": "motionplay_challenges",
+  "instructions": [
+    {
+      "name": "createChallenge",
+      "accounts": [
+        {
+          "name": "challenge",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "escrowVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "creator",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
+        },
+        {
+          "name": "gameId",
+          "type": "u64"
+        },
+        {
+          "name": "randomString",
+          "type": "string"
+        },
+        {
+          "name": "startTime",
+          "type": "i64"
+        },
+        {
+          "name": "finishTime",
+          "type": "i64"
+        },
+        {
+          "name": "entryFee",
+          "type": "u64"
+        },
+        {
+          "name": "maxParticipants",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "joinChallenge",
+      "accounts": [
+        {
+          "name": "challenge",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "participant",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "participantTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "distributePrizes",
+      "accounts": [
+        {
+          "name": "challenge",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "platformTreasury",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "winner1",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Challenge",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "creator",
+            "type": "publicKey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "name": "gameId",
+            "type": "u64"
+          },
+          {
+            "name": "randomString",
+            "type": "string"
+          },
+          {
+            "name": "startTime",
+            "type": "i64"
+          },
+          {
+            "name": "finishTime",
+            "type": "i64"
+          },
+          {
+            "name": "entryFee",
+            "type": "u64"
+          },
+          {
+            "name": "maxParticipants",
+            "type": "u16"
+          },
+          {
+            "name": "currentParticipants",
+            "type": "u16"
+          },
+          {
+            "name": "platformFeeBps",
+            "type": "u16"
+          },
+          {
+            "name": "vaultAuthorityBump",
+            "type": "u8"
+          },
+          {
+            "name": "createdAt",
+            "type": "i64"
+          },
+          {
+            "name": "isActive",
+            "type": "bool"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidTime",
+      "msg": "Invalid start or finish time"
+    },
+    {
+      "code": 6001,
+      "name": "NameTooLong",
+      "msg": "Name is too long"
+    },
+    {
+      "code": 6002,
+      "name": "DescriptionTooLong",
+      "msg": "Description is too long"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidRandomString",
+      "msg": "Random string must be exactly 8 characters"
+    },
+    {
+      "code": 6004,
+      "name": "MaxParticipantsReached",
+      "msg": "Maximum number of participants reached"
+    },
+    {
+      "code": 6005,
+      "name": "ChallengeNotActive",
+      "msg": "Challenge is not active"
+    },
+    {
+      "code": 6006,
+      "name": "Unauthorized",
+      "msg": "Only admin or creator can perform this action"
+    },
+    {
+      "code": 6007,
+      "name": "ChallengeNotEnded",
+      "msg": "Challenge has not ended yet"
+    },
+    {
+      "code": 6008,
+      "name": "ChallengeStillActive",
+      "msg": "Challenge is still active"
+    },
+    {
+      "code": 6009,
+      "name": "ArithmeticOverflow",
+      "msg": "Arithmetic overflow"
+    }
+  ]
+}
