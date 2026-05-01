@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
   "name": "motionplay_challenges",
-  "address": "7mCaQvGKDicYCH2ruxF6uD9W8QJpk4hE2cWLmimU8iuT",
+  "address": "DNjSQoQ7u9Zrfot4uaATGbszQyF8HhRpbYGBy11eMQ7t",
   "instructions": [
     {
       "name": "createChallenge",
