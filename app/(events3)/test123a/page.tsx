@@ -1,251 +1,120 @@
 'use client';
 
-import { useState } from 'react';
-import { Connection, PublicKey, SystemProgram } from '@solana/web3.js';
-import { AnchorProvider, Program, BN } from '@coral-xyz/anchor';
+import React, { useState } from 'react';
+import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
+import { AnchorProvider, Program } from '@coral-xyz/anchor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import idlJson from '@/idl2.json'; // <- update path to your IDL
+import { IDL } from '@/idl1';   // Adjust import path if needed
 
-// ================== IDL CONFIG ==================
-const IDL = idlJson as any;
+const PROGRAM_ID = new PublicKey("2HK29Di58nED836JN14U1bPsxW4q52FLW5knoJEDmYQJ");
 
-// ================== DEVNET CONFIG ==================
-const PROGRAM_ID = new PublicKey('2HK29Di58nED836JN14U1bPsxW4q52FLW5knoJEDmYQJ');
-const DEVNET_RPC = 'https://api.devnet.solana.com';
-
-const VAULT_SEED = Buffer.from('vault');
-const COMPETITION_SEED = Buffer.from('competition');
-
-export default function CreateCompetitionPage() {
+export default function CompetitionPage() {
   const wallet = useWallet();
+  const [competitionPubkey, setCompetitionPubkey] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
 
-  const [formData, setFormData] = useState({
-    username: '',
-    description: '',
-    gameId: '1',
-    startDate: '',
-    startTime: '',
-    finishDate: '',
-    finishTime: '',
-    entryFee: '100000000',
-    maxParticipants: '100',
-  });
+  const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const getProvider = () => {
+    if (!wallet.publicKey || !wallet.signTransaction) {
+      throw new Error("Please connect your wallet");
+    }
 
-  const connection = new Connection(DEVNET_RPC, 'confirmed');
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    return new AnchorProvider(
+      connection,
+      wallet as any,
+      { commitment: "confirmed" }
+    );
   };
 
-  const createCompetition = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const createCompetition = async () => {
     if (!wallet.publicKey) {
-      setStatus({ type: 'error', message: 'Please connect your wallet first' });
+      alert("Please connect your wallet first!");
       return;
     }
 
-    setLoading(true);
-    setStatus(null);
-
     try {
-      const startTs = Math.floor(new Date(`${formData.startDate}T${formData.startTime || '00:00'}`).getTime() / 1000);
-      const finishTs = Math.floor(new Date(`${formData.finishDate}T${formData.finishTime || '23:59'}`).getTime() / 1000);
+      const provider = getProvider();
 
-      const provider = new AnchorProvider(connection, wallet as any, { commitment: 'confirmed' });
-      const program = new Program(IDL, PROGRAM_ID, provider);
+      // ✅ Explicit typing to fix Vercel/Next.js type confusion
+      const program = new Program(
+        IDL as any, 
+        PROGRAM_ID, 
+        provider
+      ) as Program<any>;
 
-      // Derive PDAs
+      const username = "Justin";
+      const description = "Test Competition on Devnet";
+      const gameId = 123;
+      const randomString = `motion_${Date.now()}`;
+      const startTime = Math.floor(Date.now() / 1000);
+      const finishTime = startTime + 86400; // 24 hours
+      const entryFee = 100_000_000; // 0.1 SOL
+      const maxParticipants = 100;
+
       const [compPda] = PublicKey.findProgramAddressSync(
         [
-          COMPETITION_SEED,
+          Buffer.from("competition"),
           wallet.publicKey.toBuffer(),
-          Buffer.from(new Uint8Array(new BigUint64Array([BigInt(formData.gameId)]).buffer)),
-          Buffer.from(formData.username.trim()),
+          new Uint8Array(new BigUint64Array([BigInt(gameId)]).buffer),
+          Buffer.from(randomString),
         ],
         PROGRAM_ID
       );
 
-      const [vaultPda] = PublicKey.findProgramAddressSync([VAULT_SEED, compPda.toBuffer()], PROGRAM_ID);
+      const [vaultPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("vault"), compPda.toBuffer()],
+        PROGRAM_ID
+      );
 
-      // Call Anchor method
       const tx = await program.methods
         .createCompetition({
-          username: formData.username.trim(),
-          description: formData.description.trim(),
-          gameId: new BN(formData.gameId),
-          randomString: formData.username.trim(),
-          startTime: new BN(startTs),
-          finishTime: new BN(finishTs),
-          entryFee: new BN(formData.entryFee),
-          maxParticipants: Number(formData.maxParticipants),
+          username,
+          description,
+          gameId: new (require('@coral-xyz/anchor')).BN(gameId),
+          randomString,
+          startTime: new (require('@coral-xyz/anchor')).BN(startTime),
+          finishTime: new (require('@coral-xyz/anchor')).BN(finishTime),
+          entryFee: new (require('@coral-xyz/anchor')).BN(entryFee),
+          maxParticipants,
         })
         .accounts({
           creator: wallet.publicKey,
           competition: compPda,
           vault: vaultPda,
-          systemProgram: SystemProgram.programId,
+          systemProgram: PublicKey.default,
         })
         .rpc();
 
-      setStatus({ type: 'success', message: `✅ Competition created! Tx: ${tx}` });
+      setCompetitionPubkey(compPda.toBase58());
+      setStatus(`✅ Competition Created! PDA: ${compPda.toBase58()}`);
+      console.log("✅ Transaction:", tx);
     } catch (err: any) {
-      console.error('Error creating competition:', err);
-      setStatus({ type: 'error', message: err.message || 'Failed to create competition' });
-    } finally {
-      setLoading(false);
+      console.error(err);
+      setStatus("❌ Error: " + err.message);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold">Create MotionPlay Competition</h1>
-            <p className="text-green-400 mt-1">● Connected to Devnet</p>
-          </div>
-          <WalletMultiButton />
-        </div>
+    <div style={{ padding: 40, fontFamily: 'Arial, sans-serif' }}>
+      <h1>MotionPlay Competition</h1>
+      <WalletMultiButton />
 
-        <form onSubmit={createCompetition} className="space-y-6 bg-gray-900 p-8 rounded-2xl border border-gray-800">
-          <div>
-            <label className="block text-sm mb-2 font-medium">Username</label>
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Justin"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm mb-2 font-medium">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              required
-              rows={4}
-              className="w-full px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Test Competition on Devnet..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm mb-2">Game ID</label>
-              <input
-                type="number"
-                name="gameId"
-                value={formData.gameId}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-800 rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm mb-2">Entry Fee (Lamports)</label>
-              <input
-                type="number"
-                name="entryFee"
-                value={formData.entryFee}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-800 rounded-lg"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm mb-2">Max Participants</label>
-              <input
-                type="number"
-                name="maxParticipants"
-                value={formData.maxParticipants}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-800 rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm mb-2">Start Date</label>
-              <input
-                type="date"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-gray-800 rounded-lg"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm mb-2">Start Time</label>
-              <input
-                type="time"
-                name="startTime"
-                value={formData.startTime}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-gray-800 rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm mb-2">Finish Date</label>
-              <input
-                type="date"
-                name="finishDate"
-                value={formData.finishDate}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-gray-800 rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm mb-2">Finish Time</label>
-              <input
-                type="time"
-                name="finishTime"
-                value={formData.finishTime}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-gray-800 rounded-lg"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || !wallet.publicKey}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 rounded-xl font-semibold text-lg transition-colors"
-          >
-            {loading ? 'Creating Competition...' : 'Create Competition'}
-          </button>
-        </form>
-
-        {status && (
-          <div
-            className={`mt-6 p-5 rounded-2xl text-sm ${
-              status.type === 'success'
-                ? 'bg-green-900/50 border border-green-700'
-                : 'bg-red-900/50 border border-red-700'
-            }`}
-          >
-            {status.message}
-          </div>
-        )}
+      <div style={{ margin: "30px 0" }}>
+        <button 
+          onClick={createCompetition} 
+          disabled={!wallet.publicKey}
+          style={{ padding: "15px 30px", fontSize: "18px" }}
+        >
+          Create New Competition
+        </button>
       </div>
+
+      {status && <p style={{ fontSize: "18px", marginTop: 20 }}>{status}</p>}
+      {competitionPubkey && (
+        <p><strong>Competition PDA:</strong> {competitionPubkey}</p>
+      )}
     </div>
   );
 }
