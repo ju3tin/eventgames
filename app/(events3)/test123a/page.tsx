@@ -5,7 +5,7 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { useWallet, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
-import { IDL } from './idl'; // ← We'll create this
+import { IDL } from '@/idl1'; // ← We'll create this
 
 require('@solana/wallet-adapter-react-ui/styles.css');
 
