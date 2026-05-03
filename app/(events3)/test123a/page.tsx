@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react';
 import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
 import { AnchorProvider, Program, web3 } from '@coral-xyz/anchor';
