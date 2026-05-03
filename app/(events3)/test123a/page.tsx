@@ -5,7 +5,7 @@ import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { IDL } from '@/idl1';        // ← Make sure path is correct
+import { IDL } from '@/idl1';   // ← Change path if your idl file is elsewhere
 
 const PROGRAM_ID = new PublicKey("2HK29Di58nED836JN14U1bPsxW4q52FLW5knoJEDmYQJ");
 
@@ -16,23 +16,28 @@ export default function CompetitionPage() {
 
   const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 
-  const getProvider = (): AnchorProvider => {
+  const getProvider = () => {
     if (!wallet.publicKey || !wallet.signTransaction) {
       throw new Error("Please connect your wallet");
     }
-    return new AnchorProvider(connection, wallet as any, {
-      commitment: "confirmed",
-    });
+    return new AnchorProvider(
+      connection,
+      wallet as any,
+      { commitment: "confirmed" }
+    );
   };
 
   const createCompetition = async () => {
-    if (!wallet.publicKey) return alert("Connect wallet first!");
+    if (!wallet.publicKey) {
+      alert("Please connect your wallet first!");
+      return;
+    }
 
     try {
       const provider = getProvider();
       
-      // ✅ Correct Program initialization
-      const program = new Program(IDL, PROGRAM_ID, provider);
+      // ✅ This is the correct way
+      const program = new Program(IDL as any, PROGRAM_ID, provider);
 
       const username = "Justin";
       const description = "Test Competition on Devnet";
@@ -78,8 +83,8 @@ export default function CompetitionPage() {
         .rpc();
 
       setCompetitionPubkey(compPda.toBase58());
-      setStatus(`✅ Success! Competition PDA: ${compPda.toBase58()}`);
-      console.log("Transaction signature:", tx);
+      setStatus(`✅ Competition Created Successfully!`);
+      console.log("Transaction:", tx);
     } catch (err: any) {
       console.error(err);
       setStatus("❌ Error: " + err.message);
@@ -87,20 +92,22 @@ export default function CompetitionPage() {
   };
 
   return (
-    <div style={{ padding: 40, maxWidth: 900 }}>
-      <h1>MotionPlay - Create Competition</h1>
+    <div style={{ padding: 40 }}>
+      <h1>MotionPlay Competition</h1>
       <WalletMultiButton />
 
-      <div style={{ margin: "30px 0" }}>
-        <button onClick={createCompetition} disabled={!wallet.publicKey} style={{ padding: "12px 24px", fontSize: "16px" }}>
-          Create New Competition
+      <div style={{ marginTop: 30 }}>
+        <button 
+          onClick={createCompetition} 
+          disabled={!wallet.publicKey}
+          style={{ padding: "15px 30px", fontSize: "18px" }}
+        >
+          Create Competition
         </button>
       </div>
 
-      {status && <p><strong>{status}</strong></p>}
-      {competitionPubkey && (
-        <p><strong>Competition Address:</strong> {competitionPubkey}</p>
-      )}
+      {status && <p style={{ marginTop: 20, fontWeight: "bold" }}>{status}</p>}
+      {competitionPubkey && <p><strong>Competition PDA:</strong> {competitionPubkey}</p>}
     </div>
   );
 }
