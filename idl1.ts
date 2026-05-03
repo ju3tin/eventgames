@@ -1,4 +1,4 @@
-export IDL = {
+export const IDL = {
   "address": "2HK29Di58nED836JN14U1bPsxW4q52FLW5knoJEDmYQJ",
   "metadata": {
     "name": "motionplay",
