@@ -1,158 +1,107 @@
-"use client";
+'use client';
+
 import React, { useState } from 'react';
 import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
-import { AnchorProvider, Program, web3 } from '@coral-xyz/anchor';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { useWallet, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
-import { IDL } from '@/idl1'; // ← We'll create this
-
-require('@solana/wallet-adapter-react-ui/styles.css');
+import { AnchorProvider, Program } from '@coral-xyz/anchor';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { IDL } from '@/idl1';   // Adjust path if needed
 
 const PROGRAM_ID = new PublicKey("2HK29Di58nED836JN14U1bPsxW4q52FLW5knoJEDmYQJ");
-const network = WalletAdapterNetwork.Devnet;
 
-function AppContent() {
+export default function CompetitionPage() {
   const wallet = useWallet();
   const [competitionPubkey, setCompetitionPubkey] = useState<string>("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<string>("");
 
   const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 
-  const getProvider = () => {
-    if (!wallet.publicKey) throw new Error("Wallet not connected");
-    return new AnchorProvider(connection, wallet as any, { commitment: "confirmed" });
+  // ✅ Correct getProvider function
+  const getProvider = (): AnchorProvider => {
+    if (!wallet.publicKey || !wallet.signTransaction) {
+      throw new Error("Please connect your wallet first");
+    }
+
+    return new AnchorProvider(
+      connection,
+      wallet as any,           // WalletAdapter works with AnchorProvider
+      { commitment: "confirmed" }
+    );
   };
 
   // Create Competition
   const createCompetition = async () => {
-    if (!wallet.publicKey) return alert("Connect wallet first");
-
-    const provider = getProvider();
-    const program = new Program(IDL as any, PROGRAM_ID, provider);
-
-    const username = "Justin";
-    const description = "My First MotionPlay Challenge";
-    const gameId = 1;
-    const randomString = `comp_${Date.now()}`;
-    const startTime = Math.floor(Date.now() / 1000);
-    const finishTime = startTime + 86400; // 24 hours
-    const entryFee = 0.1 * web3.LAMPORTS_PER_SOL;
-    const maxParticipants = 50;
-
-    const [compPda] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("competition"),
-        wallet.publicKey.toBuffer(),
-        new web3.BN(gameId).toArrayLike(Buffer, "le", 8),
-        Buffer.from(randomString),
-      ],
-      PROGRAM_ID
-    );
-
-    const [vaultPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("vault"), compPda.toBuffer()],
-      PROGRAM_ID
-    );
+    if (!wallet.publicKey) return alert("Connect wallet first!");
 
     try {
+      const provider = getProvider();
+      const program = new Program(IDL as any, PROGRAM_ID, provider);
+
+      const username = "Justin";
+      const description = "Test Competition on Devnet";
+      const gameId = 123;
+      const randomString = `motion_${Date.now()}`;
+      const startTime = Math.floor(Date.now() / 1000);
+      const finishTime = startTime + 86400; // 24 hours
+      const entryFee = 0.1 * 1_000_000_000; // 0.1 SOL
+      const maxParticipants = 100;
+
+      const [compPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("competition"),
+          wallet.publicKey.toBuffer(),
+          new Uint8Array(new BigUint64Array([BigInt(gameId)]).buffer),
+          Buffer.from(randomString),
+        ],
+        PROGRAM_ID
+      );
+
+      const [vaultPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("vault"), compPda.toBuffer()],
+        PROGRAM_ID
+      );
+
       const tx = await program.methods
         .createCompetition({
           username,
           description,
-          gameId: new web3.BN(gameId),
+          gameId: new (require('@coral-xyz/anchor')).BN(gameId),
           randomString,
-          startTime: new web3.BN(startTime),
-          finishTime: new web3.BN(finishTime),
-          entryFee: new web3.BN(entryFee),
+          startTime: new (require('@coral-xyz/anchor')).BN(startTime),
+          finishTime: new (require('@coral-xyz/anchor')).BN(finishTime),
+          entryFee: new (require('@coral-xyz/anchor')).BN(entryFee),
           maxParticipants,
         })
         .accounts({
           creator: wallet.publicKey,
           competition: compPda,
           vault: vaultPda,
-          systemProgram: web3.SystemProgram.programId,
+          systemProgram: PublicKey.default,
         })
         .rpc();
 
       setCompetitionPubkey(compPda.toBase58());
-      setStatus(`Competition created! PDA: ${compPda.toBase58()}`);
-      console.log("Transaction:", tx);
+      setStatus(`✅ Competition Created! PDA: ${compPda.toBase58()}`);
+      console.log("Signature:", tx);
     } catch (err: any) {
       console.error(err);
-      alert("Error: " + err.message);
-    }
-  };
-
-  // Enter Competition
-  const enterCompetition = async () => {
-    if (!competitionPubkey) return alert("Create competition first");
-
-    const provider = getProvider();
-    const program = new Program(IDL as any, PROGRAM_ID, provider);
-
-    const compKey = new PublicKey(competitionPubkey);
-    const [playerEntryPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("entry"), compKey.toBuffer(), wallet.publicKey!.toBuffer()],
-      PROGRAM_ID
-    );
-
-    const [vaultPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("vault"), compKey.toBuffer()],
-      PROGRAM_ID
-    );
-
-    try {
-      const tx = await program.methods.enter()
-        .accounts({
-          player: wallet.publicKey,
-          competition: compKey,
-          playerEntry: playerEntryPda,
-          vault: vaultPda,
-          systemProgram: web3.SystemProgram.programId,
-        })
-        .rpc();
-
-      setStatus("✅ Successfully entered the competition!");
-      console.log("Enter tx:", tx);
-    } catch (err: any) {
-      alert(err.message);
+      setStatus("❌ Error: " + err.message);
     }
   };
 
   return (
-    <div style={{ padding: 40, fontFamily: 'Arial' }}>
-      <h1>MotionPlay - Competition</h1>
+    <div style={{ padding: 40, maxWidth: 800 }}>
+      <h1>MotionPlay Competition</h1>
       <WalletMultiButton />
 
       <div style={{ margin: "30px 0" }}>
         <button onClick={createCompetition} disabled={!wallet.publicKey}>
-          Create New Competition
-        </button>
-
-        <button onClick={enterCompetition} disabled={!competitionPubkey || !wallet.publicKey} style={{ marginLeft: 20 }}>
-          Enter Competition
+          Create Competition
         </button>
       </div>
 
       {status && <p><strong>{status}</strong></p>}
-
-      {competitionPubkey && (
-        <p><strong>Competition PDA:</strong> {competitionPubkey}</p>
-      )}
+      {competitionPubkey && <p><strong>Competition PDA:</strong> {competitionPubkey}</p>}
     </div>
-  );
-}
-
-export default function App() {
-  const wallets = [new PhantomWalletAdapter()];
-
-  return (
-    <WalletProvider wallets={wallets} autoConnect>
-      <WalletModalProvider>
-        <AppContent />
-      </WalletModalProvider>
-    </WalletProvider>
   );
 }
