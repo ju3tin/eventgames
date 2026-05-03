@@ -5,7 +5,7 @@ import { Connection, PublicKey, SystemProgram } from '@solana/web3.js';
 import { AnchorProvider, Program, BN } from '@coral-xyz/anchor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import idlJson from '@/idl1.json'; // <- update path to your IDL
+import idlJson from '@/idl2.json'; // <- update path to your IDL
 
 // ================== IDL CONFIG ==================
 const IDL = idlJson as any;
