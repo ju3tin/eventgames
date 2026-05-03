@@ -5,7 +5,7 @@ import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { IDL } from '@/idl1';   // Adjust path if needed
+import { IDL } from '@/idl1';        // ← Make sure path is correct
 
 const PROGRAM_ID = new PublicKey("2HK29Di58nED836JN14U1bPsxW4q52FLW5knoJEDmYQJ");
 
@@ -16,26 +16,23 @@ export default function CompetitionPage() {
 
   const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 
-  // ✅ Correct getProvider function
   const getProvider = (): AnchorProvider => {
     if (!wallet.publicKey || !wallet.signTransaction) {
-      throw new Error("Please connect your wallet first");
+      throw new Error("Please connect your wallet");
     }
-
-    return new AnchorProvider(
-      connection,
-      wallet as any,           // WalletAdapter works with AnchorProvider
-      { commitment: "confirmed" }
-    );
+    return new AnchorProvider(connection, wallet as any, {
+      commitment: "confirmed",
+    });
   };
 
-  // Create Competition
   const createCompetition = async () => {
     if (!wallet.publicKey) return alert("Connect wallet first!");
 
     try {
       const provider = getProvider();
-      const program = new Program(IDL as any, PROGRAM_ID, provider);
+      
+      // ✅ Correct Program initialization
+      const program = new Program(IDL, PROGRAM_ID, provider);
 
       const username = "Justin";
       const description = "Test Competition on Devnet";
@@ -43,7 +40,7 @@ export default function CompetitionPage() {
       const randomString = `motion_${Date.now()}`;
       const startTime = Math.floor(Date.now() / 1000);
       const finishTime = startTime + 86400; // 24 hours
-      const entryFee = 0.1 * 1_000_000_000; // 0.1 SOL
+      const entryFee = 100_000_000; // 0.1 SOL
       const maxParticipants = 100;
 
       const [compPda] = PublicKey.findProgramAddressSync(
@@ -81,8 +78,8 @@ export default function CompetitionPage() {
         .rpc();
 
       setCompetitionPubkey(compPda.toBase58());
-      setStatus(`✅ Competition Created! PDA: ${compPda.toBase58()}`);
-      console.log("Signature:", tx);
+      setStatus(`✅ Success! Competition PDA: ${compPda.toBase58()}`);
+      console.log("Transaction signature:", tx);
     } catch (err: any) {
       console.error(err);
       setStatus("❌ Error: " + err.message);
@@ -90,18 +87,20 @@ export default function CompetitionPage() {
   };
 
   return (
-    <div style={{ padding: 40, maxWidth: 800 }}>
-      <h1>MotionPlay Competition</h1>
+    <div style={{ padding: 40, maxWidth: 900 }}>
+      <h1>MotionPlay - Create Competition</h1>
       <WalletMultiButton />
 
       <div style={{ margin: "30px 0" }}>
-        <button onClick={createCompetition} disabled={!wallet.publicKey}>
-          Create Competition
+        <button onClick={createCompetition} disabled={!wallet.publicKey} style={{ padding: "12px 24px", fontSize: "16px" }}>
+          Create New Competition
         </button>
       </div>
 
       {status && <p><strong>{status}</strong></p>}
-      {competitionPubkey && <p><strong>Competition PDA:</strong> {competitionPubkey}</p>}
+      {competitionPubkey && (
+        <p><strong>Competition Address:</strong> {competitionPubkey}</p>
+      )}
     </div>
   );
 }
