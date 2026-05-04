@@ -1,31 +1,27 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
-import { AnchorProvider, Program } from '@coral-xyz/anchor';
+import { Connection, PublicKey, SystemProgram, clusterApiUrl } from '@solana/web3.js';
+import { AnchorProvider, BN, Program } from '@coral-xyz/anchor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { IDL } from '@/idl1';   // Adjust import path if needed
+import { IDL } from '@/idl1';
 
 const PROGRAM_ID = new PublicKey("2HK29Di58nED836JN14U1bPsxW4q52FLW5knoJEDmYQJ");
+
+const CONNECTION = new Connection(clusterApiUrl("devnet"), "confirmed");
 
 export default function CompetitionPage() {
   const wallet = useWallet();
   const [competitionPubkey, setCompetitionPubkey] = useState<string>("");
   const [status, setStatus] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-
-  const getProvider = () => {
+  const getProvider = (): AnchorProvider => {
     if (!wallet.publicKey || !wallet.signTransaction) {
       throw new Error("Please connect your wallet");
     }
-
-    return new AnchorProvider(
-      connection,
-      wallet as any,
-      { commitment: "confirmed" }
-    );
+    return new AnchorProvider(CONNECTION, wallet as any, { commitment: "confirmed" });
   };
 
   const createCompetition = async () => {
@@ -34,15 +30,12 @@ export default function CompetitionPage() {
       return;
     }
 
+    setLoading(true);
+    setStatus("");
+
     try {
       const provider = getProvider();
-
-      // ✅ Explicit typing to fix Vercel/Next.js type confusion
-      const program = new Program(
-        IDL as any, 
-        PROGRAM_ID, 
-        provider
-      ) as Program<any>;
+      const program = new Program(IDL as any, provider) as Program<any>;
 
       const username = "Justin";
       const description = "Test Competition on Devnet";
@@ -72,49 +65,64 @@ export default function CompetitionPage() {
         .createCompetition({
           username,
           description,
-          gameId: new (require('@coral-xyz/anchor')).BN(gameId),
+          gameId: new BN(gameId),
           randomString,
-          startTime: new (require('@coral-xyz/anchor')).BN(startTime),
-          finishTime: new (require('@coral-xyz/anchor')).BN(finishTime),
-          entryFee: new (require('@coral-xyz/anchor')).BN(entryFee),
+          startTime: new BN(startTime),
+          finishTime: new BN(finishTime),
+          entryFee: new BN(entryFee),
           maxParticipants,
         })
         .accounts({
           creator: wallet.publicKey,
           competition: compPda,
           vault: vaultPda,
-          systemProgram: PublicKey.default,
+          systemProgram: SystemProgram.programId,
         })
         .rpc();
 
       setCompetitionPubkey(compPda.toBase58());
-      setStatus(`✅ Competition Created! PDA: ${compPda.toBase58()}`);
+      setStatus(`✅ Competition created! TX: ${tx}`);
       console.log("✅ Transaction:", tx);
     } catch (err: any) {
       console.error(err);
-      setStatus("❌ Error: " + err.message);
+      setStatus(`❌ Error: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: 40, fontFamily: 'Arial, sans-serif' }}>
+    <main style={{ padding: 40, fontFamily: 'Arial, sans-serif', maxWidth: 600 }}>
       <h1>MotionPlay Competition</h1>
+
       <WalletMultiButton />
 
       <div style={{ margin: "30px 0" }}>
-        <button 
-          onClick={createCompetition} 
-          disabled={!wallet.publicKey}
-          style={{ padding: "15px 30px", fontSize: "18px" }}
+        <button
+          onClick={createCompetition}
+          disabled={!wallet.publicKey || loading}
+          style={{
+            padding: "12px 28px",
+            fontSize: 16,
+            cursor: wallet.publicKey && !loading ? "pointer" : "not-allowed",
+            opacity: wallet.publicKey && !loading ? 1 : 0.5,
+          }}
         >
-          Create New Competition
+          {loading ? "Creating..." : "Create New Competition"}
         </button>
       </div>
 
-      {status && <p style={{ fontSize: "18px", marginTop: 20 }}>{status}</p>}
-      {competitionPubkey && (
-        <p><strong>Competition PDA:</strong> {competitionPubkey}</p>
+      {status && (
+        <p style={{ fontSize: 15, marginTop: 16, wordBreak: "break-word" }}>
+          {status}
+        </p>
       )}
-    </div>
+
+      {competitionPubkey && (
+        <p style={{ wordBreak: "break-word" }}>
+          <strong>Competition PDA:</strong> {competitionPubkey}
+        </p>
+      )}
+    </main>
   );
 }
