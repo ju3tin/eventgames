@@ -35,8 +35,8 @@ export default function CompetitionPage() {
 
     try {
       const provider = getProvider();
-      const program = new Program(IDL as any, provider) as Program<any>;
-
+      const program = new Program(IDL as any, provider) as any;
+      
       const username = "Justin";
       const description = "Test Competition on Devnet";
       const gameId = 123;
