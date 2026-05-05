@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import './globals.css';
+// import './globals.css';
 import { Analytics } from '@vercel/analytics/next';
+import '@solana/wallet-adapter-react-ui/styles.css';
 
 const geist = Geist({ subsets: ['latin'] });
 const geistMono = Geist_Mono({ subsets: ['latin'] });
