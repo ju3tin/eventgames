@@ -1,28 +1,15 @@
+// page.tsx - replace your static imports with this pattern
 'use client';
 
 import React, { useState } from 'react';
-import { Connection, PublicKey, SystemProgram, clusterApiUrl } from '@solana/web3.js';
-import { AnchorProvider, BN, Program } from '@coral-xyz/anchor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { IDL } from '@/idl1';
-
-const PROGRAM_ID = new PublicKey("2HK29Di58nED836JN14U1bPsxW4q52FLW5knoJEDmYQJ");
-
-const CONNECTION = new Connection(clusterApiUrl("devnet"), "confirmed");
 
 export default function CompetitionPage() {
   const wallet = useWallet();
   const [competitionPubkey, setCompetitionPubkey] = useState<string>("");
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-
-  const getProvider = (): AnchorProvider => {
-    if (!wallet.publicKey || !wallet.signTransaction) {
-      throw new Error("Please connect your wallet");
-    }
-    return new AnchorProvider(CONNECTION, wallet as any, { commitment: "confirmed" });
-  };
 
   const createCompetition = async () => {
     if (!wallet.publicKey) {
@@ -34,16 +21,26 @@ export default function CompetitionPage() {
     setStatus("");
 
     try {
-      const provider = getProvider();
+      // Dynamic imports — loaded only when button is clicked, not at build time
+      const { Connection, PublicKey, SystemProgram, clusterApiUrl } = await import('@solana/web3.js');
+      const { AnchorProvider, BN, Program } = await import('@coral-xyz/anchor');
+      const { IDL } = await import('@/idl1');
+
+      const PROGRAM_ID = new PublicKey("2HK29Di58nED836JN14U1bPsxW4q52FLW5knoJEDmYQJ");
+      const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+
+      if (!wallet.signTransaction) throw new Error("Wallet not ready");
+
+      const provider = new AnchorProvider(connection, wallet as any, { commitment: "confirmed" });
       const program = new Program(IDL as any, provider) as any;
-      
+
       const username = "Justin";
       const description = "Test Competition on Devnet";
       const gameId = 123;
       const randomString = `motion_${Date.now()}`;
       const startTime = Math.floor(Date.now() / 1000);
-      const finishTime = startTime + 86400; // 24 hours
-      const entryFee = 100_000_000; // 0.1 SOL
+      const finishTime = startTime + 86400;
+      const entryFee = 100_000_000;
       const maxParticipants = 100;
 
       const [compPda] = PublicKey.findProgramAddressSync(
@@ -82,7 +79,6 @@ export default function CompetitionPage() {
 
       setCompetitionPubkey(compPda.toBase58());
       setStatus(`✅ Competition created! TX: ${tx}`);
-      console.log("✅ Transaction:", tx);
     } catch (err: any) {
       console.error(err);
       setStatus(`❌ Error: ${err.message}`);
