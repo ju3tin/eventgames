@@ -1,12 +1,11 @@
 const nextConfig = {
-  transpilePackages: [
-    '@solana/web3.js',
-    '@coral-xyz/anchor',
-    '@solana/wallet-adapter-react',
-    '@solana/wallet-adapter-react-ui',
-    '@solana/wallet-adapter-base',
-  ],
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push(
+        '@solana/web3.js',
+        '@coral-xyz/anchor',
+      );
+    }
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,
